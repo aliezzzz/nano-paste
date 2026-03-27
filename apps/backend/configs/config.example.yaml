@@ -1,0 +1,19 @@
+server:
+  port: 8080
+
+database:
+  driver: sqlite
+  dsn: ./data/nanopaste.db
+
+jwt:
+  issuer: nanopaste-backend
+  secret: replace-with-your-jwt-secret
+  access_token_ttl_minutes: 60
+
+s3:
+  endpoint: http://localhost:9000
+  region: us-east-1
+  bucket: nanopaste-local
+  access_key_id: your-access-key
+  secret_access_key: your-secret-key
+  use_path_style: true
