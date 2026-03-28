@@ -15,6 +15,7 @@ interface RealtimeController {
 }
 
 export function createRealtimeConnection(options: RealtimeOptions): RealtimeController {
+  const MAX_RECONNECT_ATTEMPTS = 5;
   let ws: WebSocket | null = null;
   let reconnectAttempts = 0;
   let reconnectTimer: number | null = null;
@@ -33,7 +34,7 @@ export function createRealtimeConnection(options: RealtimeOptions): RealtimeCont
 
     const wsUrl = toWsUrl(options.apiBaseUrl, token);
 
-    ws = new WebSocket(wsUrl, ["bearer", token]);
+    ws = new WebSocket(wsUrl);
 
     ws.addEventListener("open", () => {
       reconnectAttempts = 0;
@@ -64,6 +65,10 @@ export function createRealtimeConnection(options: RealtimeOptions): RealtimeCont
       ws = null;
       if (manualClose) return;
       reconnectAttempts += 1;
+      if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+        options.onStatusChange("error");
+        return;
+      }
       const delay = Math.min(10000, 1000 * 2 ** Math.min(reconnectAttempts, 4));
       reconnectTimer = window.setTimeout(connect, delay);
     });
@@ -96,10 +101,7 @@ export function createRealtimeConnection(options: RealtimeOptions): RealtimeCont
 function toWsUrl(apiBaseUrl: string, accessToken: string): string {
   const wsBase = apiBaseUrl.replace(/^http/i, "ws");
   const url = new URL(`${wsBase}/v1/events/ws`);
-  // 浏览器 WebSocket 无法直接设置 Authorization header，优先通过 subprotocol 传递，
-  // 并降级补充 query 参数以适配支持 query token 的服务端。
+  // 浏览器 WebSocket 无法直接设置 Authorization header，使用 query token。
   url.searchParams.set("access_token", accessToken);
-  url.searchParams.set("accessToken", accessToken);
   return url.toString();
 }
-

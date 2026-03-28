@@ -11,6 +11,11 @@ interface CompleteUploadInput {
   etag?: string;
 }
 
+interface CleanupFilesInput {
+  itemIds?: string[];
+  reason?: "manual" | "expired";
+}
+
 export async function prepareFileUpload(
   client: ApiClient,
   { file, category = "other" }: PrepareUploadInput,
@@ -54,6 +59,16 @@ export async function completeFileUpload(client: ApiClient, input: CompleteUploa
     body: JSON.stringify({
       fileId: input.fileId,
       etag: input.etag,
+    }),
+  });
+}
+
+export async function cleanupFiles(client: ApiClient, input: CleanupFilesInput): Promise<void> {
+  await client.request<{ success: boolean }>("/v1/files/cleanup", {
+    method: "POST",
+    body: JSON.stringify({
+      reason: input.reason ?? "manual",
+      itemIds: input.itemIds ?? [],
     }),
   });
 }

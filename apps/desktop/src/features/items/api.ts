@@ -1,5 +1,6 @@
 import type {
   CreateItemResponse,
+  DeleteItemResponse,
   GetItemDetailResponse,
   ItemDetail,
   ListItemsResponse,
@@ -41,8 +42,22 @@ export async function listItemDetails(client: ApiClient, limit: number): Promise
   return details;
 }
 
+export async function getItemDetail(client: ApiClient, itemId: string): Promise<ItemDetail> {
+  const response = await client.request<GetItemDetailResponse>(
+    `/v1/items/${encodeURIComponent(itemId)}`,
+    { method: "GET" }
+  );
+  return response.item;
+}
+
 export async function prepareFileDownload(client: ApiClient, fileId: string): Promise<PrepareDownloadResponse> {
   return client.request<PrepareDownloadResponse>(`/v1/files/${encodeURIComponent(fileId)}/prepare-download`, {
     method: "POST",
+  });
+}
+
+export async function deleteItem(client: ApiClient, itemId: string): Promise<void> {
+  await client.request<DeleteItemResponse>(`/v1/items/${encodeURIComponent(itemId)}`, {
+    method: "DELETE",
   });
 }

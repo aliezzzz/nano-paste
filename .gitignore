@@ -5,3 +5,5 @@
 node_modules
 dist
 target
+apps/backend/data
+apps/backend/data/nanopaste.db

@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	errFileNotFound = errors.New("file not found")
-	errFileNotReady = errors.New("file not ready")
+	errFileNotFound   = errors.New("file not found")
+	errFileNotReady   = errors.New("file not ready")
+	errFileNotPending = errors.New("file not pending")
 )
 
 type repository struct {
@@ -47,7 +48,7 @@ func (r *repository) prepareUpload(ctx context.Context, in prepareUploadInput) (
 	fileID := uuid.NewString()
 	retentionUntil := now.Add(90 * 24 * time.Hour).Format(time.RFC3339Nano)
 	createdAt := now.Format(time.RFC3339Nano)
-	storageKey := fmt.Sprintf("mock/%s/%s", in.UserID, fileID)
+	storageKey := fmt.Sprintf("%s/%s", in.UserID, fileID)
 
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO file_objects(
@@ -76,6 +77,28 @@ func (r *repository) prepareUpload(ctx context.Context, in prepareUploadInput) (
 		ExpiresAt:    now.Add(24 * time.Hour).Format(time.RFC3339Nano),
 		Category:     normalizeCategory(in.Category),
 	}, nil
+}
+
+func (r *repository) verifyUploadTarget(ctx context.Context, userID, fileID string) error {
+	row := r.db.QueryRowContext(ctx, `
+		SELECT status
+		FROM file_objects
+		WHERE user_id = ? AND id = ? AND cleaned_at IS NULL
+		LIMIT 1`, userID, fileID)
+
+	var status string
+	if err := row.Scan(&status); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errFileNotFound
+		}
+		return fmt.Errorf("query upload target: %w", err)
+	}
+
+	if strings.TrimSpace(status) != "pending" {
+		return errFileNotPending
+	}
+
+	return nil
 }
 
 type completeUploadInput struct {
