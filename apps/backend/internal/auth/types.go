@@ -72,11 +72,13 @@ type loginResponse struct {
 	UserID   string    `json:"user_id"`
 	Username string    `json:"username"`
 	Account  string    `json:"account,omitempty"`
+	DeviceID string    `json:"deviceId"`
 	Tokens   tokenPair `json:"tokens"`
 }
 
 type refreshResponse struct {
-	Tokens tokenPair `json:"tokens"`
+	DeviceID string    `json:"deviceId"`
+	Tokens   tokenPair `json:"tokens"`
 }
 
 type logoutResponse struct {

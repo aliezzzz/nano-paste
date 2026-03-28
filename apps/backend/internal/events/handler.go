@@ -45,7 +45,11 @@ func (h *handler) listEvents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID := authx.DeviceIDFromRequest(r)
+	deviceID, err := authx.DeviceIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
 
 	sinceEventID := int64(-1)
 	rawSince := strings.TrimSpace(r.URL.Query().Get("since_event_id"))
@@ -120,7 +124,11 @@ func (h *handler) ws(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID := authx.DeviceIDFromRequest(r)
+	deviceID, err := authx.DeviceIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {

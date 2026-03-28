@@ -13,6 +13,7 @@ export interface LoginRequest {
 export interface LoginResponse {
   userId: string;
   account: string;
+  deviceId: string;
   tokens: AuthTokenPair;
 }
 
@@ -28,6 +29,7 @@ export interface RefreshRequest {
 }
 
 export interface RefreshResponse {
+  deviceId: string;
   tokens: AuthTokenPair;
 }
 
@@ -53,4 +55,3 @@ export type LogoutApi = {
   request: LogoutRequest;
   response: ApiResponse<LogoutResponse>;
 };
-

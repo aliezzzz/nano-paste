@@ -16,7 +16,7 @@ export interface FileRecord {
 }
 
 export interface MockStore {
-  refreshTokens: Map<string, string>;
+  refreshTokens: Map<string, { accountId: string; deviceId: string }>;
   itemsByAccount: Map<string, Map<string, ItemDetail>>;
   filesByAccount: Map<string, Map<string, FileRecord>>;
   devicesByAccount: Map<string, Map<string, DeviceInfo>>;

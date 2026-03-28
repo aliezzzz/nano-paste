@@ -68,6 +68,7 @@ func main() {
 		middleware.RequestID,
 		middleware.Recover,
 		middleware.Logger,
+		middleware.CORS,
 	)
 
 	port := os.Getenv("PORT")

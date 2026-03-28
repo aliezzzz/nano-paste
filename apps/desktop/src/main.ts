@@ -1,24 +1,15 @@
 import "./styles.css";
+import { API_BASE_URL } from "./config/env";
 import { createUiShell } from "./ui";
-import "./clipboard";
-import "./files";
-import "./sync";
-import "./repository";
-import type {
-  ApiResponse,
-  CompleteUploadRequest,
-  CompleteUploadResponse,
-  CreateItemRequest,
-  CreateItemResponse,
-  FileItemDetail,
-  GetItemDetailResponse,
-  ItemDetail,
-  ListItemsResponse,
-  NanoPasteWsEvent,
-  PrepareDownloadResponse,
-  PrepareUploadRequest,
-  PrepareUploadResponse,
-} from "../../../packages/contracts/v1";
+import { getAuthSession, clearAuthSession, getDeviceId, setAuthSession } from "./auth/store";
+import { ApiClient, ApiRequestError } from "./api/client";
+import { loginWithPassword, logoutWithRefreshToken, refreshWithToken } from "./api/auth";
+import { createUploadQueue, type UploadQueueItem, type UploadQueueStatus } from "./features/files/queue";
+import { createTextItem, listItemDetails, prepareFileDownload } from "./features/items/api";
+import { renderItems } from "./features/items/render";
+import { createRealtimeConnection, type RealtimeStatus } from "./realtime/ws";
+import { toErrorMessage } from "./shared/errors";
+import { formatBytes } from "./shared/format";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -28,22 +19,76 @@ if (!app) {
 
 app.innerHTML = createUiShell();
 
-const MOCK_BASE_URL = "http://localhost:3100";
-const MOCK_ACCOUNT = "desktop-demo";
-const MOCK_PASSWORD = "mock-password";
-const DEVICE_ID = "desktop_mock_client";
-
-let accessToken = "";
-let ws: WebSocket | null = null;
-
-const statusEl = mustById<HTMLParagraphElement>("connection-status");
-const downloadStatusEl = mustById<HTMLParagraphElement>("download-status");
+const authScreenEl = mustById<HTMLElement>("auth-screen");
+const workspaceEl = mustById<HTMLElement>("workspace");
+const connectionStatusEl = mustById<HTMLParagraphElement>("connection-status");
+const authStatusEl = mustById<HTMLParagraphElement>("auth-status");
 const itemsLoadingEl = mustById<HTMLParagraphElement>("items-loading");
 const itemsListEl = mustById<HTMLUListElement>("items-list");
 const itemsEmptyEl = mustById<HTMLParagraphElement>("items-empty");
+const downloadStatusEl = mustById<HTMLParagraphElement>("download-status");
+const loginFormEl = mustById<HTMLFormElement>("login-form");
+const usernameInputEl = mustById<HTMLInputElement>("login-username");
+const passwordInputEl = mustById<HTMLInputElement>("login-password");
+const logoutBtnEl = mustById<HTMLButtonElement>("logout-btn");
 const textFormEl = mustById<HTMLFormElement>("text-form");
+const textTitleInputEl = mustById<HTMLInputElement>("text-title-input");
 const textInputEl = mustById<HTMLInputElement>("text-input");
-const mockUploadBtnEl = mustById<HTMLButtonElement>("mock-upload-btn");
+const uploadDropzoneEl = mustById<HTMLDivElement>("upload-dropzone");
+const pickFilesBtnEl = mustById<HTMLButtonElement>("pick-files-btn");
+const fileInputEl = mustById<HTMLInputElement>("file-input");
+const uploadQueueListEl = mustById<HTMLUListElement>("upload-queue-list");
+const uploadQueueEmptyEl = mustById<HTMLParagraphElement>("upload-queue-empty");
+const queueClearBtnEl = mustById<HTMLButtonElement>("queue-clear-btn");
+
+let currentWsStatus: RealtimeStatus = "idle";
+let realtime = createRealtimeConnection({
+  apiBaseUrl: API_BASE_URL,
+  getAccessToken: () => getAuthSession().accessToken,
+  onEvent: () => {
+    void refreshItems();
+  },
+  onStatusChange: (status) => {
+    currentWsStatus = status;
+    renderConnectionStatus();
+  },
+});
+
+const apiClient = new ApiClient({
+  baseUrl: API_BASE_URL,
+  getAccessToken: () => getAuthSession().accessToken,
+  getDeviceId,
+  onUnauthorized: () => {
+    clearAuthSession();
+    realtime.disconnect();
+    renderAuthState();
+    renderConnectionStatus();
+    itemsListEl.innerHTML = "";
+    itemsEmptyEl.textContent = "请先登录";
+    itemsEmptyEl.classList.remove("hidden");
+  },
+  refreshAccessToken: async () => {
+    const current = getAuthSession();
+    if (!current.refreshToken) return false;
+
+    try {
+      const refreshed = await refreshWithToken(API_BASE_URL, current.refreshToken, getDeviceId());
+      setAuthSession(refreshed.tokens, undefined, refreshed.deviceId);
+      return true;
+    } catch {
+      return false;
+    }
+  },
+});
+
+const uploadQueue = createUploadQueue(apiClient, {
+  onChange: (items) => {
+    renderUploadQueue(items);
+  },
+  onUploadCompleted: () => {
+    void refreshItems();
+  },
+});
 
 void bootstrap();
 
@@ -54,151 +99,262 @@ function mustById<T extends HTMLElement>(id: string): T {
 }
 
 async function bootstrap(): Promise<void> {
-  setStatus("正在登录 mock-server...");
-  await login();
-  setStatus("已连接（HTTP 就绪）");
-
+  renderUploadQueue(uploadQueue.getItems());
+  renderAuthState();
   bindActions();
-  connectWs();
-  await refreshItems();
+
+  if (getAuthSession().accessToken) {
+    toggleWorkspace(true);
+    realtime.connect();
+    await refreshItems();
+  } else {
+    toggleWorkspace(false);
+    itemsEmptyEl.textContent = "请先登录";
+    itemsEmptyEl.classList.remove("hidden");
+  }
+
+  renderConnectionStatus();
 }
 
 function bindActions(): void {
+  loginFormEl.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const username = usernameInputEl.value.trim();
+    const password = passwordInputEl.value;
+    if (!username || !password) return;
+
+    setConnectionMessage("登录中...");
+    try {
+      const result = await loginWithPassword({
+        baseUrl: API_BASE_URL,
+        username,
+        password,
+      });
+      setAuthSession(result.tokens, result.username ?? username, result.deviceId);
+      passwordInputEl.value = "";
+      renderAuthState();
+      toggleWorkspace(true);
+      realtime.disconnect();
+      realtime.connect();
+      await refreshItems();
+    } catch (error) {
+      setConnectionMessage(`登录失败：${toErrorMessage(error)}`);
+    }
+  });
+
+  logoutBtnEl.addEventListener("click", async () => {
+    const session = getAuthSession();
+    try {
+      if (session.refreshToken) {
+        await logoutWithRefreshToken(API_BASE_URL, session.refreshToken, getDeviceId());
+      }
+    } catch {
+      // 忽略登出请求失败，保证本地状态可清除
+    } finally {
+      clearAuthSession();
+      realtime.disconnect();
+      toggleWorkspace(false);
+      itemsListEl.innerHTML = "";
+      itemsEmptyEl.textContent = "请先登录";
+      itemsEmptyEl.classList.remove("hidden");
+      downloadStatusEl.textContent = "";
+      renderAuthState();
+      renderConnectionStatus();
+    }
+  });
+
   textFormEl.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     const content = textInputEl.value.trim();
+    const title = textTitleInputEl.value.trim();
     if (!content) return;
 
-    const request: CreateItemRequest = {
-      type: "text",
-      content,
-    };
+    if (!getAuthSession().accessToken) {
+      setConnectionMessage("请先登录后发送文本");
+      return;
+    }
 
     try {
-      await apiRequest<CreateItemResponse>("/v1/items", {
-        method: "POST",
-        body: JSON.stringify(request),
+      await createTextItem(apiClient, {
+        content,
+        title: title || undefined,
       });
+      textTitleInputEl.value = "";
       textInputEl.value = "";
       await refreshItems();
     } catch (error) {
-      setStatus(`发送失败：${toErrorMessage(error)}`);
+      setConnectionMessage(`发送失败：${toErrorMessage(error)}`);
     }
   });
 
-  mockUploadBtnEl.addEventListener("click", async () => {
-    const suffix = Math.random().toString(36).slice(2, 8);
-    const fileName = `mock-file-${suffix}.txt`;
-    const fileSize = 1024 + Math.floor(Math.random() * 4096);
-
-    const prepareBody: PrepareUploadRequest = {
-      fileName,
-      fileSize,
-      mimeType: "text/plain",
-    };
-
-    try {
-      const prepareResult = await apiRequest<PrepareUploadResponse>("/v1/files/prepare-upload", {
-        method: "POST",
-        body: JSON.stringify(prepareBody),
-      });
-
-      const completeBody: CompleteUploadRequest = {
-        fileId: prepareResult.fileId,
-      };
-
-      await apiRequest<CompleteUploadResponse>("/v1/files/complete", {
-        method: "POST",
-        body: JSON.stringify(completeBody),
-      });
-
-      setStatus(`已模拟上传：${fileName}`);
-      await refreshItems();
-    } catch (error) {
-      setStatus(`模拟上传失败：${toErrorMessage(error)}`);
-    }
-  });
-}
-
-async function login(): Promise<void> {
-  type LoginResponse = {
-    userId: string;
-    account: string;
-    tokens: { accessToken: string; refreshToken: string; expiresInSeconds: number };
+  const stopDragDefault = (event: DragEvent): void => {
+    event.preventDefault();
+    event.stopPropagation();
   };
 
-  const response = await fetch(`${MOCK_BASE_URL}/v1/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ account: MOCK_ACCOUNT, password: MOCK_PASSWORD }),
+  let dragDepth = 0;
+  uploadDropzoneEl.addEventListener("dragenter", (event) => {
+    stopDragDefault(event);
+    dragDepth += 1;
+    uploadDropzoneEl.classList.add("dropzone-active");
   });
 
-  const payload = (await response.json()) as ApiResponse<LoginResponse>;
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
+  uploadDropzoneEl.addEventListener("dragover", (event) => {
+    stopDragDefault(event);
+    uploadDropzoneEl.classList.add("dropzone-active");
+  });
 
-  accessToken = payload.data.tokens.accessToken;
+  uploadDropzoneEl.addEventListener("dragleave", (event) => {
+    stopDragDefault(event);
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) {
+      uploadDropzoneEl.classList.remove("dropzone-active");
+    }
+  });
+
+  uploadDropzoneEl.addEventListener("drop", (event) => {
+    stopDragDefault(event);
+    dragDepth = 0;
+    uploadDropzoneEl.classList.remove("dropzone-active");
+    if (event.dataTransfer?.files?.length) {
+      enqueueFiles(event.dataTransfer.files);
+    }
+  });
+
+  uploadDropzoneEl.addEventListener("click", () => {
+    fileInputEl.click();
+  });
+
+  uploadDropzoneEl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      fileInputEl.click();
+    }
+  });
+
+  pickFilesBtnEl.addEventListener("click", (event) => {
+    event.stopPropagation();
+    fileInputEl.click();
+  });
+
+  fileInputEl.addEventListener("change", () => {
+    if (fileInputEl.files?.length) {
+      enqueueFiles(fileInputEl.files);
+      fileInputEl.value = "";
+    }
+  });
+
+  queueClearBtnEl.addEventListener("click", () => {
+    uploadQueue.clearFinished();
+  });
+
+  uploadQueueListEl.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const action = target.dataset.action;
+    const id = target.dataset.id;
+    if (!id || action !== "retry") return;
+    uploadQueue.retry(id);
+  });
 }
 
-function connectWs(): void {
-  if (!accessToken) return;
-
-  const wsBase = MOCK_BASE_URL.replace(/^http/, "ws");
-  ws = new WebSocket(`${wsBase}/ws?accessToken=${encodeURIComponent(accessToken)}`);
-
-  ws.addEventListener("open", () => {
-    setStatus("已连接（HTTP + WS）");
-  });
-
-  ws.addEventListener("close", () => {
-    setStatus("WS 已断开（HTTP 可用）");
-  });
-
-  ws.addEventListener("message", (event) => {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(String(event.data));
-    } catch {
-      return;
-    }
-
-    if (!parsed || typeof parsed !== "object" || !("event" in parsed)) {
-      return;
-    }
-
-    const message = parsed as { event?: string };
-    if (message.event === "item_created" || message.event === "item_deleted" || message.event === "file_ready") {
-      void onRealtimeEvent(parsed as NanoPasteWsEvent);
-    }
-  });
+function enqueueFiles(files: FileList): void {
+  if (!getAuthSession().accessToken) {
+    setConnectionMessage("请先登录后再上传文件");
+    return;
+  }
+  uploadQueue.enqueue(files);
 }
 
-async function onRealtimeEvent(event: NanoPasteWsEvent): Promise<void> {
-  if (event.event === "item_created" || event.event === "item_deleted" || event.event === "file_ready") {
-    await refreshItems();
+function renderUploadQueue(items: UploadQueueItem[]): void {
+  uploadQueueListEl.innerHTML = "";
+  uploadQueueEmptyEl.classList.toggle("hidden", items.length > 0);
+
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.className = `queue-item queue-${item.status}`;
+
+    const head = document.createElement("div");
+    head.className = "queue-item-head";
+
+    const name = document.createElement("p");
+    name.className = "queue-file-name";
+    name.textContent = item.file.name;
+
+    const badge = document.createElement("span");
+    badge.className = `queue-state state-${item.status}`;
+    badge.textContent = queueStatusText(item.status);
+
+    head.append(name, badge);
+
+    const meta = document.createElement("p");
+    meta.className = "queue-meta";
+    meta.textContent = `${formatBytes(item.file.size)} · ${item.category}`;
+
+    li.append(head, meta);
+
+    if (item.error) {
+      const err = document.createElement("p");
+      err.className = "queue-error";
+      err.textContent = `失败原因：${item.error}`;
+      li.append(err);
+    }
+
+    if (item.status === "failed") {
+      const retryBtn = document.createElement("button");
+      retryBtn.type = "button";
+      retryBtn.className = "btn btn-ghost btn-small";
+      retryBtn.dataset.action = "retry";
+      retryBtn.dataset.id = item.id;
+      retryBtn.textContent = "重试";
+      li.append(retryBtn);
+    }
+
+    uploadQueueListEl.append(li);
   }
+}
+
+function queueStatusText(status: UploadQueueStatus): string {
+  const labelMap: Record<UploadQueueStatus, string> = {
+    queued: "已入队",
+    preparing: "准备中",
+    uploading: "上传中",
+    completing: "确认中",
+    done: "完成",
+    failed: "失败",
+  };
+  return labelMap[status];
 }
 
 async function refreshItems(): Promise<void> {
+  if (!getAuthSession().accessToken) {
+    itemsListEl.innerHTML = "";
+    itemsEmptyEl.textContent = "请先登录";
+    itemsEmptyEl.classList.remove("hidden");
+    return;
+  }
+
   itemsLoadingEl.classList.remove("hidden");
   itemsEmptyEl.classList.add("hidden");
 
   try {
-    const list = await apiRequest<ListItemsResponse>(`/v1/items?limit=20`, {
-      method: "GET",
+    const items = await listItemDetails(apiClient, 20);
+    renderItems(itemsListEl, items, async (fileId) => {
+      try {
+        const detail = await prepareFileDownload(apiClient, fileId);
+        downloadStatusEl.textContent = `下载地址：${detail.downloadUrl}`;
+      } catch (error) {
+        downloadStatusEl.textContent = `下载地址获取失败：${toErrorMessage(error)}`;
+      }
     });
 
-    const details = await Promise.all(
-      list.items.map(async (summary) => {
-        const detail = await apiRequest<GetItemDetailResponse>(`/v1/items/${encodeURIComponent(summary.id)}`, {
-          method: "GET",
-        });
-        return detail.item;
-      }),
-    );
-
-    renderItems(details);
+    if (!items.length) {
+      itemsEmptyEl.textContent = "暂无条目";
+      itemsEmptyEl.classList.remove("hidden");
+    }
   } catch (error) {
     itemsListEl.innerHTML = "";
     itemsEmptyEl.textContent = `加载失败：${toErrorMessage(error)}`;
@@ -208,103 +364,59 @@ async function refreshItems(): Promise<void> {
   }
 }
 
-function renderItems(items: ItemDetail[]): void {
-  if (!items.length) {
-    itemsListEl.innerHTML = "";
-    itemsEmptyEl.textContent = "暂无条目";
-    itemsEmptyEl.classList.remove("hidden");
+function renderAuthState(): void {
+  const session = getAuthSession();
+  const isLoggedIn = Boolean(session.accessToken);
+
+  usernameInputEl.disabled = false;
+  passwordInputEl.disabled = false;
+  logoutBtnEl.disabled = !isLoggedIn;
+
+  authStatusEl.textContent = isLoggedIn
+    ? `已登录：${session.username || "unknown"} / 设备 ${getDeviceId()}`
+    : "未登录";
+
+  toggleWorkspace(isLoggedIn);
+
+  renderConnectionStatus();
+}
+
+function toggleWorkspace(loggedIn: boolean): void {
+  authScreenEl.classList.toggle("hidden", loggedIn);
+  workspaceEl.classList.toggle("hidden", !loggedIn);
+}
+
+function setConnectionMessage(message: string): void {
+  connectionStatusEl.textContent = message;
+}
+
+function renderConnectionStatus(): void {
+  const loggedIn = Boolean(getAuthSession().accessToken);
+
+  if (!loggedIn) {
+    setConnectionMessage(`未登录 / API: ${API_BASE_URL}`);
     return;
   }
 
-  itemsEmptyEl.classList.add("hidden");
+  const wsMap: Record<RealtimeStatus, string> = {
+    idle: "WS 未连接",
+    connecting: "WS 连接中",
+    open: "WS 已连接",
+    closed: "WS 已断开",
+    reconnecting: "WS 重连中",
+    error: "WS 连接异常",
+  };
 
-  itemsListEl.innerHTML = items
-    .map((item) => {
-      if (item.type === "text") {
-        return `
-          <li class="item-card">
-            <div class="item-head">
-              <span class="item-type">文本</span>
-              <time class="item-time">${new Date(item.createdAt).toLocaleString()}</time>
-            </div>
-            <p class="item-content">${escapeHtml(item.content)}</p>
-          </li>
-        `;
-      }
+  setConnectionMessage(`已登录 / ${wsMap[currentWsStatus]} / API: ${API_BASE_URL}`);
+}
 
-      const fileItem = item as FileItemDetail;
-      return `
-        <li class="item-card">
-          <div class="item-head">
-            <span class="item-type">文件</span>
-            <time class="item-time">${new Date(item.createdAt).toLocaleString()}</time>
-          </div>
-          <p class="item-content">文件名：${escapeHtml(fileItem.fileName)}</p>
-          <p class="item-content">大小：${formatBytes(fileItem.fileSize)}</p>
-          <button class="btn btn-small" data-action="download" data-file-id="${escapeHtml(fileItem.fileId)}">下载</button>
-        </li>
-      `;
-    })
-    .join("");
+window.addEventListener("beforeunload", () => {
+  realtime.disconnect();
+});
 
-  for (const button of itemsListEl.querySelectorAll<HTMLButtonElement>('button[data-action="download"]')) {
-    button.addEventListener("click", async () => {
-      const fileId = button.dataset.fileId;
-      if (!fileId) return;
-
-      try {
-        const response = await apiRequest<PrepareDownloadResponse>(
-          `/v1/files/${encodeURIComponent(fileId)}/prepare-download`,
-          {
-            method: "POST",
-          },
-        );
-        downloadStatusEl.textContent = `已获取下载地址（mock）：${response.downloadUrl}`;
-      } catch (error) {
-        downloadStatusEl.textContent = `下载地址获取失败：${toErrorMessage(error)}`;
-      }
-    });
+window.addEventListener("unhandledrejection", (event) => {
+  const reason = event.reason;
+  if (reason instanceof ApiRequestError) {
+    setConnectionMessage(`请求失败：${reason.message}`);
   }
-}
-
-function formatBytes(size: number): string {
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
-
-function setStatus(message: string): void {
-  statusEl.textContent = message;
-}
-
-function toErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
-
-async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
-  const response = await fetch(`${MOCK_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "x-device-id": DEVICE_ID,
-      ...init.headers,
-    },
-  });
-
-  const payload = (await response.json()) as ApiResponse<T>;
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
-  return payload.data;
-}
+});

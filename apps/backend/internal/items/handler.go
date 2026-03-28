@@ -84,7 +84,12 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID := authx.DeviceIDFromRequest(r)
+	deviceID, err := authx.DeviceIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
+
 	item, ev, err := h.repo.createTextItem(r.Context(), userID, deviceID, req.Title, req.Content, req.clientEventID())
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to create item", nil, requestID)

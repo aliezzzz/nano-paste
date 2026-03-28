@@ -2,6 +2,8 @@ package files
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -25,6 +27,7 @@ func NewHandler(hub *events.Hub) (http.Handler, error) {
 	h := &handler{repo: newRepository(sqlite), hub: hub}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/files/prepare-upload", h.prepareUpload)
+	mux.HandleFunc("/v1/files/upload/", h.uploadByID)
 	mux.HandleFunc("/v1/files/complete", h.complete)
 	mux.HandleFunc("/v1/files/cleanup", h.cleanup)
 	mux.HandleFunc("/v1/files/", h.fileByID)
@@ -93,11 +96,29 @@ func (h *handler) prepareUpload(w http.ResponseWriter, r *http.Request) {
 
 	common.WriteSuccess(w, http.StatusOK, prepareUploadResponse{
 		FileID:       out.FileID,
-		UploadURL:    out.UploadURL,
+		UploadURL:    signedUploadURL(r, out.FileID),
 		UploadMethod: out.UploadMethod,
 		ExpiresAt:    out.ExpiresAt,
 		Category:     out.Category,
 	}, requestID)
+}
+
+func (h *handler) uploadByID(w http.ResponseWriter, r *http.Request) {
+	requestID := common.RequestIDFromContext(r.Context())
+	if r.Method != http.MethodPut && r.Method != http.MethodPost {
+		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+		return
+	}
+
+	fileID := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/files/upload/"))
+	if fileID == "" || strings.Contains(fileID, "/") {
+		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+		return
+	}
+
+	_, _ = io.Copy(io.Discard, r.Body)
+	w.Header().Set("ETag", fmt.Sprintf("\"mock-%s\"", fileID))
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *handler) complete(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +134,11 @@ func (h *handler) complete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID := authx.DeviceIDFromRequest(r)
+	deviceID, err := authx.DeviceIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
 
 	var req completeUploadRequest
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -258,6 +283,18 @@ func (h *handler) broadcast(ev eventRow) {
 		Payload:   payload,
 		CreatedAt: ev.CreatedAt,
 	})
+}
+
+func signedUploadURL(r *http.Request, fileID string) string {
+	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+	if scheme == "" {
+		scheme = "http"
+	}
+	host := strings.TrimSpace(r.Host)
+	if host == "" {
+		host = "localhost:8080"
+	}
+	return fmt.Sprintf("%s://%s/v1/files/upload/%s", scheme, host, fileID)
 }
 
 type prepareUploadRequest struct {

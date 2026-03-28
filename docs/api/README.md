@@ -11,6 +11,7 @@
 ## 当前状态
 
 - 已落地 `packages/contracts/v1` 契约定义（仅定义，不含运行逻辑）。
+- 已补充后端实现版 API 文档：[`backend-api.md`](./backend-api.md)
 
 ## 契约索引
 
@@ -22,3 +23,7 @@
 - [`packages/contracts/v1/files.ts`](../../packages/contracts/v1/files.ts)
 - [`packages/contracts/v1/devices.ts`](../../packages/contracts/v1/devices.ts)
 - [`packages/contracts/v1/events.ts`](../../packages/contracts/v1/events.ts)
+
+## 实现版 API 文档
+
+- [`docs/api/backend-api.md`](./backend-api.md)

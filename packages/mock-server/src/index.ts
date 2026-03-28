@@ -49,6 +49,18 @@ const wsServer = new WebSocketServer({ noServer: true });
 
 const PORT = Number(process.env.MOCK_SERVER_PORT ?? 3100);
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Device-Id, X-Request-Id');
+  res.header('Access-Control-Expose-Headers', 'X-Request-Id, ETag');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
 app.use(express.json());
 
 function ok<T>(data: T): ApiOk<T> {
@@ -71,6 +83,14 @@ function fail(code: ErrorCode, message: string): ApiErr {
 
 function toAccountId(account: string): string {
   return `acc_${account.trim().toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+}
+
+function normalizePlatform(raw: string): DeviceInfo['platform'] {
+  const value = raw.trim().toLowerCase();
+  if (value === 'macos' || value === 'windows' || value === 'linux') {
+    return value;
+  }
+  return 'unknown';
 }
 
 function accessTokenOf(accountId: string): string {
@@ -125,6 +145,8 @@ app.get('/health', (_req, res) => {
 app.post('/v1/auth/login', (req, res) => {
   const account = String(req.body?.account ?? '').trim();
   const password = String(req.body?.password ?? '').trim();
+  const deviceName = String(req.body?.deviceName ?? req.body?.device_name ?? 'Desktop Local').trim() || 'Desktop Local';
+  const platform = normalizePlatform(String(req.body?.platform ?? 'unknown'));
 
   if (!account || !password) {
     res.status(400).json(fail('VALIDATION_ERROR', 'account/password required'));
@@ -132,14 +154,32 @@ app.post('/v1/auth/login', (req, res) => {
   }
 
   const accountId = toAccountId(account);
+  const now = nowIso();
+  const devices = getAccountDevices(accountId);
+  const existingDevice = [...devices.values()].find(
+    (item) => item.deviceName === deviceName && item.platform === platform && !item.revokedAt,
+  );
+  const deviceId = existingDevice?.deviceId ?? newId('dev');
+
+  const device: DeviceInfo = existingDevice ?? {
+    deviceId,
+    deviceName,
+    platform,
+    createdAt: now,
+    lastSeenAt: now,
+  };
+  device.lastSeenAt = now;
+  devices.set(device.deviceId, device);
+
   const accessToken = accessTokenOf(accountId);
   const refreshToken = refreshTokenOf(accountId);
 
-  store.refreshTokens.set(refreshToken, accountId);
+  store.refreshTokens.set(refreshToken, { accountId, deviceId: device.deviceId });
 
   const payload: LoginResponse = {
     userId: `user_${accountId}`,
     account,
+    deviceId: device.deviceId,
     tokens: {
       accessToken,
       refreshToken,
@@ -152,16 +192,17 @@ app.post('/v1/auth/login', (req, res) => {
 
 app.post('/v1/auth/refresh', (req, res) => {
   const refreshToken = String(req.body?.refreshToken ?? '');
-  const accountId = store.refreshTokens.get(refreshToken);
+  const session = store.refreshTokens.get(refreshToken);
 
-  if (!accountId) {
+  if (!session) {
     res.status(401).json(fail('UNAUTHORIZED', 'refreshToken invalid'));
     return;
   }
 
   const payload: RefreshResponse = {
+    deviceId: session.deviceId,
     tokens: {
-      accessToken: accessTokenOf(accountId),
+      accessToken: accessTokenOf(session.accountId),
       refreshToken,
       expiresInSeconds: 3600,
     },
@@ -173,12 +214,12 @@ app.post('/v1/auth/refresh', (req, res) => {
 app.post('/v1/auth/logout', (req, res) => {
   const refreshToken = String(req.body?.refreshToken ?? '');
   const allDevices = Boolean(req.body?.allDevices);
-  const accountId = store.refreshTokens.get(refreshToken);
+  const session = store.refreshTokens.get(refreshToken);
 
-  if (refreshToken && accountId) {
+  if (refreshToken && session) {
     if (allDevices) {
-      for (const [token, tokenAccountId] of store.refreshTokens.entries()) {
-        if (tokenAccountId === accountId) {
+      for (const [token, tokenSession] of store.refreshTokens.entries()) {
+        if (tokenSession.accountId === session.accountId) {
           store.refreshTokens.delete(token);
         }
       }
@@ -336,11 +377,23 @@ app.post('/v1/files/prepare-upload', (req, res) => {
   res.json(
     ok({
       fileId,
-      uploadUrl: `https://mock.nanopaste.local/upload/${fileId}`,
+      uploadUrl: `${req.protocol}://${req.get('host')}/upload/${fileId}`,
       uploadMethod: 'PUT' as const,
       expiresAt,
     }),
   );
+});
+
+app.put('/upload/:fileId', (req, res) => {
+  const { fileId } = req.params;
+  res.setHeader('ETag', `"mock-${fileId}"`);
+  res.status(200).end();
+});
+
+app.post('/upload/:fileId', (req, res) => {
+  const { fileId } = req.params;
+  res.setHeader('ETag', `"mock-${fileId}"`);
+  res.status(200).end();
 });
 
 app.post('/v1/files/complete', (req, res) => {

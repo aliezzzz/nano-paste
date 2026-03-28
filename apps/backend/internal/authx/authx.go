@@ -12,14 +12,49 @@ import (
 var errUnauthorized = errors.New("unauthorized")
 
 func UserIDFromRequest(r *http.Request) (string, error) {
+	claims, err := claimsFromRequest(r)
+	if err != nil {
+		return "", err
+	}
+
+	if strings.TrimSpace(claims.userID) == "" {
+		return "", errUnauthorized
+	}
+
+	if strings.TrimSpace(claims.deviceID) == "" {
+		return "", errUnauthorized
+	}
+
+	return claims.userID, nil
+}
+
+func DeviceIDFromRequest(r *http.Request) (string, error) {
+	claims, err := claimsFromRequest(r)
+	if err != nil {
+		return "", err
+	}
+
+	if strings.TrimSpace(claims.deviceID) == "" {
+		return "", errUnauthorized
+	}
+
+	return claims.deviceID, nil
+}
+
+type tokenClaims struct {
+	userID   string
+	deviceID string
+}
+
+func claimsFromRequest(r *http.Request) (tokenClaims, error) {
 	authorization := strings.TrimSpace(r.Header.Get("Authorization"))
 	if !strings.HasPrefix(authorization, "Bearer ") {
-		return "", errUnauthorized
+		return tokenClaims{}, errUnauthorized
 	}
 
 	tokenString := strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
 	if tokenString == "" {
-		return "", errUnauthorized
+		return tokenClaims{}, errUnauthorized
 	}
 
 	secret := []byte(envOrDefault("JWT_SECRET", "dev-secret-change-me"))
@@ -30,28 +65,25 @@ func UserIDFromRequest(r *http.Request) (string, error) {
 		return secret, nil
 	})
 	if err != nil || !parsed.Valid {
-		return "", errUnauthorized
+		return tokenClaims{}, errUnauthorized
 	}
 
 	claims, ok := parsed.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", errUnauthorized
+		return tokenClaims{}, errUnauthorized
 	}
 
 	sub, _ := claims["sub"].(string)
-	if strings.TrimSpace(sub) == "" {
-		return "", errUnauthorized
+	did, _ := claims["did"].(string)
+
+	if strings.TrimSpace(sub) == "" || strings.TrimSpace(did) == "" {
+		return tokenClaims{}, errUnauthorized
 	}
 
-	return strings.TrimSpace(sub), nil
-}
-
-func DeviceIDFromRequest(r *http.Request) string {
-	deviceID := strings.TrimSpace(r.Header.Get("X-Device-Id"))
-	if deviceID == "" {
-		return "device_unknown"
-	}
-	return deviceID
+	return tokenClaims{
+		userID:   strings.TrimSpace(sub),
+		deviceID: strings.TrimSpace(did),
+	}, nil
 }
 
 func envOrDefault(key, fallback string) string {

@@ -115,7 +115,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := h.signAccessToken(user.ID, user.Account, sessionID, accessExp)
+	accessToken, err := h.signAccessToken(user.ID, user.Account, sessionID, deviceID, accessExp)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to sign access token", nil, requestID)
 		return
@@ -125,6 +125,7 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		UserID:   user.ID,
 		Username: user.Account,
 		Account:  user.Account,
+		DeviceID: deviceID,
 		Tokens: tokenPair{
 			AccessToken:      accessToken,
 			RefreshToken:     refreshToken,
@@ -181,13 +182,20 @@ func (h *handler) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := h.signAccessToken(session.UserID, "", session.ID, accessExp)
+	deviceID := strings.TrimSpace(session.DeviceID.String)
+	if !session.DeviceID.Valid || deviceID == "" {
+		common.WriteError(w, common.UNAUTHORIZED, "invalid refresh token", nil, requestID)
+		return
+	}
+
+	accessToken, err := h.signAccessToken(session.UserID, "", session.ID, deviceID, accessExp)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to sign access token", nil, requestID)
 		return
 	}
 
 	common.WriteSuccess(w, http.StatusOK, refreshResponse{
+		DeviceID: deviceID,
 		Tokens: tokenPair{
 			AccessToken:      accessToken,
 			RefreshToken:     newRefreshToken,
@@ -235,13 +243,14 @@ func (h *handler) logout(w http.ResponseWriter, r *http.Request) {
 	common.WriteSuccess(w, http.StatusOK, logoutResponse{Success: true}, requestID)
 }
 
-func (h *handler) signAccessToken(userID, account, sessionID string, exp time.Time) (string, error) {
+func (h *handler) signAccessToken(userID, account, sessionID, deviceID string, exp time.Time) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": userID,
 		"iss": h.issuer,
 		"iat": time.Now().UTC().Unix(),
 		"exp": exp.UTC().Unix(),
 		"sid": sessionID,
+		"did": deviceID,
 	}
 	if account != "" {
 		claims["account"] = account
