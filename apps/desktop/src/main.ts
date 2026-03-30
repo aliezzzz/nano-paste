@@ -26,6 +26,7 @@ let devicesCache: DeviceInfo[] = [];
 let deviceManagerOpen = false;
 let revokingDeviceId: string | null = null;
 let revokeConfirmDeviceId: string | null = null;
+let globalPasteEventsBound = false;
 
 // 初始化应用
 async function init() {
@@ -113,6 +114,7 @@ function showWorkspace() {
   
   // 绑定事件
   bindWorkspaceEvents();
+  bindGlobalPasteEvents();
   ensureDeviceManagerModal();
   bindViewportEvents();
   loadDevices();
@@ -338,6 +340,56 @@ function bindViewportEvents() {
 
   window.addEventListener('resize', onViewportChange);
   window.addEventListener('orientationchange', onViewportChange);
+}
+
+function bindGlobalPasteEvents() {
+  if (globalPasteEventsBound) return;
+  globalPasteEventsBound = true;
+  document.addEventListener('paste', handleGlobalPaste);
+}
+
+async function handleGlobalPaste(event: ClipboardEvent) {
+  if (event.defaultPrevented) return;
+  if (isEditableTarget(event.target)) return;
+
+  if (!getAuthSession().accessToken) return;
+  if (!document.getElementById('workspace-desktop') && !document.getElementById('workspace-mobile')) return;
+  if (!apiClient) return;
+
+  const clipboardData = event.clipboardData;
+  if (!clipboardData) return;
+
+  const files = Array.from(clipboardData.files || []);
+  if (files.length > 0) {
+    event.preventDefault();
+    uploadQueue?.enqueue(files);
+    showToast(`已粘贴并开始上传 ${files.length} 个文件`, 'success');
+    return;
+  }
+
+  const text = clipboardData.getData('text/plain').trim();
+  if (!text) return;
+
+  try {
+    event.preventDefault();
+    await createTextItem(apiClient, { content: text });
+    itemsController?.loadItems();
+    showToast('已粘贴并发送文本', 'success');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '未知错误';
+    showToast(`粘贴处理失败: ${message}`, 'error');
+  }
+}
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  if (!element) return false;
+
+  if (element.closest('input, textarea, [contenteditable], [role="textbox"]')) {
+    return true;
+  }
+
+  return false;
 }
 
 function syncResponsiveLayout(force = false) {

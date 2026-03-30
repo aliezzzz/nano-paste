@@ -13,15 +13,17 @@ export function createItemsPanel(): string {
       </div>
 
       <p id="items-loading" class="text-sm text-slate-400 hidden">加载中...</p>
-      <div id="items-list" class="flex-1 overflow-y-auto custom-scrollbar space-y-3">
-        <!-- Items will be injected here -->
+      <div class="relative flex-1 min-h-0">
+        <div id="items-list" class="h-full overflow-y-auto custom-scrollbar space-y-3">
+          <!-- Items will be injected here -->
+        </div>
+        <p id="items-empty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 hidden">
+          <svg class="w-12 h-12 mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+          暂无条目
+        </p>
       </div>
-      <p id="items-empty" class="text-center py-12 text-slate-500 hidden">
-        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-        </svg>
-        暂无条目
-      </p>
     </div>
   `;
 }

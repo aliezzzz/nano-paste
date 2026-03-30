@@ -7,7 +7,7 @@ import { createMobileTabs } from './mobile-tabs';
 export function createWorkspace(): string {
   return `
     <!-- Desktop Layout (md and up) -->
-    <div class="hidden md:flex flex-col h-full" id="workspace-desktop">
+    <div class="hidden md:flex flex-col h-screen" id="workspace-desktop">
       ${createHeader()}
       <main class="relative z-0 flex-1 overflow-hidden flex">
         <aside class="w-96 border-r border-slate-800/50 bg-slate-900/30 flex flex-col shrink-0">
