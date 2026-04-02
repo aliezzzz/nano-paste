@@ -1,6 +1,6 @@
 export function createMobileTabs(): string {
   return `
-    <nav class="fixed bottom-0 left-0 right-0 h-16 border-t border-slate-800/50 bg-slate-900/80 backdrop-blur-md flex items-center justify-around z-50">
+    <nav class="fixed bottom-0 left-0 right-0 h-16 border-t border-slate-800/50 bg-slate-900/90 flex items-center justify-around z-50">
       <button 
         onclick="window.switchMobileTab('send')" 
         data-tab="send" 

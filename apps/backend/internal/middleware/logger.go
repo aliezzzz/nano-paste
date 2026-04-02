@@ -14,11 +14,18 @@ import (
 type statusRecorder struct {
 	http.ResponseWriter
 	status int
+	bytes  int
 }
 
 func (r *statusRecorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
+}
+
+func (r *statusRecorder) Write(b []byte) (int, error) {
+	n, err := r.ResponseWriter.Write(b)
+	r.bytes += n
+	return n, err
 }
 
 func (r *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
@@ -50,6 +57,6 @@ func Logger(next http.Handler) http.Handler {
 		next.ServeHTTP(rec, r)
 
 		requestID := common.RequestIDFromContext(r.Context())
-		log.Printf("method=%s path=%s status=%d duration=%s request_id=%s", r.Method, r.URL.Path, rec.status, time.Since(start), requestID)
+		log.Printf("method=%s path=%s status=%d duration=%s request_id=%s remote_ip=%s user_agent=%q bytes=%d", r.Method, r.URL.Path, rec.status, time.Since(start), requestID, r.RemoteAddr, r.UserAgent(), rec.bytes)
 	})
 }

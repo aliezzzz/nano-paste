@@ -13,7 +13,7 @@ func Recover(next http.Handler) http.Handler {
 		defer func() {
 			if v := recover(); v != nil {
 				requestID := common.RequestIDFromContext(r.Context())
-				log.Printf("panic recovered request_id=%s path=%s panic=%v stack=%s", requestID, r.URL.Path, v, string(debug.Stack()))
+				log.Printf("panic recovered request_id=%s method=%s path=%s panic=%v stack=%s", requestID, r.Method, r.URL.Path, v, string(debug.Stack()))
 				common.WriteError(w, common.INTERNAL, "internal server error", nil, requestID)
 			}
 		}()

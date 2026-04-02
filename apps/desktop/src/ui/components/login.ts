@@ -9,7 +9,7 @@ export function createLoginPage(): string {
         <div class="w-full max-w-3xl h-full max-h-[680px] max-[700px]:max-h-[620px] grid grid-cols-1 lg:grid-cols-[1fr_640px] gap-6 lg:gap-10 items-center">
           <div class="hidden lg:block"></div>
 
-          <div class="h-full min-h-0 bg-slate-950/22 backdrop-blur-[1px] px-4 sm:px-8 lg:px-10 py-3 sm:py-6 lg:py-8 max-[700px]:py-2 flex flex-col justify-center">
+          <div class="h-full min-h-0 bg-slate-950/35 px-4 sm:px-8 lg:px-10 py-3 sm:py-6 lg:py-8 max-[700px]:py-2 flex flex-col justify-center">
             <div class="text-center mb-3 sm:mb-6 lg:mb-7 max-[700px]:mb-2">
               <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-500 mb-3 sm:mb-4 shadow-[0_0_36px_rgba(99,102,241,0.35)]">
                 <svg class="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,6 +1,6 @@
 export function createHeader(): string {
   return `
-    <header class="relative z-[80] h-16 border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 shrink-0">
+    <header class="relative z-[80] h-16 border-b border-slate-800/50 bg-slate-900/85 flex items-center justify-between px-4 sm:px-6 shrink-0">
       <!-- Left: Logo -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-violet-500/20">

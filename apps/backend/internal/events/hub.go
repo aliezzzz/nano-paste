@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -51,6 +52,7 @@ func (h *Hub) Register(userID string, conn *websocket.Conn) *wsClient {
 		h.clients[userID] = make(map[*wsClient]struct{})
 	}
 	h.clients[userID][client] = struct{}{}
+	log.Printf("component=events_hub event=ws_register user_id=%s connections=%d", userID, len(h.clients[userID]))
 	return client
 }
 
@@ -62,9 +64,11 @@ func (h *Hub) Unregister(userID string, client *wsClient) {
 		return
 	}
 	delete(bucket, client)
+	current := len(bucket)
 	if len(bucket) == 0 {
 		delete(h.clients, userID)
 	}
+	log.Printf("component=events_hub event=ws_unregister user_id=%s connections=%d", userID, current)
 }
 
 func (h *Hub) BroadcastEvent(ev StoredEvent) {
@@ -83,6 +87,7 @@ func (h *Hub) BroadcastEvent(ev StoredEvent) {
 
 	for _, client := range clients {
 		if err = client.writeRaw(message); err != nil {
+			log.Printf("component=events_hub event=broadcast_failed user_id=%s event_id=%d err=%v", ev.UserID, ev.ID, err)
 			client.close()
 			h.Unregister(ev.UserID, client)
 		}

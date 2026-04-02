@@ -34,7 +34,7 @@ export function createItemCard(item: ItemDetail, index: number): string {
   const icon = isText ? '📝' : '📄';
   
   return `
-    <div class="bg-slate-900/60 backdrop-blur border border-slate-700/50 rounded-lg p-4 hover:border-violet-500/30 transition-all group">
+    <div class="bg-slate-900/85 border border-slate-700/50 rounded-lg p-4 hover:border-violet-500/30 transition-all group">
       <div class="flex items-start gap-3">
         <div class="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-xl shrink-0">
           ${icon}

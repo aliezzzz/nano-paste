@@ -39,11 +39,11 @@ export function createWorkspace(): string {
 export function createMobileSendPage(): string {
   return `
     <div class="h-full overflow-y-auto custom-scrollbar p-4 space-y-4">
-      <div class="bg-slate-900/60 backdrop-blur border border-slate-700/50 rounded-xl p-4">
+      <div class="bg-slate-900/85 border border-slate-700/50 rounded-xl p-4">
         ${createSendPanel()}
       </div>
       
-      <div class="bg-slate-900/60 backdrop-blur border border-slate-700/50 rounded-xl p-4">
+      <div class="bg-slate-900/85 border border-slate-700/50 rounded-xl p-4">
         ${createUploadPanel({ compact: true })}
       </div>
     </div>

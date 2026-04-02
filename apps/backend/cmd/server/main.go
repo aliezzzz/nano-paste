@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/ronronner/my-todolist/apps/backend/internal/auth"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
@@ -19,31 +20,53 @@ type healthData struct {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	log.Printf("service=nanopaste-backend stage=startup event=boot go_version=%s pid=%d", runtime.Version(), os.Getpid())
+
+	port, portFromEnv := envOrDefault("PORT", "8080")
+	sqliteDSN, sqliteFromEnv := envOrDefault("SQLITE_DSN", "./data/nanopaste.db")
+	jwtIssuer, issuerFromEnv := envOrDefault("JWT_ISSUER", "nanopaste-backend")
+	accessTTLMinutes, accessTTLFromEnv := envOrDefault("ACCESS_TOKEN_TTL_MINUTES", "60")
+	refreshTTLHours, refreshTTLFromEnv := envOrDefault("REFRESH_TOKEN_TTL_HOURS", "720")
+	jwtSecretSet := os.Getenv("JWT_SECRET") != ""
+
+	log.Printf("service=nanopaste-backend stage=config port=%s port_from_env=%t sqlite_dsn=%s sqlite_dsn_from_env=%t jwt_issuer=%s jwt_issuer_from_env=%t access_ttl_minutes=%s access_ttl_from_env=%t refresh_ttl_hours=%s refresh_ttl_from_env=%t jwt_secret_set=%t", port, portFromEnv, sqliteDSN, sqliteFromEnv, jwtIssuer, issuerFromEnv, accessTTLMinutes, accessTTLFromEnv, refreshTTLHours, refreshTTLFromEnv, jwtSecretSet)
+
 	mux := http.NewServeMux()
+	log.Printf("service=nanopaste-backend stage=init component=auth_handler status=starting")
 	authHandler, err := auth.NewHandler()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=init component=auth_handler status=failed err=%v", err)
 	}
+	log.Printf("service=nanopaste-backend stage=init component=auth_handler status=ready")
 
+	log.Printf("service=nanopaste-backend stage=init component=events status=starting")
 	hub, eventsHandler, err := events.NewHubAndHandler()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=init component=events status=failed err=%v", err)
 	}
+	log.Printf("service=nanopaste-backend stage=init component=events status=ready")
 
+	log.Printf("service=nanopaste-backend stage=init component=items_handler status=starting")
 	itemsHandler, err := items.NewHandler(hub)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=init component=items_handler status=failed err=%v", err)
 	}
+	log.Printf("service=nanopaste-backend stage=init component=items_handler status=ready")
 
+	log.Printf("service=nanopaste-backend stage=init component=files_handler status=starting")
 	filesHandler, err := files.NewHandler(hub)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=init component=files_handler status=failed err=%v", err)
 	}
+	log.Printf("service=nanopaste-backend stage=init component=files_handler status=ready")
 
+	log.Printf("service=nanopaste-backend stage=init component=devices_handler status=starting")
 	devicesHandler, err := devices.NewHandler()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=init component=devices_handler status=failed err=%v", err)
 	}
+	log.Printf("service=nanopaste-backend stage=init component=devices_handler status=ready")
 
 	mux.Handle("/v1/auth/", authHandler)
 	mux.Handle("/v1/items", itemsHandler)
@@ -71,12 +94,18 @@ func main() {
 		middleware.CORS,
 	)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	log.Printf("service=nanopaste-backend stage=startup event=routes_registered")
+	log.Printf("service=nanopaste-backend stage=startup event=listening addr=:%s", port)
 
 	if err = http.ListenAndServe(":"+port, handler); err != nil {
-		log.Fatal(err)
+		log.Fatalf("service=nanopaste-backend stage=runtime event=listen_failed addr=:%s err=%v", port, err)
 	}
+}
+
+func envOrDefault(key, def string) (string, bool) {
+	v := os.Getenv(key)
+	if v == "" {
+		return def, false
+	}
+	return v, true
 }

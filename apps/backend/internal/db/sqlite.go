@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -23,6 +24,8 @@ func SQLite() (*sql.DB, error) {
 			dsn = "./data/nanopaste.db"
 		}
 
+		log.Printf("component=sqlite stage=init event=opening dsn=%s", dsn)
+
 		dir := filepath.Dir(dsn)
 		if dir != "." {
 			if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -34,28 +37,34 @@ func SQLite() (*sql.DB, error) {
 		db, err := sql.Open("sqlite3", dsn)
 		if err != nil {
 			sqliteErr = fmt.Errorf("open sqlite: %w", err)
+			log.Printf("component=sqlite stage=init event=open_failed dsn=%s err=%v", dsn, err)
 			return
 		}
 
 		if _, err = db.Exec(`PRAGMA foreign_keys = ON;`); err != nil {
 			_ = db.Close()
 			sqliteErr = fmt.Errorf("enable foreign_keys: %w", err)
+			log.Printf("component=sqlite stage=init event=pragma_failed dsn=%s err=%v", dsn, err)
 			return
 		}
+		log.Printf("component=sqlite stage=init event=foreign_keys_enabled")
 
 		if err = ensureAuthTables(db); err != nil {
 			_ = db.Close()
 			sqliteErr = err
+			log.Printf("component=sqlite stage=init event=ensure_auth_tables_failed err=%v", err)
 			return
 		}
 
 		if err = ensureCoreSyncTables(db); err != nil {
 			_ = db.Close()
 			sqliteErr = err
+			log.Printf("component=sqlite stage=init event=ensure_core_sync_tables_failed err=%v", err)
 			return
 		}
 
 		sqliteDB = db
+		log.Printf("component=sqlite stage=init event=ready dsn=%s", dsn)
 	})
 
 	if sqliteErr != nil {

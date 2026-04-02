@@ -542,7 +542,7 @@ function ensureDeviceManagerModal() {
   modal.id = 'device-manager-modal';
   modal.className = 'fixed inset-0 z-[200] hidden';
   modal.innerHTML = `
-    <div id="device-manager-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div id="device-manager-backdrop" class="absolute inset-0 bg-black/70"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4">
       <div class="w-full max-w-xl rounded-2xl border border-slate-700/60 bg-slate-900/95 shadow-2xl shadow-black/60">
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
@@ -956,7 +956,7 @@ class ItemsController {
     const icon = getItemIconSvg(item);
     
     return `
-      <div class="bg-slate-900/60 backdrop-blur border border-slate-700/50 rounded-lg p-4 hover:border-violet-500/30 transition-all group">
+      <div class="bg-slate-900/85 border border-slate-700/50 rounded-lg p-4 hover:border-violet-500/30 transition-all group">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-lg bg-slate-800/70 flex items-center justify-center shrink-0">
             ${icon}

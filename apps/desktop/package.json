@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
+    "build:exe": "tauri build --no-bundle",
     "dev:web": "vite",
     "build:web": "vite build"
   },
