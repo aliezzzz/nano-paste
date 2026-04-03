@@ -1,7 +1,7 @@
 import './styles.css';
 import { createLoginPage, createWorkspace, createMobileSendPage, createItemsPanel } from './ui';
 import { getAuthSession, clearAuthSession, getDeviceId, setAuthSession } from './auth/store';
-import { API_BASE_URL } from './config/env';
+import { getCurrentApiBaseUrl, isValidApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from './config/runtime';
 import { createRealtimeConnection, type RealtimeStatus } from './realtime/ws';
 import { createUploadQueue } from './features/files/queue';
 import { listItemDetails, createTextItem, getItemDetail, prepareFileDownload, deleteItem } from './features/items/api';
@@ -24,9 +24,11 @@ let viewportEventsBound = false;
 let viewportRaf: number | null = null;
 let devicesCache: DeviceInfo[] = [];
 let deviceManagerOpen = false;
+let configModalOpen = false;
 let revokingDeviceId: string | null = null;
 let revokeConfirmDeviceId: string | null = null;
 let globalPasteEventsBound = false;
+let savingConfig = false;
 
 // 初始化应用
 async function init() {
@@ -47,7 +49,10 @@ async function init() {
 // 显示登录页
 function showLogin() {
   closeDeviceManager();
+  closeConfigModal();
   app.innerHTML = createLoginPage();
+  ensureConfigModal();
+  bindConfigButtonEvents();
   
   // 绑定登录事件
   const form = document.getElementById('login-form') as HTMLFormElement;
@@ -71,7 +76,7 @@ async function handleLogin(e: Event) {
     
     // 调用登录 API
     const session = await loginWithPassword({ 
-      baseUrl: API_BASE_URL,
+      baseUrl: getCurrentApiBaseUrl(),
       username, 
       password,
     });
@@ -101,21 +106,13 @@ function showWorkspace() {
   });
   
   // 初始化 WebSocket
-  realtime = createRealtimeConnection({
-    apiBaseUrl: API_BASE_URL,
-    getAccessToken: () => getAuthSession().accessToken,
-    onEvent: () => {
-      itemsController?.loadItems();
-    },
-    onStatusChange: (status) => {
-      updateConnectionStatus(status);
-    },
-  });
+  realtime = createRealtime();
   
   // 绑定事件
   bindWorkspaceEvents();
   bindGlobalPasteEvents();
   ensureDeviceManagerModal();
+  ensureConfigModal();
   bindViewportEvents();
   loadDevices();
 
@@ -179,6 +176,17 @@ function bindWorkspaceEvents() {
   document.querySelectorAll('#manage-devices-btn').forEach((button) => {
     button.addEventListener('click', () => {
       openDeviceManager();
+    });
+  });
+
+  bindConfigButtonEvents();
+}
+
+function bindConfigButtonEvents() {
+  document.querySelectorAll('#open-config-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      ensureConfigModal();
+      openConfigModal();
     });
   });
 }
@@ -612,6 +620,184 @@ function closeDeviceManager() {
   modal.classList.add('hidden');
 }
 
+function ensureConfigModal() {
+  if (document.getElementById('runtime-config-modal')) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'runtime-config-modal';
+  modal.className = 'fixed inset-0 z-[210] hidden';
+  modal.innerHTML = `
+    <div id="runtime-config-backdrop" class="absolute inset-0 bg-black/70"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="w-full max-w-lg rounded-2xl border border-slate-700/60 bg-slate-900/95 shadow-2xl shadow-black/60">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-700/60">
+          <div>
+            <h3 class="text-base font-semibold text-slate-100">连接配置</h3>
+            <p class="text-xs text-slate-500 mt-0.5">修改后端地址后将立即重连</p>
+          </div>
+          <button id="runtime-config-close" type="button" class="w-8 h-8 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors">✕</button>
+        </div>
+
+        <form id="runtime-config-form" class="px-5 py-4 space-y-4">
+          <div>
+            <label for="runtime-config-api-base-url" class="block text-sm text-slate-300 mb-1.5">后端地址</label>
+            <input
+              id="runtime-config-api-base-url"
+              type="url"
+              spellcheck="false"
+              placeholder="http://127.0.0.1:8080"
+              class="w-full h-11 px-3 bg-slate-900/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30 transition-all"
+            />
+            <p id="runtime-config-error" class="hidden mt-1.5 text-xs text-red-400"></p>
+            <p class="mt-2 text-xs text-slate-500">当前生效：<span id="runtime-config-current" class="text-slate-300"></span></p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2">
+            <button id="runtime-config-reset" type="button" class="px-3 py-2 rounded-lg text-xs text-slate-300 bg-slate-800/70 hover:bg-slate-700/80 transition-colors">恢复默认</button>
+            <button id="runtime-config-cancel" type="button" class="px-3 py-2 rounded-lg text-xs text-slate-300 bg-slate-800/70 hover:bg-slate-700/80 transition-colors">取消</button>
+            <button id="runtime-config-save" type="submit" class="px-3 py-2 rounded-lg text-xs text-white bg-violet-600 hover:bg-violet-500 transition-colors">保存并应用</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.id === 'runtime-config-backdrop' || target.id === 'runtime-config-close' || target.id === 'runtime-config-cancel') {
+      closeConfigModal();
+      return;
+    }
+
+    if (target.id === 'runtime-config-reset') {
+      void handleResetRuntimeConfig();
+    }
+  });
+
+  const form = modal.querySelector<HTMLFormElement>('#runtime-config-form');
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    void handleSaveRuntimeConfig();
+  });
+}
+
+function openConfigModal() {
+  const modal = document.getElementById('runtime-config-modal');
+  if (!modal) return;
+
+  configModalOpen = true;
+  modal.classList.remove('hidden');
+  renderConfigModal();
+}
+
+function closeConfigModal() {
+  const modal = document.getElementById('runtime-config-modal');
+  if (!modal) return;
+
+  configModalOpen = false;
+  setRuntimeConfigError('');
+  modal.classList.add('hidden');
+}
+
+function renderConfigModal() {
+  if (!configModalOpen) return;
+
+  const input = document.getElementById('runtime-config-api-base-url') as HTMLInputElement | null;
+  const current = document.getElementById('runtime-config-current');
+  const saveButton = document.getElementById('runtime-config-save') as HTMLButtonElement | null;
+  const resetButton = document.getElementById('runtime-config-reset') as HTMLButtonElement | null;
+  if (!input || !current || !saveButton || !resetButton) return;
+
+  const apiBaseUrl = getCurrentApiBaseUrl();
+  input.value = apiBaseUrl;
+  current.textContent = apiBaseUrl;
+
+  saveButton.disabled = savingConfig;
+  saveButton.textContent = savingConfig ? '应用中...' : '保存并应用';
+  resetButton.disabled = savingConfig;
+  input.disabled = savingConfig;
+}
+
+function setRuntimeConfigError(message: string) {
+  const errorEl = document.getElementById('runtime-config-error');
+  if (!errorEl) return;
+
+  errorEl.textContent = message;
+  if (message) {
+    errorEl.classList.remove('hidden');
+  } else {
+    errorEl.classList.add('hidden');
+  }
+}
+
+async function handleSaveRuntimeConfig() {
+  const input = document.getElementById('runtime-config-api-base-url') as HTMLInputElement | null;
+  if (!input) return;
+
+  const nextApiBaseUrl = input.value.trim();
+  if (!isValidApiBaseUrl(nextApiBaseUrl)) {
+    setRuntimeConfigError('请输入合法的 http/https 地址，例如 http://127.0.0.1:8080');
+    return;
+  }
+
+  try {
+    savingConfig = true;
+    setRuntimeConfigError('');
+    renderConfigModal();
+
+    setApiBaseUrl(nextApiBaseUrl);
+    await applyRuntimeApiBaseUrl();
+
+    showToast('后端地址已更新并生效', 'success');
+    closeConfigModal();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '配置保存失败';
+    setRuntimeConfigError(message);
+    showToast(`配置应用失败: ${message}`, 'error');
+  } finally {
+    savingConfig = false;
+    renderConfigModal();
+  }
+}
+
+async function handleResetRuntimeConfig() {
+  try {
+    savingConfig = true;
+    setRuntimeConfigError('');
+    renderConfigModal();
+
+    resetApiBaseUrl();
+    await applyRuntimeApiBaseUrl();
+
+    showToast('已恢复默认地址并生效', 'success');
+    closeConfigModal();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '恢复默认配置失败';
+    setRuntimeConfigError(message);
+    showToast(`恢复默认失败: ${message}`, 'error');
+  } finally {
+    savingConfig = false;
+    renderConfigModal();
+  }
+}
+
+async function applyRuntimeApiBaseUrl() {
+  apiClient = createApiClient();
+
+  realtime?.disconnect();
+  realtime = createRealtime();
+  if (getAuthSession().accessToken) {
+    realtime.connect();
+  }
+
+  await Promise.all([
+    itemsController?.loadItems(),
+    loadDevices(),
+  ]);
+}
+
 function renderDeviceManagerModal() {
   const listEl = document.getElementById('device-manager-list');
   if (!listEl || !deviceManagerOpen) return;
@@ -1000,9 +1186,22 @@ class ItemsController {
   }
 }
 
+function createRealtime(): ReturnType<typeof createRealtimeConnection> {
+  return createRealtimeConnection({
+    apiBaseUrl: getCurrentApiBaseUrl(),
+    getAccessToken: () => getAuthSession().accessToken,
+    onEvent: () => {
+      itemsController?.loadItems();
+    },
+    onStatusChange: (status) => {
+      updateConnectionStatus(status);
+    },
+  });
+}
+
 function createApiClient(): ApiClient {
   return new ApiClient({
-    baseUrl: API_BASE_URL,
+    baseUrl: getCurrentApiBaseUrl(),
     getAccessToken: () => getAuthSession().accessToken,
     getDeviceId,
     onUnauthorized: () => {
@@ -1017,7 +1216,7 @@ function createApiClient(): ApiClient {
       }
 
       try {
-        const refreshed = await refreshWithToken(API_BASE_URL, session.refreshToken, session.deviceId);
+        const refreshed = await refreshWithToken(getCurrentApiBaseUrl(), session.refreshToken, session.deviceId);
         setAuthSession(refreshed.tokens, session.username, refreshed.deviceId);
         return true;
       } catch {
