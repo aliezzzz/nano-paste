@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: nanopaste:latest
+    container_name: nanopaste-backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      PORT: "${PORT:-8080}"
+      SQLITE_DSN: "${SQLITE_DSN:-/data/nanopaste.db}"
+      WEB_DIST_DIR: "${WEB_DIST_DIR:-/app/web}"
+      JWT_SECRET: "${JWT_SECRET:-dev-secret-change-me}"
+      JWT_ISSUER: "${JWT_ISSUER:-nanopaste-backend}"
+      ACCESS_TOKEN_TTL_MINUTES: "${ACCESS_TOKEN_TTL_MINUTES:-60}"
+      REFRESH_TOKEN_TTL_HOURS: "${REFRESH_TOKEN_TTL_HOURS:-720}"
+    volumes:
+      - nanopaste_data:/data
+
+volumes:
+  nanopaste_data:
