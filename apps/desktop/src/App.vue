@@ -266,12 +266,12 @@ function handleClearFinishedUpload(): void {
   clearFinishedUploads();
 }
 
-async function handleItemAction(payload: { id: string; action: "copy" | "download" | "delete" | "favorite" }): Promise<void> {
+async function handleItemAction(payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): Promise<void> {
   await executeItemAction(payload.id, payload.action, (id, favorite) => {
     items.value = items.value.map((item) => (
       item.id === id ? { ...item, isFavorite: favorite } : item
     ));
-  });
+  }, payload.content);
 }
 
 function handleLogout(): void {

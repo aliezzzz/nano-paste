@@ -1,4 +1,5 @@
 import type { ApiResponse } from "../../../../packages/contracts/v1";
+import { getRememberedDeviceId } from "../auth/store";
 
 export interface AuthTokenBundle {
   accessToken: string;
@@ -19,12 +20,16 @@ interface LoginResult {
 }
 
 export async function loginWithPassword(input: LoginInput): Promise<LoginResult> {
+  const rememberedDeviceId = getRememberedDeviceId();
+
   const payload = await postApi<LoginApiData>(`${input.baseUrl}/v1/auth/login`, {
     username: input.username,
     account: input.username,
     password: input.password,
-    device_name: "Desktop Local",
-    deviceName: "Desktop Local",
+    device_name: "web",
+    deviceName: "web",
+    remembered_device_id: rememberedDeviceId,
+    rememberedDeviceId,
     platform: detectPlatform(),
     client_version: "0.1.0",
     clientVersion: "0.1.0",

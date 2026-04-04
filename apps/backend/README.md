@@ -27,6 +27,7 @@ go run ./cmd/server
 - `JWT_ISSUER`：JWT issuer，默认 `nanopaste-backend`
 - `ACCESS_TOKEN_TTL_MINUTES`：Access Token 时长（分钟），默认 `60`
 - `REFRESH_TOKEN_TTL_HOURS`：Refresh Token 时长（小时），默认 `720`
+- `WEB_DIST_DIR`：前端构建产物目录，默认 `../desktop/dist`
 
 示例：
 
@@ -71,6 +72,31 @@ sqlite3 ./data/nanopaste.db < ./migrations/0001_init.down.sql
 ```bash
 curl http://localhost:8080/health
 ```
+
+## 访问 Web 版本（由后端托管静态文件）
+
+1. 先构建前端静态资源：
+
+```bash
+cd apps/desktop
+npm install
+npm run build:web
+```
+
+2. 启动后端：
+
+```bash
+cd apps/backend
+go run ./cmd/server
+```
+
+3. 浏览器访问：`http://localhost:8080/`
+
+说明：
+
+- 后端会优先保留 `/v1/*` 和 `/health` 路由。
+- 其余 GET/HEAD 路由会尝试返回静态文件；未命中时回退 `index.html`，支持 SPA 前端路由直达。
+- Web 端登录会固定上报设备名 `web`，并在浏览器本地记住 `deviceId` 用于后续登录复用同一设备记录。
 
 ## 已实现接口清单
 

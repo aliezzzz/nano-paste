@@ -8,6 +8,7 @@ export interface LoginRequest {
   account: string;
   password: string;
   deviceName?: string;
+  rememberedDeviceId?: string;
 }
 
 export interface LoginResponse {

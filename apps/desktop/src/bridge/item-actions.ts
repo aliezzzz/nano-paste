@@ -34,6 +34,7 @@ export async function handleItemAction(
   id: string,
   action: "copy" | "download" | "delete" | "favorite",
   reloadItems: ReloadItems,
+  copyContent?: string,
   onFavoriteChanged?: OnFavoriteChanged,
 ): Promise<void> {
   const apiClient = getApiClient();
@@ -53,6 +54,11 @@ export async function handleItemAction(
   }
 
   if (action === "copy") {
+    if (typeof copyContent === "string" && copyContent.length > 0) {
+      await copyTextToClipboard(copyContent);
+      return;
+    }
+
     const item = await getItemDetail(apiClient, id);
     if (item.type !== "text" || !item.content) {
       throw new Error("无法复制此内容");

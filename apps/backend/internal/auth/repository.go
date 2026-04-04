@@ -62,12 +62,48 @@ func (r *repository) createUser(ctx context.Context, account, passwordHash strin
 	return u, nil
 }
 
-func (r *repository) upsertDevice(ctx context.Context, userID, deviceName, platform, clientVersion string) (string, error) {
+func (r *repository) upsertDevice(ctx context.Context, userID, rememberedDeviceID, deviceName, platform, clientVersion string) (string, error) {
 	if deviceName == "" {
 		deviceName = "unknown-device"
 	}
 	if platform == "" {
 		platform = "unknown"
+	}
+
+	if rememberedDeviceID != "" {
+		const findByIDQ = `
+			SELECT id
+			FROM devices
+			WHERE id = ? AND user_id = ? AND revoked_at IS NULL
+			LIMIT 1`
+
+		var existingID string
+		err := r.db.QueryRowContext(ctx, findByIDQ, rememberedDeviceID, userID).Scan(&existingID)
+		if err != nil && err != sql.ErrNoRows {
+			return "", fmt.Errorf("find device by remembered id: %w", err)
+		}
+
+		if err == nil {
+			const updateByIDQ = `
+				UPDATE devices
+				SET device_name = ?, platform = ?, client_version = ?, last_seen_at = datetime('now')
+				WHERE id = ? AND user_id = ? AND revoked_at IS NULL`
+			if _, err = r.db.ExecContext(ctx, updateByIDQ, deviceName, platform, nullIfEmpty(clientVersion), existingID, userID); err != nil {
+				return "", fmt.Errorf("update device by remembered id: %w", err)
+			}
+			return existingID, nil
+		}
+	}
+
+	if strings.EqualFold(deviceName, "web") {
+		deviceID := uuid.NewString()
+		const insertQ = `
+			INSERT INTO devices(id, user_id, device_name, platform, client_version, last_seen_at)
+			VALUES(?, ?, ?, ?, ?, datetime('now'))`
+		if _, err := r.db.ExecContext(ctx, insertQ, deviceID, userID, deviceName, platform, nullIfEmpty(clientVersion)); err != nil {
+			return "", fmt.Errorf("insert web device: %w", err)
+		}
+		return deviceID, nil
 	}
 
 	const findQ = `

@@ -21,6 +21,7 @@ export interface TokenBundle {
 }
 
 const AUTH_STORAGE_KEY = "nanopaste.desktop.auth";
+const REMEMBERED_DEVICE_ID_STORAGE_KEY = "nanopaste.desktop.device_id";
 const session: AuthSessionState = {
   accessToken: "",
   refreshToken: "",
@@ -44,6 +45,7 @@ export function setAuthSession(tokens: TokenBundle, username?: string, deviceId?
   }
   if (deviceId) {
     session.deviceId = deviceId;
+    localStorage.setItem(REMEMBERED_DEVICE_ID_STORAGE_KEY, deviceId);
   }
   persistSession();
 }
@@ -58,7 +60,14 @@ export function clearAuthSession(): void {
 }
 
 export function getDeviceId(): string {
-  return session.deviceId;
+  if (session.deviceId) {
+    return session.deviceId;
+  }
+  return getRememberedDeviceId();
+}
+
+export function getRememberedDeviceId(): string {
+  return (localStorage.getItem(REMEMBERED_DEVICE_ID_STORAGE_KEY) ?? "").trim();
 }
 
 function hydrateSession(): void {
@@ -72,6 +81,9 @@ function hydrateSession(): void {
     session.expiresInSeconds = parsed.expiresInSeconds ?? 0;
     session.username = parsed.username ?? "";
     session.deviceId = parsed.deviceId ?? "";
+    if (session.deviceId) {
+      localStorage.setItem(REMEMBERED_DEVICE_ID_STORAGE_KEY, session.deviceId);
+    }
   } catch {
     clearAuthSession();
   }

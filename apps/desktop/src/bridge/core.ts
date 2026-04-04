@@ -102,6 +102,7 @@ export async function executeItemAction(
   id: string,
   action: "copy" | "download" | "delete" | "favorite",
   onFavoriteChanged?: (id: string, favorite: boolean) => void,
+  copyContent?: string,
 ): Promise<void> {
   try {
     await handleItemAction(
@@ -111,6 +112,7 @@ export async function executeItemAction(
       async () => {
         await loadItems?.();
       },
+      copyContent,
       onFavoriteChanged,
     );
 

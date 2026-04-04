@@ -93,7 +93,14 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	deviceID, err := h.repo.upsertDevice(r.Context(), user.ID, strings.TrimSpace(req.deviceNameValue()), strings.TrimSpace(req.Platform), strings.TrimSpace(req.clientVersionValue()))
+	deviceID, err := h.repo.upsertDevice(
+		r.Context(),
+		user.ID,
+		strings.TrimSpace(req.rememberedDeviceIDValue()),
+		strings.TrimSpace(req.deviceNameValue()),
+		strings.TrimSpace(req.Platform),
+		strings.TrimSpace(req.clientVersionValue()),
+	)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to upsert device", nil, requestID)
 		return

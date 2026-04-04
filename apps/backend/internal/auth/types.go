@@ -1,14 +1,16 @@
 package auth
 
 type loginRequest struct {
-	Username           string `json:"username"`
-	Account            string `json:"account"`
-	Password           string `json:"password"`
-	DeviceName         string `json:"device_name"`
-	DeviceNameCamel    string `json:"deviceName"`
-	Platform           string `json:"platform"`
-	ClientVersion      string `json:"client_version"`
-	ClientVersionCamel string `json:"clientVersion"`
+	Username                string `json:"username"`
+	Account                 string `json:"account"`
+	Password                string `json:"password"`
+	DeviceName              string `json:"device_name"`
+	DeviceNameCamel         string `json:"deviceName"`
+	RememberedDeviceID      string `json:"remembered_device_id"`
+	RememberedDeviceIDCamel string `json:"rememberedDeviceId"`
+	Platform                string `json:"platform"`
+	ClientVersion           string `json:"client_version"`
+	ClientVersionCamel      string `json:"clientVersion"`
 }
 
 func (r loginRequest) accountValue() string {
@@ -30,6 +32,13 @@ func (r loginRequest) clientVersionValue() string {
 		return r.ClientVersion
 	}
 	return r.ClientVersionCamel
+}
+
+func (r loginRequest) rememberedDeviceIDValue() string {
+	if r.RememberedDeviceID != "" {
+		return r.RememberedDeviceID
+	}
+	return r.RememberedDeviceIDCamel
 }
 
 type refreshRequest struct {
