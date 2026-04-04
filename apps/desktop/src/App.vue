@@ -274,6 +274,14 @@ async function handleItemAction(payload: { id: string; action: "copy" | "downloa
   }, payload.content);
 }
 
+async function handleRefreshItems(): Promise<void> {
+  try {
+    await reloadItems();
+  } catch (error) {
+    console.error("刷新条目失败:", error);
+  }
+}
+
 function handleLogout(): void {
   logoutSession();
 }
@@ -367,6 +375,7 @@ function handleUploadFiles(files: File[]): void {
       @retry-upload="handleRetryUpload"
       @clear-finished-upload="handleClearFinishedUpload"
       @item-action="handleItemAction"
+      @refresh-items="handleRefreshItems"
     />
 
     <div v-if="deviceModalOpen" class="fixed inset-0 z-[290]">

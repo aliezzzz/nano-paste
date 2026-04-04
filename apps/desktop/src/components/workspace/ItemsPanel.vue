@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 
 export interface ItemView {
   id: string;
@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<{ items?: ItemView[]; loading?: boolean }
 
 const emit = defineEmits<{
   (e: "item-action", payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): void;
+  (e: "refresh-items"): void;
 }>();
 
 function actionFor(item: ItemView): "copy" | "download" {
@@ -26,11 +27,38 @@ function actionFor(item: ItemView): "copy" | "download" {
 }
 
 const favoriteOnly = ref(false);
+const rotating = ref(false);
+let rotateTimer: number | null = null;
+
 const visibleItems = computed(() => {
   if (!favoriteOnly.value) {
     return props.items;
   }
   return props.items.filter((item) => item.isFavorite);
+});
+
+function refreshItems(): void {
+  if (props.loading) {
+    return;
+  }
+
+  rotating.value = true;
+  if (rotateTimer !== null) {
+    window.clearTimeout(rotateTimer);
+  }
+  rotateTimer = window.setTimeout(() => {
+    rotating.value = false;
+    rotateTimer = null;
+  }, 620);
+
+  emit("refresh-items");
+}
+
+onBeforeUnmount(() => {
+  if (rotateTimer !== null) {
+    window.clearTimeout(rotateTimer);
+    rotateTimer = null;
+  }
 });
 </script>
 
@@ -43,7 +71,22 @@ const visibleItems = computed(() => {
         </svg>
         最近条目
       </h2>
-      <div class="inline-flex rounded-lg border border-slate-700/60 bg-slate-900/70 p-0.5">
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors"
+          :class="props.loading ? 'text-slate-500 bg-slate-800/50 border-slate-700/60 cursor-not-allowed' : 'text-cyan-200 bg-cyan-500/15 border-cyan-400/40 hover:bg-cyan-500/25 hover:text-cyan-100'"
+          :disabled="props.loading"
+          title="刷新条目"
+          @click="refreshItems"
+        >
+          <svg class="w-4 h-4 refresh-icon" :class="rotating ? 'is-rotating' : ''" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M499.72 872.52c-179.31 0-325.19-143.88-325.19-320.75 0-176.84 145.88-320.72 325.19-320.72 54.31 0 108.12 13.5 155.62 39.03 23.31 12.56 32.06 41.69 19.5 65.03-12.44 23.38-41.56 32.12-65 19.53-33.56-18.06-71.62-27.59-110.12-27.59-126.38 0-229.19 100.81-229.19 224.72 0 123.94 102.81 224.75 229.19 224.75 104.5 0 195.75-69.22 221.87-168.31 6.81-25.62 33.12-40.88 58.69-34.16 25.62 6.78 40.94 33.03 34.19 58.66-37.32 141.18-166.75 239.81-314.75 239.81z" fill="currentColor"></path>
+            <path d="M799.24 407.04l-89.26-228.19c-6.2-15.85-27.38-18.78-37.64-5.2l-154.62 204.6c-10.26 13.58-1.67 33.16 15.27 34.8l243.89 23.59c16.15 1.57 28.27-14.48 22.36-29.6z" fill="currentColor"></path>
+          </svg>
+        </button>
+
+        <div class="inline-flex rounded-lg border border-slate-700/60 bg-slate-900/70 p-0.5">
         <button
           type="button"
           class="px-2.5 py-1 text-xs rounded-md transition-colors"
@@ -60,6 +103,7 @@ const visibleItems = computed(() => {
         >
           仅收藏
         </button>
+        </div>
       </div>
     </div>
 
@@ -114,3 +158,23 @@ const visibleItems = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.refresh-icon {
+  transform-origin: center;
+}
+
+.is-rotating {
+  animation: refresh-spin-once 620ms ease-in-out 1;
+}
+
+@keyframes refresh-spin-once {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>

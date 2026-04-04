@@ -40,6 +40,7 @@ const emit = defineEmits<{
   (e: "open-config"): void;
   (e: "open-device-manager"): void;
   (e: "logout"): void;
+  (e: "refresh-items"): void;
   (e: "retry-upload", id: string): void;
   (e: "clear-finished-upload"): void;
   (e: "send-text", payload: SendPayload): void;
@@ -71,6 +72,10 @@ function clearFinishedUpload(): void {
 
 function itemAction(payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): void {
   emit("item-action", payload);
+}
+
+function refreshItems(): void {
+  emit("refresh-items");
 }
 
 function switchMobileTab(tab: "send" | "items"): void {
@@ -156,7 +161,7 @@ function uploadFiles(files: File[]): void {
           <UploadPanel :queue-items="props.queueItems" @retry="retryUpload" @clear-finished="clearFinishedUpload" @files-selected="uploadFiles" />
         </aside>
         <section class="flex-1 flex flex-col min-h-0 bg-slate-900/20">
-          <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" />
+          <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" @refresh-items="refreshItems" />
         </section>
       </main>
     </div>
@@ -198,7 +203,7 @@ function uploadFiles(files: File[]): void {
         </div>
         <div v-else class="h-full overflow-y-auto custom-scrollbar p-4">
           <div class="bg-slate-900/85 border border-slate-700/50 rounded-xl p-4 h-full min-h-[420px]">
-            <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" />
+            <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" @refresh-items="refreshItems" />
           </div>
         </div>
       </main>
