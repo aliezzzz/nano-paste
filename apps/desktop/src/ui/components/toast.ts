@@ -1,24 +1,24 @@
-export function showToast(message: string, type: 'success' | 'error' = 'success'): void {
-  const toast = document.createElement('div');
-  toast.className = `fixed top-1/4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-xl z-50 transition-all duration-300 ${
-    type === 'success' ? 'bg-emerald-500/90' : 'bg-red-500/90'
-  } text-white text-sm font-medium`;
-  toast.style.opacity = '0';
-  toast.style.transform = 'translate(-50%, -20px)';
-  toast.textContent = message;
-  
-  document.body.appendChild(toast);
-  
-  // 动画进入
-  requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translate(-50%, 0)';
+export type ToastType = 'success' | 'error';
+
+export interface ToastEvent {
+  message: string;
+  type: ToastType;
+}
+
+type ToastListener = (event: ToastEvent) => void;
+
+const listeners = new Set<ToastListener>();
+
+export function showToast(message: string, type: ToastType = 'success'): void {
+  const event: ToastEvent = { message, type };
+  listeners.forEach((listener) => {
+    listener(event);
   });
-  
-  // 2秒后消失
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translate(-50%, -20px)';
-    setTimeout(() => toast.remove(), 300);
-  }, 2000);
+}
+
+export function subscribeToast(listener: ToastListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }

@@ -11,10 +11,14 @@
     "build:web": "vite build"
   },
   "dependencies": {
+    "vue": "^3.5.22",
     "@tauri-apps/api": "^2.0.0",
     "lucide": "^1.7.0"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@unocss/preset-wind": "^66.6.7",
+    "unocss": "^66.6.7",
     "@tauri-apps/cli": "^2.0.0",
     "autoprefixer": "^10.4.27",
     "postcss": "^8.5.8",
