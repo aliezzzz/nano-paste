@@ -1,3 +1,5 @@
+#[cfg(target_os = "macos")]
+use tauri::image::Image;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
@@ -14,12 +16,16 @@ pub fn run() {
                 .items(&[&show_item, &quit_item])
                 .build()?;
 
-            TrayIconBuilder::new()
-                .icon(
-                    app.default_window_icon()
-                        .expect("failed to get default window icon")
-                        .clone(),
-                )
+            #[cfg(target_os = "macos")]
+            let tray_icon = Image::from_bytes(include_bytes!("../icons/trayTemplate@2x.png"))?;
+            #[cfg(not(target_os = "macos"))]
+            let tray_icon = app
+                .default_window_icon()
+                .expect("failed to get default window icon")
+                .clone();
+
+            let tray_builder = TrayIconBuilder::new()
+                .icon(tray_icon)
                 .menu(&tray_menu)
                 .show_menu_on_left_click(true)
                 .on_menu_event(|app_handle, event| match event.id().as_ref() {
@@ -31,8 +37,12 @@ pub fn run() {
                     }
                     "quit" => app_handle.exit(0),
                     _ => {}
-                })
-                .build(app)?;
+                });
+
+            #[cfg(target_os = "macos")]
+            let tray_builder = tray_builder.icon_as_template(true);
+
+            tray_builder.build(app)?;
 
             if let Some(window) = app.get_webview_window("main") {
                 let app_handle = app.handle().clone();
