@@ -7,8 +7,8 @@
 
 - 多应用仓库，主要包含：
   - `apps/backend`：Go 1.22 + SQLite 的 HTTP/WS 后端。
-  - `apps/desktop`：Tauri + Vite + TypeScript 桌面端（可 `dev:web`）。
-  - `packages/mock-server`：Express + ws + TypeScript 本地 mock 服务。
+  - `apps/desktop`：Tauri + Vite + Vue 3 + TypeScript + UnoCSS 桌面端（可 `dev:web`）。
+  - `packages/contracts`：前后端共享 TypeScript 协议类型（`v1/*`）。
 - 当前未发现统一任务编排（无根 `package.json` 脚本、无 Makefile）。
 - 当前未发现统一 lint/format 配置（如 ESLint/Prettier/golangci）。
 - 当前测试文件很少或没有，命令以“可执行标准”优先。
@@ -44,20 +44,15 @@
 - Web 构建：`npm run build:web`
 - Tauri 开发：`npm run dev`
 - Tauri 打包：`npm run build`
+- 仅构建可执行文件（跳过安装包）：`npm run build:exe`
 - 类型检查（lint 替代）：`npx tsc --noEmit`
 
 说明：`apps/desktop/package.json` 当前没有 `test`/`lint` 脚本。
 
-### 2.3 Mock Server（TypeScript）
+补充说明：
 
-在 `packages/mock-server` 执行：
-
-- 安装依赖：`npm install`
-- 开发模式：`npm run dev`
-- 单次启动：`npm run start`
-- 类型检查（lint 替代）：`npm run typecheck`
-
-说明：`packages/mock-server/package.json` 当前没有 `test`/`lint` 脚本。
+- 当前桌面端 Web UI 已迁移为 Vue 组件架构，桥接层位于 `src/bridge/`。
+- 生成的桌面应用默认通过 `tauri.conf.json` 注入 `additionalBrowserArgs` 禁用 GPU（用于降低 WebView2 内存占用）。
 
 ## 3. 单测命令速查（重点）
 
@@ -67,7 +62,7 @@
 - 运行一组匹配测试：`go test ./path/to/pkg -run 'TestAuth|TestRefresh' -v`
 - 关闭缓存复现问题：`go test ./path/to/pkg -run '^TestName$' -count=1 -v`
 
-TypeScript 子项目暂无标准测试脚本；若新增测试框架，必须补充本节。
+当前 TypeScript 端（`apps/desktop`）暂无标准测试脚本；若新增测试框架，必须补充本节。
 
 ## 4. 通用代码风格
 
@@ -105,22 +100,24 @@ TypeScript 子项目暂无标准测试脚本；若新增测试框架，必须补
 - HTTP 层统一通过 `common.WriteError` 返回标准错误结构。
 - 鉴权失败返回 `UNAUTHORIZED`，参数问题返回 `VALIDATION_ERROR`。
 
-## 6. TypeScript 规范（desktop + mock-server）
+## 6. TypeScript 规范（desktop + contracts）
 
 ### 6.1 导入与模块
 
 - 保持子项目现有风格：
   - `apps/desktop`：双引号 + 分号。
-  - `packages/mock-server`：单引号，NodeNext 风格。
+  - `packages/contracts`：类型声明优先，保持简洁导出。
 - 类型导入优先 `import type`。
 - 导入顺序建议：外部依赖 -> 内部模块，组间空一行。
+- `apps/desktop` 前端界面层优先使用 Vue 组件与组合式状态；避免回退到字符串模板拼接。
 
 ### 6.2 类型与接口
 
-- 两个 TS 子项目都开启 `strict`，禁止随意引入 `any`。
+- `apps/desktop` 开启 `strict`，禁止随意引入 `any`。
 - 导出函数与复杂分支优先显式返回类型。
 - API 请求/响应优先复用 `packages/contracts` 类型。
 - 可空值先收窄再使用，减少非空断言。
+- 浏览器端尽量避免手写 DOM API（如 `document.querySelector` / `innerHTML`）；优先通过 Vue 模板和响应式状态驱动 UI。
 
 ### 6.3 命名
 
@@ -147,7 +144,6 @@ TypeScript 子项目暂无标准测试脚本；若新增测试框架，必须补
 - 确认只改任务相关文件，无临时代码/调试输出。
 - Backend 改动至少执行：`go build ./...`、`go test ./...`。
 - Desktop 改动至少执行：`npm run build:web`、`npx tsc --noEmit`。
-- Mock-server 改动至少执行：`npm run typecheck`。
 
 ## 9. 文档维护要求
 

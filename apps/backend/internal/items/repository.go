@@ -21,6 +21,7 @@ type itemRecord struct {
 	Title             string
 	Content           string
 	FileID            string
+	IsFavorite        bool
 	FileName          string
 	FileSize          int64
 	MimeType          string
@@ -102,7 +103,7 @@ func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title
 	return created, ev, nil
 }
 
-func (r *repository) listItems(ctx context.Context, userID, itemType string, limit, offset int) ([]itemRecord, bool, error) {
+func (r *repository) listItems(ctx context.Context, userID, itemType, sort string, limit, offset int) ([]itemRecord, bool, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -114,7 +115,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType string, lim
 	}
 
 	query := `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -125,7 +126,11 @@ func (r *repository) listItems(ctx context.Context, userID, itemType string, lim
 		query += ` AND i.type = ?`
 		args = append(args, itemType)
 	}
-	query += ` ORDER BY i.created_at DESC LIMIT ? OFFSET ?`
+	if strings.TrimSpace(sort) == "favorite" {
+		query += ` ORDER BY COALESCE(i.is_favorite, 0) DESC, i.created_at DESC LIMIT ? OFFSET ?`
+	} else {
+		query += ` ORDER BY i.created_at DESC LIMIT ? OFFSET ?`
+	}
 	args = append(args, limit+1, offset)
 
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -156,7 +161,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType string, lim
 
 func (r *repository) getItemByID(ctx context.Context, userID, itemID string) (itemRecord, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -174,6 +179,33 @@ func (r *repository) getItemByID(ctx context.Context, userID, itemID string) (it
 		return itemRecord{}, fmt.Errorf("get item by id: %w", err)
 	}
 	return it, nil
+}
+
+func (r *repository) setItemFavorite(ctx context.Context, userID, itemID string, favorite bool) (itemRecord, string, error) {
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE clipboard_items
+		SET is_favorite = ?
+		WHERE user_id = ? AND id = ? AND deleted_at IS NULL`, boolToInt(favorite), userID, itemID)
+	if err != nil {
+		return itemRecord{}, "", fmt.Errorf("set item favorite: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return itemRecord{}, "", fmt.Errorf("set item favorite rows affected: %w", err)
+	}
+	if affected == 0 {
+		return itemRecord{}, "", errItemNotFound
+	}
+
+	item, err := r.getItemByID(ctx, userID, itemID)
+	if err != nil {
+		return itemRecord{}, "", err
+	}
+
+	return item, now, nil
 }
 
 func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (string, eventRow, error) {
@@ -264,7 +296,7 @@ func insertEvent(ctx context.Context, tx *sql.Tx, userID, eventType string, item
 
 func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (itemRecord, error) {
 	row := q.QueryRowContext(ctx, `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -322,6 +354,7 @@ type queryable interface {
 
 func scanItemOne(row scanner) (itemRecord, error) {
 	var it itemRecord
+	var isFavorite int
 	if err := row.Scan(
 		&it.ID,
 		&it.UserID,
@@ -329,6 +362,7 @@ func scanItemOne(row scanner) (itemRecord, error) {
 		&it.Title,
 		&it.Content,
 		&it.FileID,
+		&isFavorite,
 		&it.FileName,
 		&it.FileSize,
 		&it.MimeType,
@@ -338,6 +372,7 @@ func scanItemOne(row scanner) (itemRecord, error) {
 	); err != nil {
 		return itemRecord{}, err
 	}
+	it.IsFavorite = isFavorite > 0
 	if strings.TrimSpace(it.CreatedByDeviceID) == "" {
 		it.CreatedByDeviceID = "device_unknown"
 	}
@@ -360,4 +395,11 @@ func nullIfNilString(s *string) any {
 		return nil
 	}
 	return strings.TrimSpace(*s)
+}
+
+func boolToInt(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
 }

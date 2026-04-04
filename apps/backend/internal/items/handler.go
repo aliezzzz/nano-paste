@@ -43,8 +43,31 @@ func (h *handler) items(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) itemByID(w http.ResponseWriter, r *http.Request) {
-	itemID := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/items/"))
-	if itemID == "" || strings.Contains(itemID, "/") {
+	trimmed := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/items/"))
+	if trimmed == "" {
+		requestID := common.RequestIDFromContext(r.Context())
+		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+		return
+	}
+
+	if strings.HasSuffix(trimmed, "/favorite") {
+		itemID := strings.TrimSpace(strings.TrimSuffix(trimmed, "/favorite"))
+		if itemID == "" || strings.Contains(itemID, "/") {
+			requestID := common.RequestIDFromContext(r.Context())
+			common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+			return
+		}
+		if r.Method != http.MethodPost {
+			requestID := common.RequestIDFromContext(r.Context())
+			common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+			return
+		}
+		h.favorite(w, r, itemID)
+		return
+	}
+
+	itemID := trimmed
+	if strings.Contains(itemID, "/") {
 		requestID := common.RequestIDFromContext(r.Context())
 		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
 		return
@@ -140,7 +163,13 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, hasMore, err := h.repo.listItems(r.Context(), userID, itemType, limit, offset)
+	sort := strings.TrimSpace(r.URL.Query().Get("sort"))
+	if sort != "" && sort != "favorite" {
+		common.WriteError(w, common.VALIDATION_ERROR, "sort must be favorite", nil, requestID)
+		return
+	}
+
+	items, hasMore, err := h.repo.listItems(r.Context(), userID, itemType, sort, limit, offset)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to list items", nil, requestID)
 		return
@@ -152,6 +181,7 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 			ID:                it.ID,
 			Type:              it.Type,
 			Title:             emptyAsNil(it.Title),
+			IsFavorite:        it.IsFavorite,
 			CreatedAt:         it.CreatedAt,
 			CreatedByDeviceID: fallbackDeviceID(it.CreatedByDeviceID),
 		})
@@ -219,6 +249,38 @@ func (h *handler) delete(w http.ResponseWriter, r *http.Request, itemID string) 
 	}, requestID)
 }
 
+func (h *handler) favorite(w http.ResponseWriter, r *http.Request, itemID string) {
+	requestID := common.RequestIDFromContext(r.Context())
+	userID, err := authx.UserIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
+
+	var req favoriteItemRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.WriteError(w, common.VALIDATION_ERROR, "invalid json body", nil, requestID)
+		return
+	}
+
+	item, updatedAt, err := h.repo.setItemFavorite(r.Context(), userID, itemID, req.Favorite)
+	if err != nil {
+		if err == errItemNotFound {
+			common.WriteError(w, common.NOT_FOUND, "item not found", nil, requestID)
+			return
+		}
+		common.WriteError(w, common.INTERNAL, "failed to update item favorite", nil, requestID)
+		return
+	}
+
+	common.WriteSuccess(w, http.StatusOK, favoriteItemResponse{
+		Success:   true,
+		ItemID:    item.ID,
+		Favorite:  item.IsFavorite,
+		UpdatedAt: updatedAt,
+	}, requestID)
+}
+
 func (h *handler) broadcast(ev eventRow) {
 	if ev.ID == 0 || strings.TrimSpace(ev.UserID) == "" {
 		return
@@ -262,6 +324,7 @@ type itemSummary struct {
 	ID                string  `json:"id"`
 	Type              string  `json:"type"`
 	Title             *string `json:"title,omitempty"`
+	IsFavorite        bool    `json:"isFavorite"`
 	CreatedAt         string  `json:"createdAt"`
 	CreatedByDeviceID string  `json:"createdByDeviceId"`
 }
@@ -280,10 +343,22 @@ type deleteItemResponse struct {
 	DeletedAt string `json:"deletedAt"`
 }
 
+type favoriteItemRequest struct {
+	Favorite bool `json:"favorite"`
+}
+
+type favoriteItemResponse struct {
+	Success   bool   `json:"success"`
+	ItemID    string `json:"itemId"`
+	Favorite  bool   `json:"favorite"`
+	UpdatedAt string `json:"updatedAt"`
+}
+
 func toItemDetail(item itemRecord) map[string]any {
 	base := map[string]any{
 		"id":                item.ID,
 		"type":              item.Type,
+		"isFavorite":        item.IsFavorite,
 		"createdAt":         item.CreatedAt,
 		"createdByDeviceId": fallbackDeviceID(item.CreatedByDeviceID),
 	}

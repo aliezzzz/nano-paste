@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -142,6 +143,7 @@ func ensureCoreSyncTables(db *sql.DB) error {
 		  title TEXT,
 		  content TEXT,
 		  file_id TEXT,
+		  is_favorite INTEGER NOT NULL DEFAULT 0,
 		  created_by_device_id TEXT,
 		  created_at TEXT NOT NULL,
 		  deleted_at TEXT,
@@ -183,5 +185,24 @@ func ensureCoreSyncTables(db *sql.DB) error {
 		}
 	}
 
+	if err := ensureColumnExists(db, "clipboard_items", "is_favorite", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
+
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_items_user_favorite_created ON clipboard_items(user_id, is_favorite, created_at DESC);`); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
+
+	return nil
+}
+
+func ensureColumnExists(db *sql.DB, tableName, columnName, ddl string) error {
+	stmt := fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, ddl)
+	if _, err := db.Exec(stmt); err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate column name") {
+			return nil
+		}
+		return fmt.Errorf("add column %s.%s: %w", tableName, columnName, err)
+	}
 	return nil
 }

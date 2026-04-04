@@ -1,10 +1,11 @@
-import { createTextItem, deleteItem, getItemDetail, prepareFileDownload } from "../features/items/api";
+import { createTextItem, deleteItem, getItemDetail, prepareFileDownload, setItemFavorite } from "../features/items/api";
 import { cleanupFiles } from "../features/files/api";
 import { copyTextToClipboard, triggerFileDownload } from "./platform";
 import type { ApiClient } from "../api/client";
 
 type ApiClientGetter = () => ApiClient | null;
 type ReloadItems = () => Promise<void>;
+type OnFavoriteChanged = (id: string, favorite: boolean) => void;
 
 export async function sendText(
   getApiClient: ApiClientGetter,
@@ -31,8 +32,9 @@ export async function sendText(
 export async function handleItemAction(
   getApiClient: ApiClientGetter,
   id: string,
-  action: string,
+  action: "copy" | "download" | "delete" | "favorite",
   reloadItems: ReloadItems,
+  onFavoriteChanged?: OnFavoriteChanged,
 ): Promise<void> {
   const apiClient = getApiClient();
   if (!apiClient) {
@@ -67,5 +69,13 @@ export async function handleItemAction(
 
     const prepared = await prepareFileDownload(apiClient, item.fileId);
     await triggerFileDownload(prepared.downloadUrl, prepared.fileName || item.fileName || "download.bin");
+    return;
+  }
+
+  if (action === "favorite") {
+    const item = await getItemDetail(apiClient, id);
+    const nextFavorite = !item.isFavorite;
+    await setItemFavorite(apiClient, id, nextFavorite);
+    onFavoriteChanged?.(id, nextFavorite);
   }
 }

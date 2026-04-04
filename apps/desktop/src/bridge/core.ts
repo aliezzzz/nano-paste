@@ -63,6 +63,7 @@ function showWorkspace(): void {
     },
   });
 
+  void loadItems?.();
   void loadDevices();
   realtime.connect();
 }
@@ -97,7 +98,11 @@ export async function handleGlobalPasteEvent(event: ClipboardEvent): Promise<voi
   });
 }
 
-export async function executeItemAction(id: string, action: string): Promise<void> {
+export async function executeItemAction(
+  id: string,
+  action: "copy" | "download" | "delete" | "favorite",
+  onFavoriteChanged?: (id: string, favorite: boolean) => void,
+): Promise<void> {
   try {
     await handleItemAction(
       () => apiClient,
@@ -106,6 +111,7 @@ export async function executeItemAction(id: string, action: string): Promise<voi
       async () => {
         await loadItems?.();
       },
+      onFavoriteChanged,
     );
 
     if (action === "delete") {
@@ -114,10 +120,22 @@ export async function executeItemAction(id: string, action: string): Promise<voi
       showToast("已复制到剪贴板", "success");
     } else if (action === "download") {
       showToast("已开始下载（保存到系统下载目录）", "success");
+    } else if (action === "favorite") {
+      showToast("收藏状态已更新", "success");
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "操作失败";
-    showToast(`${action === "delete" ? "删除" : action === "copy" ? "复制" : "下载"}失败: ${message}`, "error");
+    const actionLabel =
+      action === "delete"
+        ? "删除"
+        : action === "copy"
+          ? "复制"
+          : action === "download"
+            ? "下载"
+            : action === "favorite"
+              ? "收藏"
+              : "操作";
+    showToast(`${actionLabel}失败: ${message}`, "error");
   }
 }
 

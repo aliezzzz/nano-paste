@@ -21,13 +21,14 @@ export function createItemsLoader(getApiClient: ApiClientGetter, getHooks: Hooks
         throw new Error("API client is not initialized");
       }
 
-      const items = await listItemDetails(apiClient, 50);
+      const items = await listItemDetails(apiClient, 50, { sort: "favorite" });
       const mappedItems: ItemView[] = items.map((item) => ({
         id: String(item.id),
         type: item.type,
         title: item.title,
         content: item.type === "text" ? item.content : undefined,
         fileName: item.type === "file" ? item.fileName : undefined,
+        isFavorite: item.isFavorite,
         createdAt: item.createdAt,
         iconSvg: getItemIconSvg(item),
       }));

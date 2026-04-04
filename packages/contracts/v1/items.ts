@@ -10,6 +10,7 @@ export interface ItemSummary {
   id: string;
   type: ItemType;
   title?: string;
+  isFavorite: boolean;
   createdAt: string;
   createdByDeviceId: string;
 }
@@ -48,6 +49,7 @@ export type CreateItemApi = {
 
 export interface ListItemsRequest extends PaginationInput {
   type?: ItemType;
+  sort?: 'favorite';
 }
 
 export interface ListItemsResponse {
@@ -91,5 +93,24 @@ export type DeleteItemApi = {
   method: 'DELETE';
   request: DeleteItemRequest;
   response: ApiResponse<DeleteItemResponse>;
+};
+
+export interface FavoriteItemRequest {
+  itemId: string;
+  favorite: boolean;
+}
+
+export interface FavoriteItemResponse {
+  success: true;
+  itemId: string;
+  favorite: boolean;
+  updatedAt: string;
+}
+
+export type FavoriteItemApi = {
+  path: '/v1/items/:itemId/favorite';
+  method: 'POST';
+  request: FavoriteItemRequest;
+  response: ApiResponse<FavoriteItemResponse>;
 };
 

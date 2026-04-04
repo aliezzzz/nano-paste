@@ -1,6 +1,7 @@
 import type {
   CreateItemResponse,
   DeleteItemResponse,
+  FavoriteItemResponse,
   GetItemDetailResponse,
   ItemDetail,
   ListItemsResponse,
@@ -25,8 +26,17 @@ export async function createTextItem(client: ApiClient, input: CreateTextInput):
   });
 }
 
-export async function listItemDetails(client: ApiClient, limit: number): Promise<ItemDetail[]> {
-  const list = await client.request<ListItemsResponse>(`/v1/items?limit=${encodeURIComponent(String(limit))}`, {
+type ListItemDetailsOptions = {
+  sort?: "favorite";
+};
+
+export async function listItemDetails(client: ApiClient, limit: number, options?: ListItemDetailsOptions): Promise<ItemDetail[]> {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (options?.sort === "favorite") {
+    query.set("sort", "favorite");
+  }
+
+  const list = await client.request<ListItemsResponse>(`/v1/items?${query.toString()}`, {
     method: "GET",
   });
 
@@ -59,5 +69,12 @@ export async function prepareFileDownload(client: ApiClient, fileId: string): Pr
 export async function deleteItem(client: ApiClient, itemId: string): Promise<void> {
   await client.request<DeleteItemResponse>(`/v1/items/${encodeURIComponent(itemId)}`, {
     method: "DELETE",
+  });
+}
+
+export async function setItemFavorite(client: ApiClient, itemId: string, favorite: boolean): Promise<void> {
+  await client.request<FavoriteItemResponse>(`/v1/items/${encodeURIComponent(itemId)}/favorite`, {
+    method: "POST",
+    body: JSON.stringify({ favorite }),
   });
 }

@@ -329,7 +329,7 @@ func queryCleanupTargets(ctx context.Context, tx *sql.Tx, in cleanupInput) ([]st
 			SELECT DISTINCT f.id
 			FROM file_objects f
 			JOIN clipboard_items i ON i.file_id = f.id AND i.user_id = f.user_id
-			WHERE f.user_id = ? AND f.cleaned_at IS NULL AND i.deleted_at IS NULL`
+			WHERE f.user_id = ? AND f.cleaned_at IS NULL AND i.deleted_at IS NULL AND COALESCE(i.is_favorite, 0) = 0`
 		args := []any{in.UserID}
 
 		if strings.TrimSpace(in.Category) != "" {
@@ -353,7 +353,15 @@ func queryCleanupTargets(ctx context.Context, tx *sql.Tx, in cleanupInput) ([]st
 	base := `
 		SELECT f.id
 		FROM file_objects f
-		WHERE f.user_id = ? AND f.cleaned_at IS NULL`
+		WHERE f.user_id = ? AND f.cleaned_at IS NULL
+		  AND NOT EXISTS (
+			  SELECT 1
+			  FROM clipboard_items i
+			  WHERE i.user_id = f.user_id
+			    AND i.file_id = f.id
+			    AND i.deleted_at IS NULL
+			    AND COALESCE(i.is_favorite, 0) = 1
+		  )`
 	args := []any{in.UserID}
 
 	if strings.TrimSpace(in.BeforeTime) != "" {
