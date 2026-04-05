@@ -4,12 +4,21 @@ use tauri::image::Image;
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::TrayIconBuilder,
-    Manager, WindowEvent,
+    AppHandle, Manager, Runtime, WindowEvent,
 };
+
+#[cfg(not(mobile))]
+fn show_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .setup(|app| {
             #[cfg(not(mobile))]
             {
@@ -32,12 +41,7 @@ pub fn run() {
                     .menu(&tray_menu)
                     .show_menu_on_left_click(true)
                     .on_menu_event(|app_handle, event| match event.id().as_ref() {
-                        "show" => {
-                            if let Some(window) = app_handle.get_webview_window("main") {
-                                let _ = window.show();
-                                let _ = window.set_focus();
-                            }
-                        }
+                        "show" => show_main_window(app_handle),
                         "quit" => app_handle.exit(0),
                         _ => {}
                     });
@@ -69,6 +73,13 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        #[cfg(all(not(mobile), target_os = "macos"))]
+        if let tauri::RunEvent::Reopen { .. } = event {
+            show_main_window(app_handle);
+        }
+    });
 }
