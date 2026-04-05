@@ -7,6 +7,9 @@
     "dev": "tauri dev",
     "build": "tauri build",
     "build:exe": "tauri build --no-bundle",
+    "android:init": "tauri android init",
+    "android:dev": "tauri android dev",
+    "android:build": "tauri android build",
     "dev:web": "vite",
     "build:web": "vite build"
   },

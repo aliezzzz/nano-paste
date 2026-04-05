@@ -45,6 +45,9 @@
 - Tauri 开发：`npm run dev`
 - Tauri 打包：`npm run build`
 - 仅构建可执行文件（跳过安装包）：`npm run build:exe`
+- Android 初始化：`npm run android:init`
+- Android 开发：`npm run android:dev`
+- Android 打包：`npm run android:build`
 - 类型检查（lint 替代）：`npx tsc --noEmit`
 
 说明：`apps/desktop/package.json` 当前没有 `test`/`lint` 脚本。

@@ -34,3 +34,17 @@
 - 未实现真实系统剪贴板监听。
 - 未实现真实拖拽上传与本地文件读写。
 - 未实现真实文件传输（仅展示 mock 返回的下载地址）。
+
+## Android 打包配置（Tauri 2）
+
+已补充 Android 相关脚本与移动端兼容配置：
+
+- `npm run android:init`：初始化 Android 工程骨架
+- `npm run android:dev`：Android 真机/模拟器开发调试
+- `npm run android:build`：构建 Android 安装包
+
+说明：
+
+- 当前仅补齐项目配置，Android SDK/NDK/JDK 等构建环境需在本机单独安装。
+- 桌面端托盘与关闭最小化逻辑已做移动端条件编译隔离，避免 Android 构建时引入桌面专属能力。
+- Android 端不要使用 `localhost` 作为后端地址，建议填写可从手机访问的服务地址。
