@@ -8,3 +8,4 @@ target
 apps/backend/data
 apps/backend/data/nanopaste.db
 .DS_Store
+**.tar
