@@ -28,6 +28,7 @@ export function createItemsLoader(getApiClient: ApiClientGetter, getHooks: Hooks
         title: item.title,
         content: item.type === "text" ? item.content : undefined,
         fileName: item.type === "file" ? item.fileName : undefined,
+        fileSize: item.type === "file" ? item.fileSize : undefined,
         isFavorite: item.isFavorite,
         createdAt: item.createdAt,
         iconSvg: getItemIconSvg(item),

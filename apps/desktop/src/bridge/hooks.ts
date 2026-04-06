@@ -13,6 +13,7 @@ export interface ItemView {
   title?: string;
   content?: string;
   fileName?: string;
+  fileSize?: number;
   isFavorite: boolean;
   createdAt: string;
   iconSvg: string;

@@ -38,6 +38,8 @@ const activeDevices = ref<ActiveDeviceView[]>([]);
 const sendingText = ref(false);
 const connectionStatus = ref<RealtimeStatus>("idle");
 
+const currentUsername = computed(() => getAuthSession().username);
+
 interface ToastView {
   id: number;
   message: string;
@@ -361,6 +363,7 @@ function handleUploadFiles(files: File[]): void {
       :active-devices="activeDevices"
       :sending-text="sendingText"
       :connection-status="connectionStatus"
+      :username="currentUsername"
       @open-config="openConfig"
       @open-device-manager="openDeviceManager"
       @logout="handleLogout"
