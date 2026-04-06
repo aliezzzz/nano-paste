@@ -7,22 +7,23 @@ import type {
   ListItemsResponse,
   PrepareDownloadResponse,
 } from "../../../../../packages/contracts/v1";
-import type { ApiClient } from "../../api/client";
+import { request } from "../../api/request";
 
 export type CreateTextInput = {
   content: string;
   title?: string;
 };
 
-export async function createTextItem(client: ApiClient, input: CreateTextInput): Promise<void> {
-  await client.request<CreateItemResponse>("/v1/items", {
+export async function createTextItem(input: CreateTextInput): Promise<void> {
+  await request<CreateItemResponse>({
+    url: "/v1/items",
     method: "POST",
-    body: JSON.stringify({
+    data: {
       type: "text",
       content: input.content,
       title: input.title,
       client_event_id: `evt_${Date.now()}`,
-    }),
+    },
   });
 }
 
@@ -30,19 +31,21 @@ type ListItemDetailsOptions = {
   sort?: "favorite";
 };
 
-export async function listItemDetails(client: ApiClient, limit: number, options?: ListItemDetailsOptions): Promise<ItemDetail[]> {
+export async function listItemDetails(limit: number, options?: ListItemDetailsOptions): Promise<ItemDetail[]> {
   const query = new URLSearchParams({ limit: String(limit) });
   if (options?.sort === "favorite") {
     query.set("sort", "favorite");
   }
 
-  const list = await client.request<ListItemsResponse>(`/v1/items?${query.toString()}`, {
+  const list = await request<ListItemsResponse>({
+    url: `/v1/items?${query.toString()}`,
     method: "GET",
   });
 
   const details = await Promise.all(
     list.items.map(async (summary) => {
-      const detail = await client.request<GetItemDetailResponse>(`/v1/items/${encodeURIComponent(summary.id)}`, {
+      const detail = await request<GetItemDetailResponse>({
+        url: `/v1/items/${encodeURIComponent(summary.id)}`,
         method: "GET",
       });
       return detail.item;
@@ -52,29 +55,32 @@ export async function listItemDetails(client: ApiClient, limit: number, options?
   return details;
 }
 
-export async function getItemDetail(client: ApiClient, itemId: string): Promise<ItemDetail> {
-  const response = await client.request<GetItemDetailResponse>(
-    `/v1/items/${encodeURIComponent(itemId)}`,
-    { method: "GET" }
-  );
+export async function getItemDetail(itemId: string): Promise<ItemDetail> {
+  const response = await request<GetItemDetailResponse>({
+    url: `/v1/items/${encodeURIComponent(itemId)}`,
+    method: "GET",
+  });
   return response.item;
 }
 
-export async function prepareFileDownload(client: ApiClient, fileId: string): Promise<PrepareDownloadResponse> {
-  return client.request<PrepareDownloadResponse>(`/v1/files/${encodeURIComponent(fileId)}/prepare-download`, {
+export async function prepareFileDownload(fileId: string): Promise<PrepareDownloadResponse> {
+  return request<PrepareDownloadResponse>({
+    url: `/v1/files/${encodeURIComponent(fileId)}/prepare-download`,
     method: "POST",
   });
 }
 
-export async function deleteItem(client: ApiClient, itemId: string): Promise<void> {
-  await client.request<DeleteItemResponse>(`/v1/items/${encodeURIComponent(itemId)}`, {
+export async function deleteItem(itemId: string): Promise<void> {
+  await request<DeleteItemResponse>({
+    url: `/v1/items/${encodeURIComponent(itemId)}`,
     method: "DELETE",
   });
 }
 
-export async function setItemFavorite(client: ApiClient, itemId: string, favorite: boolean): Promise<void> {
-  await client.request<FavoriteItemResponse>(`/v1/items/${encodeURIComponent(itemId)}/favorite`, {
+export async function setItemFavorite(itemId: string, favorite: boolean): Promise<void> {
+  await request<FavoriteItemResponse>({
+    url: `/v1/items/${encodeURIComponent(itemId)}/favorite`,
     method: "POST",
-    body: JSON.stringify({ favorite }),
+    data: { favorite },
   });
 }

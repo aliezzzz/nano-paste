@@ -1,5 +1,5 @@
 import type { CompleteUploadResponse, PrepareUploadResponse } from "../../../../../packages/contracts/v1";
-import type { ApiClient } from "../../api/client";
+import { request, requestRaw } from "../../api/request";
 
 interface PrepareUploadInput {
   file: File;
@@ -17,17 +17,17 @@ interface CleanupFilesInput {
 }
 
 export async function prepareFileUpload(
-  client: ApiClient,
   { file, category = "other" }: PrepareUploadInput,
 ): Promise<PrepareUploadResponse> {
-  return client.request<PrepareUploadResponse>("/v1/files/prepare-upload", {
+  return request<PrepareUploadResponse>({
+    url: "/v1/files/prepare-upload",
     method: "POST",
-    body: JSON.stringify({
+    data: {
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type || undefined,
       category,
-    }),
+    },
   });
 }
 
@@ -36,39 +36,50 @@ export async function uploadToSignedUrl(
   uploadMethod: "PUT" | "POST",
   file: File,
 ): Promise<string | undefined> {
-  const response = await fetch(uploadUrl, {
-    method: uploadMethod,
-    body: file,
-    headers: file.type
-      ? {
-        "Content-Type": file.type,
-      }
-      : undefined,
-  });
+  try {
+    const response = await requestRaw({
+      url: uploadUrl,
+      baseURL: "",
+      skipBaseUrl: true,
+      authRequired: false,
+      withDeviceId: false,
+      method: uploadMethod,
+      data: file,
+      headers: file.type
+        ? {
+          "Content-Type": file.type,
+        }
+        : undefined,
+    });
 
-  if (!response.ok) {
-    throw new Error(`二进制上传失败（${response.status} ${response.statusText || "UPLOAD_FAILED"}）`);
+    return (response.headers.etag as string | undefined) ?? undefined;
+  } catch (error) {
+    const status =
+      typeof error === "object" && error && "status" in error
+        ? String((error as { status?: number }).status ?? "UPLOAD_FAILED")
+        : "UPLOAD_FAILED";
+    throw new Error(`二进制上传失败（${status}）`);
   }
-
-  return response.headers.get("etag") ?? undefined;
 }
 
-export async function completeFileUpload(client: ApiClient, input: CompleteUploadInput): Promise<CompleteUploadResponse> {
-  return client.request<CompleteUploadResponse>("/v1/files/complete", {
+export async function completeFileUpload(input: CompleteUploadInput): Promise<CompleteUploadResponse> {
+  return request<CompleteUploadResponse>({
+    url: "/v1/files/complete",
     method: "POST",
-    body: JSON.stringify({
+    data: {
       fileId: input.fileId,
       etag: input.etag,
-    }),
+    },
   });
 }
 
-export async function cleanupFiles(client: ApiClient, input: CleanupFilesInput): Promise<void> {
-  await client.request<{ success: boolean }>("/v1/files/cleanup", {
+export async function cleanupFiles(input: CleanupFilesInput): Promise<void> {
+  await request<{ success: boolean }>({
+    url: "/v1/files/cleanup",
     method: "POST",
-    body: JSON.stringify({
+    data: {
       reason: input.reason ?? "manual",
       itemIds: input.itemIds ?? [],
-    }),
+    },
   });
 }

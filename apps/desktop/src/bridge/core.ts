@@ -1,9 +1,9 @@
 import { getAuthSession, clearAuthSession } from "../auth/store";
+import { configureRequest } from "../api/request";
 import { createUploadQueue } from "../features/files/queue";
 import { listDevices, revokeDevice } from "../features/devices/api";
 import type { DeviceInfo } from "../../../../packages/contracts/v1";
 import { showToast } from "../ui/components/toast";
-import { ApiClient } from "../api/client";
 import {
   getBridgeHooks,
   setBridgeHooks,
@@ -12,12 +12,11 @@ import {
 import { createItemsLoader, loadActiveDevices } from "./loaders";
 import { handleItemAction, sendText } from "./item-actions";
 import { handleGlobalPaste } from "./paste";
-import { createBridgeApiClient, createBridgeRealtime } from "./network";
+import { createBridgeRealtime } from "./network";
 
 let loadItems: (() => Promise<void>) | null = null;
 let uploadQueue: ReturnType<typeof createUploadQueue> | null = null;
 let realtime: ReturnType<typeof createBridgeRealtime> | null = null;
-let apiClient: ApiClient | null = null;
 
 export function setBridgeCallbacks(hooks: BridgeHooks): void {
   setBridgeHooks(hooks);
@@ -40,14 +39,16 @@ function showLogin(): void {
 }
 
 function showWorkspace(): void {
-  apiClient = createBridgeApiClient(() => {
-    clearAuthSession();
-    realtime?.disconnect();
-    showLogin();
+  configureRequest({
+    onUnauthorized: () => {
+      clearAuthSession();
+      realtime?.disconnect();
+      showLogin();
+    },
   });
 
-  loadItems = createItemsLoader(() => apiClient, getBridgeHooks);
-  uploadQueue = createUploadQueue(apiClient, {
+  loadItems = createItemsLoader(getBridgeHooks);
+  uploadQueue = createUploadQueue({
     onChange: renderQueue,
     onUploadCompleted: () => {
       void loadItems?.();
@@ -76,7 +77,6 @@ export function logoutSession(): void {
 
 export async function sendTextItem(payload: { title?: string; content: string }): Promise<void> {
   await sendText(
-    () => apiClient,
     payload,
     async () => {
       await loadItems?.();
@@ -92,7 +92,6 @@ export function enqueueFiles(files: File[]): void {
 export async function handleGlobalPasteEvent(event: ClipboardEvent): Promise<void> {
   await handleGlobalPaste(event, {
     hasSession: () => Boolean(getAuthSession().accessToken),
-    hasApiClient: () => Boolean(apiClient),
     enqueueFiles,
     sendText: sendTextItem,
   });
@@ -106,7 +105,6 @@ export async function executeItemAction(
 ): Promise<void> {
   try {
     await handleItemAction(
-      () => apiClient,
       id,
       action,
       async () => {
@@ -152,7 +150,7 @@ export function clearFinishedUploads(): void {
 
 async function loadDevices(): Promise<void> {
   try {
-    const activeDevices = await loadActiveDevices(() => apiClient);
+    const activeDevices = await loadActiveDevices();
     getBridgeHooks().onActiveDevicesChanged?.(activeDevices);
   } catch (err) {
     console.error("加载设备列表失败:", err);
@@ -161,12 +159,6 @@ async function loadDevices(): Promise<void> {
 }
 
 async function applyRuntimeApiBaseUrl(): Promise<void> {
-  apiClient = createBridgeApiClient(() => {
-    clearAuthSession();
-    realtime?.disconnect();
-    showLogin();
-  });
-
   realtime?.disconnect();
   realtime = createBridgeRealtime({
     onEvent: () => {
@@ -189,17 +181,11 @@ export async function applyRuntimeApiBaseUrlChange(): Promise<void> {
 }
 
 export async function fetchDevices(): Promise<DeviceInfo[]> {
-  if (!apiClient) {
-    throw new Error("API 客户端未初始化");
-  }
-  return listDevices(apiClient);
+  return listDevices();
 }
 
 export async function revokeDeviceById(deviceId: string): Promise<void> {
-  if (!apiClient) {
-    throw new Error("API 客户端未初始化");
-  }
-  await revokeDevice(apiClient, deviceId);
+  await revokeDevice(deviceId);
 }
 
 export function getCurrentDeviceId(): string {

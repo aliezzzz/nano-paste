@@ -1,5 +1,5 @@
-import type { ApiResponse } from "../../../../packages/contracts/v1";
 import { getRememberedDeviceId } from "../auth/store";
+import { request } from "./request";
 
 export interface AuthTokenBundle {
   accessToken: string;
@@ -99,25 +99,21 @@ interface TokenPayload {
 }
 
 async function postApi<T>(url: string, body: unknown, deviceId?: string): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (deviceId?.trim()) {
-    headers["X-Device-Id"] = deviceId;
-  }
-
-  const response = await fetch(url, {
+  return request<T>({
     method: "POST",
-    headers,
-    body: JSON.stringify(body),
+    url,
+    data: body,
+    baseURL: "",
+    skipBaseUrl: true,
+    authRequired: false,
+    retryOnUnauthorized: false,
+    withDeviceId: false,
+    headers: deviceId?.trim()
+      ? {
+        "X-Device-Id": deviceId,
+      }
+      : undefined,
   });
-
-  const payload = (await response.json()) as ApiResponse<T>;
-  if (!payload.ok) {
-    throw new Error(payload.error.message);
-  }
-
-  return payload.data;
 }
 
 function mapTokenPayload(payload: TokenPayload): AuthTokenBundle {

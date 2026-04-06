@@ -2,13 +2,11 @@ import { getAuthSession } from "../auth/store";
 import { listItemDetails } from "../features/items/api";
 import { listDevices } from "../features/devices/api";
 import { getItemIconSvg } from "./item-icons";
-import type { ApiClient } from "../api/client";
 import type { ActiveDeviceView, BridgeHooks, ItemView } from "./hooks";
 
-type ApiClientGetter = () => ApiClient | null;
 type HooksGetter = () => BridgeHooks;
 
-export function createItemsLoader(getApiClient: ApiClientGetter, getHooks: HooksGetter): () => Promise<void> {
+export function createItemsLoader(getHooks: HooksGetter): () => Promise<void> {
   return async () => {
     const hooks = getHooks();
     if (!hooks.onItemsChanged) return;
@@ -16,12 +14,7 @@ export function createItemsLoader(getApiClient: ApiClientGetter, getHooks: Hooks
     try {
       hooks.onItemsLoadingChanged?.(true);
 
-      const apiClient = getApiClient();
-      if (!apiClient) {
-        throw new Error("API client is not initialized");
-      }
-
-      const items = await listItemDetails(apiClient, 50, { sort: "favorite" });
+      const items = await listItemDetails(50, { sort: "favorite" });
       const mappedItems: ItemView[] = items.map((item) => ({
         id: String(item.id),
         type: item.type,
@@ -43,13 +36,8 @@ export function createItemsLoader(getApiClient: ApiClientGetter, getHooks: Hooks
   };
 }
 
-export async function loadActiveDevices(getApiClient: ApiClientGetter): Promise<ActiveDeviceView[]> {
-  const apiClient = getApiClient();
-  if (!apiClient) {
-    return [];
-  }
-
-  const devices = await listDevices(apiClient);
+export async function loadActiveDevices(): Promise<ActiveDeviceView[]> {
+  const devices = await listDevices();
   const activeDevices = devices.filter((device) => !device.revokedAt);
   const currentDeviceId = getAuthSession().deviceId;
 

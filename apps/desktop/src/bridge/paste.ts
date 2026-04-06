@@ -2,7 +2,6 @@ import { showToast } from "../ui/components/toast";
 
 interface PasteDeps {
   hasSession: () => boolean;
-  hasApiClient: () => boolean;
   enqueueFiles: (files: File[]) => void;
   sendText: (payload: { content: string }) => Promise<void>;
 }
@@ -12,7 +11,6 @@ export async function handleGlobalPaste(event: ClipboardEvent, deps: PasteDeps):
   if (isEditableTarget(event.target)) return;
 
   if (!deps.hasSession()) return;
-  if (!deps.hasApiClient()) return;
 
   const clipboardData = event.clipboardData;
   if (!clipboardData) return;

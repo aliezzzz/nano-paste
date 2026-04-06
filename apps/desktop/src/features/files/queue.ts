@@ -1,4 +1,3 @@
-import type { ApiClient } from "../../api/client";
 import { toErrorMessage } from "../../shared/errors";
 import { completeFileUpload, prepareFileUpload, uploadToSignedUrl } from "./api";
 
@@ -25,7 +24,7 @@ interface UploadQueue {
   getItems: () => UploadQueueItem[];
 }
 
-export function createUploadQueue(client: ApiClient, callbacks: UploadQueueCallbacks): UploadQueue {
+export function createUploadQueue(callbacks: UploadQueueCallbacks): UploadQueue {
   const items: UploadQueueItem[] = [];
   let processing = false;
 
@@ -60,7 +59,7 @@ export function createUploadQueue(client: ApiClient, callbacks: UploadQueueCallb
     if (!current) return;
 
     try {
-      const prepared = await prepareFileUpload(client, {
+      const prepared = await prepareFileUpload({
         file: current.file,
         category: current.category,
       });
@@ -73,7 +72,7 @@ export function createUploadQueue(client: ApiClient, callbacks: UploadQueueCallb
       const etag = await uploadToSignedUrl(prepared.uploadUrl, method, current.file);
 
       updateItem(id, { status: "completing" });
-      await completeFileUpload(client, {
+      await completeFileUpload({
         fileId: prepared.fileId,
         etag,
       });
