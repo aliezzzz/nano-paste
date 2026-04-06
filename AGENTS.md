@@ -48,6 +48,8 @@
 - Android 初始化：`npm run android:init`
 - Android 开发：`npm run android:dev`
 - Android 打包：`npm run android:build`
+
+补充：以上 Android 命令会先执行 `scripts/android-enable-cleartext.mjs`，自动将 `src-tauri/gen/android/app/build.gradle.kts` 中 `usesCleartextTraffic` 设为 `true`（若该文件存在），用于 HTTP 明文后端联调与打包可用性。
 - 类型检查（lint 替代）：`npx tsc --noEmit`
 
 说明：`apps/desktop/package.json` 当前没有 `test`/`lint` 脚本。

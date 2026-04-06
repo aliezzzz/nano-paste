@@ -7,9 +7,9 @@
     "dev": "tauri dev",
     "build": "npm run typecheck && tauri build",
     "build:exe": "npm run typecheck && tauri build --no-bundle",
-    "android:init": "tauri android init",
-    "android:dev": "tauri android dev",
-    "android:build": "tauri android build",
+    "android:init": "tauri android init && node ./scripts/android-enable-cleartext.mjs",
+    "android:dev": "node ./scripts/android-enable-cleartext.mjs && tauri android dev",
+    "android:build": "node ./scripts/android-enable-cleartext.mjs && tauri android build",
     "dev:web": "vite",
     "build:web": "npm run typecheck && vite build",
     "typecheck": "vue-tsc --noEmit"
