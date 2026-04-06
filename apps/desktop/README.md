@@ -37,14 +37,20 @@
 
 ## Android 打包配置（Tauri 2）
 
-已补充 Android 相关脚本与移动端兼容配置：
+已补充 Android 相关脚本、签名流程与移动端兼容配置。
 
 - `npm run android:init`：初始化 Android 工程骨架
-- `npm run android:dev`：Android 真机/模拟器开发调试
-- `npm run android:build`：构建 Android 安装包
+- `npm run android:dev`：Android ARMv8 真机开发调试
+- `npm run android:build`：构建 Android ARMv8 APK 安装包
+- `build-android-arm64.bat`：Windows 下推荐使用的一键构建入口
 
 说明：
 
 - 当前仅补齐项目配置，Android SDK/NDK/JDK 等构建环境需在本机单独安装。
+- 当前仅面向 ARMv8（`aarch64 / arm64-v8a`）设备构建，不包含 armv7/x86/x86_64。
+- Android 图标以 `src-tauri/icons/android` 为唯一来源，`android:init/dev/build` 会自动同步到 `src-tauri/gen/android/app/src/main/res`。
 - 桌面端托盘与关闭最小化逻辑已做移动端条件编译隔离，避免 Android 构建时引入桌面专属能力。
 - Android 端不要使用 `localhost` 作为后端地址，建议填写可从手机访问的服务地址。
+- 正式可分发产物为 `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release.apk`。
+- 不要分发 `*-unsigned.apk`，那是未签名包，无法直接安装。
+- 本地签名和构建收敛说明见 `docs/architecture/android-private-build.md`。

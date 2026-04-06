@@ -76,10 +76,10 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|app_handle, event| {
+    app.run(|_app_handle, _event| {
         #[cfg(all(not(mobile), target_os = "macos"))]
-        if let tauri::RunEvent::Reopen { .. } = event {
-            show_main_window(app_handle);
+        if let tauri::RunEvent::Reopen { .. } = _event {
+            show_main_window(_app_handle);
         }
     });
 }
