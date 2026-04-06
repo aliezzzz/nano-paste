@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { loginWithPassword } from "./api/auth";
 import { getAuthSession, setAuthSession } from "./auth/store";
 import { getCurrentApiBaseUrl, isValidApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from "./config/runtime";
-import { applyRuntimeApiBaseUrlChange, clearFinishedUploads, enqueueFiles, executeItemAction, fetchDevices, getCurrentDeviceId, handleGlobalPasteEvent, initializeBridge, logoutSession, retryUpload, revokeDeviceById, sendTextItem, setBridgeCallbacks } from "./bridge";
+import { applyRuntimeApiBaseUrlChange, clearFinishedUploads, enqueueFiles, executeItemAction, fetchDevices, getCurrentDeviceId, handleGlobalPasteEvent, initializeBridge, logoutSession, reloadItems, retryUpload, revokeDeviceById, sendTextItem, setBridgeCallbacks } from "./bridge";
 import { showToast, subscribeToast, type ToastType } from "./ui/components/toast";
 import WorkspaceHost from "./components/WorkspaceHost.vue";
 import type { DeviceInfo } from "../../../packages/contracts/v1";
@@ -337,22 +337,16 @@ function handleUploadFiles(files: File[]): void {
               <form id="login-form" class="space-y-2.5 sm:space-y-4 lg:space-y-5" @submit="handleLoginSubmit">
                 <div>
                   <label class="block text-sm sm:text-[1.6rem] font-semibold text-slate-200 mb-1.5 sm:mb-3">用户名</label>
-                  <input v-model="loginUsername" type="text" id="login-username" placeholder="输入用户名" required autocomplete="username" class="w-full h-11 sm:h-14 lg:h-16 px-4 sm:px-6 bg-slate-900/70 border border-slate-700/80 rounded-xl text-base sm:text-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30 transition-all">
+                  <input v-model="loginUsername" type="text" id="login-username" placeholder="输入用户名" required autocomplete="username" class="ui-input ui-input-lg">
                 </div>
                 <div>
                   <label class="block text-sm sm:text-[1.6rem] font-semibold text-slate-200 mb-1.5 sm:mb-3">密码</label>
-                  <input v-model="loginPassword" type="password" id="login-password" placeholder="输入密码" required autocomplete="current-password" class="w-full h-11 sm:h-14 lg:h-16 px-4 sm:px-6 bg-slate-900/70 border border-slate-700/80 rounded-xl text-base sm:text-2xl text-white placeholder-slate-500 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30 transition-all">
+                  <input v-model="loginPassword" type="password" id="login-password" placeholder="输入密码" required autocomplete="current-password" class="ui-input ui-input-lg">
                 </div>
                 <button type="submit" id="login-btn" :disabled="loginSubmitting" class="w-full h-11 sm:h-14 lg:h-16 mt-2 sm:mt-4 bg-gradient-to-r from-violet-600 to-violet-500 hover:from-violet-500 hover:to-violet-400 text-white text-base sm:text-2xl font-bold rounded-xl transition-all shadow-[0_0_34px_rgba(124,58,237,0.4)] disabled:opacity-70">
                   登录并进入工作台
                 </button>
               </form>
-
-              <p id="auth-status" class="mt-3 sm:mt-5 text-center text-sm sm:text-xl text-slate-400">{{ loginStatus }}</p>
-
-              <div class="mt-2 sm:mt-4 text-center">
-                <p class="text-xs sm:text-base text-slate-500">v2.0.0 • 安全加密传输</p>
-              </div>
             </div>
           </div>
         </div>
@@ -436,7 +430,7 @@ function handleUploadFiles(files: File[]): void {
           <form class="px-5 py-4 space-y-4" @submit.prevent="saveConfig">
             <div>
               <label for="runtime-config-api-base-url" class="block text-sm text-slate-300 mb-1.5">后端地址</label>
-              <input id="runtime-config-api-base-url" v-model="configApiBaseUrl" type="url" spellcheck="false" placeholder="http://127.0.0.1:8080" class="w-full h-11 px-3 bg-slate-900/80 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/30 transition-all" />
+              <input id="runtime-config-api-base-url" v-model="configApiBaseUrl" type="url" spellcheck="false" placeholder="http://127.0.0.1:8080" class="ui-input" />
               <p v-if="configError" class="mt-1.5 text-xs text-red-400">{{ configError }}</p>
               <p class="mt-2 text-xs text-slate-500">当前生效：<span class="text-slate-300">{{ currentApiBaseUrl }}</span></p>
             </div>
