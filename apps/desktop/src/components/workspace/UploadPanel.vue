@@ -3,7 +3,7 @@ import { ref } from "vue";
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
-  status: "queued" | "preparing" | "uploading" | "completing" | "done" | "failed";
+  status: "queued" | "uploading" | "done" | "failed";
   error?: string;
 }
 
@@ -47,9 +47,7 @@ function handleDragOver(e: DragEvent): void {
 
 const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: string }> = {
   queued: { text: "等待中", color: "text-slate-400" },
-  preparing: { text: "准备上传", color: "text-cyan-400" },
   uploading: { text: "上传中", color: "text-violet-400" },
-  completing: { text: "完成确认", color: "text-amber-400" },
   done: { text: "已完成", color: "text-emerald-400" },
   failed: { text: "失败", color: "text-red-400" },
 };
@@ -91,7 +89,13 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
         <div class="upload-queue-item-head">
           <div class="upload-queue-item-info">
             <p class="upload-queue-item-name">{{ item.fileName }}</p>
-            <p class="upload-queue-item-status" :class="statusMap[item.status].color">{{ statusMap[item.status].text }}</p>
+            <p class="upload-queue-item-status inline-flex items-center gap-2" :class="statusMap[item.status].color">
+              <svg v-if="item.status === 'uploading'" class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" opacity="0.28"></circle>
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+              </svg>
+              {{ statusMap[item.status].text }}
+            </p>
           </div>
           <button v-if="item.status === 'failed'" class="upload-queue-retry" @click="emit('retry', item.id)">重试</button>
         </div>

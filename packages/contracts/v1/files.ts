@@ -1,47 +1,21 @@
 /**
- * 文件相关契约：prepare-upload / complete / prepare-download
+ * 文件相关契约：upload / prepare-download
  */
 
 import type { ApiResponse } from './common';
 
-export interface PrepareUploadRequest {
-  fileName: string;
-  fileSize: number;
-  mimeType?: string;
-  sha256?: string;
-}
-
-export interface PrepareUploadResponse {
-  fileId: string;
-  uploadUrl: string;
-  uploadMethod: 'PUT' | 'POST';
-  expiresAt: string;
-}
-
-export type PrepareUploadApi = {
-  path: '/v1/files/prepare-upload';
-  method: 'POST';
-  request: PrepareUploadRequest;
-  response: ApiResponse<PrepareUploadResponse>;
-};
-
-export interface CompleteUploadRequest {
-  fileId: string;
-  etag?: string;
-  sha256?: string;
-}
-
-export interface CompleteUploadResponse {
+export interface UploadFileResponse {
   itemId: string;
   fileId: string;
   ready: true;
+  category: string;
 }
 
-export type CompleteUploadApi = {
-  path: '/v1/files/complete';
+export type UploadFileApi = {
+  path: '/v1/files/upload';
   method: 'POST';
-  request: CompleteUploadRequest;
-  response: ApiResponse<CompleteUploadResponse>;
+  request: FormData;
+  response: ApiResponse<UploadFileResponse>;
 };
 
 export interface PrepareDownloadRequest {
@@ -62,4 +36,3 @@ export type PrepareDownloadApi = {
   request: PrepareDownloadRequest;
   response: ApiResponse<PrepareDownloadResponse>;
 };
-

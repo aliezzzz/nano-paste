@@ -3,7 +3,7 @@ import type { RealtimeStatus } from "../realtime/ws";
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
-  status: "queued" | "preparing" | "uploading" | "completing" | "done" | "failed";
+  status: "queued" | "uploading" | "done" | "failed";
   error?: string;
 }
 

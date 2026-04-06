@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/ronronner/my-todolist/apps/backend/internal/authx"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
 	"github.com/ronronner/my-todolist/apps/backend/internal/db"
@@ -33,10 +34,8 @@ func NewHandler(hub *events.Hub) (http.Handler, error) {
 
 	h := &handler{repo: newRepository(sqlite), hub: hub}
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/files/prepare-upload", h.prepareUpload)
-	mux.HandleFunc("/v1/files/upload/", h.uploadByID)
+	mux.HandleFunc("/v1/files/upload", h.uploadDirect)
 	mux.HandleFunc("/v1/files/download/", h.downloadByID)
-	mux.HandleFunc("/v1/files/complete", h.complete)
 	mux.HandleFunc("/v1/files/cleanup", h.cleanup)
 	mux.HandleFunc("/v1/files/", h.fileByID)
 	return mux, nil
@@ -59,7 +58,7 @@ func (h *handler) fileByID(w http.ResponseWriter, r *http.Request) {
 	h.prepareDownload(w, r, strings.TrimSpace(parts[0]))
 }
 
-func (h *handler) prepareUpload(w http.ResponseWriter, r *http.Request) {
+func (h *handler) uploadDirect(w http.ResponseWriter, r *http.Request) {
 	requestID := common.RequestIDFromContext(r.Context())
 	if r.Method != http.MethodPost {
 		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
@@ -72,76 +71,32 @@ func (h *handler) prepareUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req prepareUploadRequest
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		common.WriteError(w, common.VALIDATION_ERROR, "invalid json body", nil, requestID)
-		return
-	}
-
-	fileName := strings.TrimSpace(req.FileName)
-	if fileName == "" {
-		common.WriteError(w, common.VALIDATION_ERROR, "fileName is required", nil, requestID)
-		return
-	}
-	if req.FileSize <= 0 {
-		common.WriteError(w, common.VALIDATION_ERROR, "fileSize must be > 0", nil, requestID)
-		return
-	}
-
-	category := normalizeCategory(req.categoryValue())
-	out, err := h.repo.prepareUpload(r.Context(), prepareUploadInput{
-		UserID:   userID,
-		FileName: fileName,
-		FileSize: req.FileSize,
-		MimeType: strings.TrimSpace(req.MimeType),
-		SHA256:   strings.TrimSpace(req.SHA256),
-		Category: category,
-	})
-	if err != nil {
-		common.WriteError(w, common.INTERNAL, "failed to prepare upload", nil, requestID)
-		return
-	}
-
-	common.WriteSuccess(w, http.StatusOK, prepareUploadResponse{
-		FileID:       out.FileID,
-		UploadURL:    signedUploadURL(r, out.FileID, accessTokenFromRequest(r)),
-		UploadMethod: out.UploadMethod,
-		ExpiresAt:    out.ExpiresAt,
-		Category:     out.Category,
-	}, requestID)
-}
-
-func (h *handler) uploadByID(w http.ResponseWriter, r *http.Request) {
-	requestID := common.RequestIDFromContext(r.Context())
-	if r.Method != http.MethodPut && r.Method != http.MethodPost {
-		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
-		return
-	}
-
-	userID, err := authx.UserIDFromRequest(r)
+	deviceID, err := authx.DeviceIDFromRequest(r)
 	if err != nil {
 		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
 		return
 	}
 
-	fileID := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/v1/files/upload/"))
-	if fileID == "" || strings.Contains(fileID, "/") {
-		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+	if err = r.ParseMultipartForm(32 << 20); err != nil {
+		common.WriteError(w, common.VALIDATION_ERROR, "invalid multipart form", nil, requestID)
 		return
 	}
 
-	if err = h.repo.verifyUploadTarget(r.Context(), userID, fileID); err != nil {
-		if err == errFileNotFound {
-			common.WriteError(w, common.NOT_FOUND, "file not found", nil, requestID)
-			return
-		}
-		if err == errFileNotPending {
-			common.WriteError(w, common.CONFLICT, "file is not pending", nil, requestID)
-			return
-		}
-		common.WriteError(w, common.INTERNAL, "failed to verify upload target", nil, requestID)
+	uploadFile, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		common.WriteError(w, common.VALIDATION_ERROR, "file is required", nil, requestID)
 		return
 	}
+	defer func() { _ = uploadFile.Close() }()
+
+	fileID := uuid.NewString()
+	fileName := strings.TrimSpace(fileHeader.Filename)
+	if fileName == "" {
+		common.WriteError(w, common.VALIDATION_ERROR, "file name is required", nil, requestID)
+		return
+	}
+	category := normalizeCategory(strings.TrimSpace(r.FormValue("category")))
+	mimeType := strings.TrimSpace(fileHeader.Header.Get("Content-Type"))
 
 	filePath, err := storageFilePath(userID, fileID)
 	if err != nil {
@@ -162,7 +117,8 @@ func (h *handler) uploadByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	hasher := sha256.New()
-	if _, err = io.Copy(io.MultiWriter(tmpFile, hasher), r.Body); err != nil {
+	fileSize, err := io.Copy(io.MultiWriter(tmpFile, hasher), uploadFile)
+	if err != nil {
 		_ = tmpFile.Close()
 		_ = os.Remove(tmpPath)
 		common.WriteError(w, common.INTERNAL, "failed to write upload data", nil, requestID)
@@ -181,8 +137,35 @@ func (h *handler) uploadByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("ETag", fmt.Sprintf("\"sha256-%s\"", hex.EncodeToString(hasher.Sum(nil))))
-	w.WriteHeader(http.StatusOK)
+	shaHex := hex.EncodeToString(hasher.Sum(nil))
+	etag := fmt.Sprintf("\"sha256-%s\"", shaHex)
+
+	out, ev, err := h.repo.directUpload(r.Context(), directUploadInput{
+		FileID:   fileID,
+		UserID:   userID,
+		DeviceID: deviceID,
+		FileName: fileName,
+		FileSize: fileSize,
+		MimeType: mimeType,
+		SHA256:   shaHex,
+		ETag:     etag,
+		Category: category,
+	})
+	if err != nil {
+		_ = os.Remove(filePath)
+		common.WriteError(w, common.INTERNAL, "failed to persist upload metadata", nil, requestID)
+		return
+	}
+
+	h.broadcast(ev)
+
+	w.Header().Set("ETag", etag)
+	common.WriteSuccess(w, http.StatusOK, completeUploadResponse{
+		ItemID:   out.ItemID,
+		FileID:   out.FileID,
+		Ready:    true,
+		Category: out.Category,
+	}, requestID)
 }
 
 func (h *handler) downloadByID(w http.ResponseWriter, r *http.Request) {
@@ -250,62 +233,6 @@ func (h *handler) downloadByID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", out.FileName))
 	w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
 	http.ServeContent(w, r, out.FileName, info.ModTime(), file)
-}
-
-func (h *handler) complete(w http.ResponseWriter, r *http.Request) {
-	requestID := common.RequestIDFromContext(r.Context())
-	if r.Method != http.MethodPost {
-		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
-		return
-	}
-
-	userID, err := authx.UserIDFromRequest(r)
-	if err != nil {
-		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
-		return
-	}
-
-	deviceID, err := authx.DeviceIDFromRequest(r)
-	if err != nil {
-		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
-		return
-	}
-
-	var req completeUploadRequest
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		common.WriteError(w, common.VALIDATION_ERROR, "invalid json body", nil, requestID)
-		return
-	}
-
-	if strings.TrimSpace(req.FileID) == "" {
-		common.WriteError(w, common.VALIDATION_ERROR, "fileId is required", nil, requestID)
-		return
-	}
-
-	out, ev, err := h.repo.completeUpload(r.Context(), completeUploadInput{
-		UserID:   userID,
-		DeviceID: deviceID,
-		FileID:   strings.TrimSpace(req.FileID),
-		ETag:     strings.TrimSpace(req.ETag),
-		SHA256:   strings.TrimSpace(req.SHA256),
-	})
-	if err != nil {
-		if err == errFileNotFound {
-			common.WriteError(w, common.NOT_FOUND, "file not found", nil, requestID)
-			return
-		}
-		common.WriteError(w, common.INTERNAL, "failed to complete upload", nil, requestID)
-		return
-	}
-
-	h.broadcast(ev)
-
-	common.WriteSuccess(w, http.StatusOK, completeUploadResponse{
-		ItemID:   out.ItemID,
-		FileID:   out.FileID,
-		Ready:    true,
-		Category: out.Category,
-	}, requestID)
 }
 
 func (h *handler) prepareDownload(w http.ResponseWriter, r *http.Request, fileID string) {
@@ -420,22 +347,6 @@ func (h *handler) broadcast(ev eventRow) {
 	})
 }
 
-func signedUploadURL(r *http.Request, fileID, accessToken string) string {
-	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
-	if scheme == "" {
-		scheme = "http"
-	}
-	host := strings.TrimSpace(r.Host)
-	if host == "" {
-		host = "localhost:8080"
-	}
-	base := fmt.Sprintf("%s://%s/v1/files/upload/%s", scheme, host, fileID)
-	if strings.TrimSpace(accessToken) == "" {
-		return base
-	}
-	return base + "?access_token=" + url.QueryEscape(accessToken)
-}
-
 func signedDownloadURL(r *http.Request, fileID, accessToken string) string {
 	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
 	if scheme == "" {
@@ -495,32 +406,6 @@ func isSafePathSegment(segment string) bool {
 		return false
 	}
 	return true
-}
-
-type prepareUploadRequest struct {
-	FileName string `json:"fileName"`
-	FileSize int64  `json:"fileSize"`
-	MimeType string `json:"mimeType"`
-	SHA256   string `json:"sha256"`
-	Category string `json:"category"`
-}
-
-func (r prepareUploadRequest) categoryValue() string {
-	return strings.TrimSpace(r.Category)
-}
-
-type prepareUploadResponse struct {
-	FileID       string `json:"fileId"`
-	UploadURL    string `json:"uploadUrl"`
-	UploadMethod string `json:"uploadMethod"`
-	ExpiresAt    string `json:"expiresAt"`
-	Category     string `json:"category"`
-}
-
-type completeUploadRequest struct {
-	FileID string `json:"fileId"`
-	ETag   string `json:"etag"`
-	SHA256 string `json:"sha256"`
 }
 
 type completeUploadResponse struct {

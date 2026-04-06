@@ -1,7 +1,9 @@
 import { toErrorMessage } from "../../shared/errors";
-import { completeFileUpload, prepareFileUpload, uploadToSignedUrl } from "./api";
+import { uploadFileDirect } from "./api";
 
-export type UploadQueueStatus = "queued" | "preparing" | "uploading" | "completing" | "done" | "failed";
+const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
+
+export type UploadQueueStatus = "queued" | "uploading" | "done" | "failed";
 
 export interface UploadQueueItem {
   id: string;
@@ -55,26 +57,17 @@ export function createUploadQueue(callbacks: UploadQueueCallbacks): UploadQueue 
   };
 
   const processItem = async (id: string): Promise<void> => {
-    const current = updateItem(id, { status: "preparing", error: undefined });
+    const current = updateItem(id, { status: "uploading", error: undefined });
     if (!current) return;
 
     try {
-      const prepared = await prepareFileUpload({
+      const uploaded = await uploadFileDirect({
         file: current.file,
         category: current.category,
       });
       updateItem(id, {
         status: "uploading",
-        fileId: prepared.fileId,
-      });
-
-      const method = prepared.uploadMethod === "POST" ? "POST" : "PUT";
-      const etag = await uploadToSignedUrl(prepared.uploadUrl, method, current.file);
-
-      updateItem(id, { status: "completing" });
-      await completeFileUpload({
-        fileId: prepared.fileId,
-        etag,
+        fileId: uploaded.fileId,
       });
 
       const done = updateItem(id, {
@@ -86,12 +79,9 @@ export function createUploadQueue(callbacks: UploadQueueCallbacks): UploadQueue 
       }
     } catch (error) {
       const reason = toErrorMessage(error);
-      const maybeCors = /network|failed to fetch|cors|fetch/i.test(reason)
-        ? "，可能是跨域/签名地址不可达，请检查后端或 mock 配置"
-        : "";
       updateItem(id, {
         status: "failed",
-        error: `${reason}${maybeCors}`,
+        error: reason,
       });
     }
   };
@@ -102,6 +92,17 @@ export function createUploadQueue(callbacks: UploadQueueCallbacks): UploadQueue 
       if (!incoming.length) return;
 
       for (const file of incoming) {
+        if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+          items.push({
+            id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+            file,
+            status: "failed",
+            category: "other",
+            error: `文件超过限制（最大 ${Math.floor(MAX_UPLOAD_SIZE_BYTES / 1024 / 1024)} MB）`,
+          });
+          continue;
+        }
+
         items.push({
           id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
           file,
