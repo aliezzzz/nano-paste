@@ -7,8 +7,9 @@ FROM node:20-alpine AS web-builder
 WORKDIR /src/apps/desktop
 
 COPY apps/desktop/package*.json ./
-RUN npm ci
+RUN npm install
 
+COPY packages/contracts /src/packages/contracts
 COPY apps/desktop ./
 RUN npm run build:web
 

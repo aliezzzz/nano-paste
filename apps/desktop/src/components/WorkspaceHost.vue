@@ -194,7 +194,7 @@ function uploadFiles(files: File[]): void {
     </div>
 
     <div class="host-mobile" id="workspace-mobile">
-      <div class="host-mobile-top">
+      <div class="host-mobile-top safe-top">
         <header class="host-header">
           <div class="host-brand-wrap">
             <div class="host-brand-icon-wrap">
@@ -239,7 +239,7 @@ function uploadFiles(files: File[]): void {
         </header>
       </div>
 
-      <main class="host-mobile-main" id="mobile-content">
+      <main class="host-mobile-main safe-bottom-tabs" id="mobile-content">
         <div v-if="activeMobileTab === 'send'" class="host-mobile-send custom-scrollbar">
           <div class="host-mobile-card">
             <SendPanel :submitting="props.sendingText" @submit="sendText" />

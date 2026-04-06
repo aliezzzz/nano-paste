@@ -13,7 +13,7 @@ function switchTab(tab: "send" | "items"): void {
 </script>
 
 <template>
-  <nav class="mobile-tabs-nav">
+  <nav class="mobile-tabs-nav safe-bottom">
     <button data-tab="send" class="mobile-tab-btn" :class="props.activeTab === 'send' ? 'mobile-tab-btn--active' : 'mobile-tab-btn--inactive'" @click="switchTab('send')">
       <svg class="mobile-tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
