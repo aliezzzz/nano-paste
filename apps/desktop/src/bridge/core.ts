@@ -10,7 +10,7 @@ import {
   type BridgeHooks,
 } from "./hooks";
 import { createItemsLoader, loadActiveDevices } from "./loaders";
-import { handleItemAction, sendText } from "./item-actions";
+import { handleItemAction, sendText, type ItemActionPayload } from "./item-actions";
 import { handleGlobalPaste } from "./paste";
 import { createBridgeRealtime } from "./network";
 
@@ -98,19 +98,17 @@ export async function handleGlobalPasteEvent(event: ClipboardEvent): Promise<voi
 }
 
 export async function executeItemAction(
-  id: string,
-  action: "copy" | "download" | "delete" | "favorite",
+  payload: ItemActionPayload,
   onFavoriteChanged?: (id: string, favorite: boolean) => void,
-  copyContent?: string,
 ): Promise<void> {
+  const { action } = payload;
+
   try {
     await handleItemAction(
-      id,
-      action,
+      payload,
       async () => {
         await loadItems?.();
       },
-      copyContent,
       onFavoriteChanged,
     );
 

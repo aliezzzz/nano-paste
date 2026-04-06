@@ -1,9 +1,19 @@
-import { createTextItem, deleteItem, getItemDetail, prepareFileDownload, setItemFavorite } from "../features/items/api";
+import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../features/items/api";
 import { cleanupFiles } from "../features/files/api";
 import { copyTextToClipboard, triggerFileDownload } from "./platform";
 
 type ReloadItems = () => Promise<void>;
 type OnFavoriteChanged = (id: string, favorite: boolean) => void;
+
+export type ItemActionPayload = {
+  id: string;
+  action: "copy" | "download" | "delete" | "favorite";
+  type: "text" | "file";
+  content?: string;
+  fileId?: string;
+  fileName?: string;
+  isFavorite: boolean;
+};
 
 export async function sendText(
   payload: { title?: string; content: string },
@@ -22,15 +32,14 @@ export async function sendText(
 }
 
 export async function handleItemAction(
-  id: string,
-  action: "copy" | "download" | "delete" | "favorite",
+  payload: ItemActionPayload,
   reloadItems: ReloadItems,
-  copyContent?: string,
   onFavoriteChanged?: OnFavoriteChanged,
 ): Promise<void> {
+  const { id, action } = payload;
+
   if (action === "delete") {
-    const item = await getItemDetail(id);
-    if (item.type === "file") {
+    if (payload.type === "file") {
       await cleanupFiles({ itemIds: [id], reason: "manual" });
     } else {
       await deleteItem(id);
@@ -40,33 +49,32 @@ export async function handleItemAction(
   }
 
   if (action === "copy") {
-    if (typeof copyContent === "string" && copyContent.length > 0) {
-      await copyTextToClipboard(copyContent);
-      return;
-    }
-
-    const item = await getItemDetail(id);
-    if (item.type !== "text" || !item.content) {
+    if (payload.type !== "text") {
       throw new Error("无法复制此内容");
     }
-    await copyTextToClipboard(item.content);
+    if (!payload.content) {
+      throw new Error("文本内容为空");
+    }
+
+    if (typeof payload.content === "string" && payload.content.length > 0) {
+      await copyTextToClipboard(payload.content);
+      return;
+    }
     return;
   }
 
   if (action === "download") {
-    const item = await getItemDetail(id);
-    if (item.type !== "file" || !item.fileId) {
+    if (payload.type !== "file" || !payload.fileId) {
       throw new Error("不是可下载的文件条目");
     }
 
-    const prepared = await prepareFileDownload(item.fileId);
-    await triggerFileDownload(prepared.downloadUrl, prepared.fileName || item.fileName || "download.bin");
+    const prepared = await prepareFileDownload(payload.fileId);
+    await triggerFileDownload(prepared.downloadUrl, prepared.fileName || payload.fileName || "download.bin");
     return;
   }
 
   if (action === "favorite") {
-    const item = await getItemDetail(id);
-    const nextFavorite = !item.isFavorite;
+    const nextFavorite = !payload.isFavorite;
     await setItemFavorite(id, nextFavorite);
     onFavoriteChanged?.(id, nextFavorite);
   }

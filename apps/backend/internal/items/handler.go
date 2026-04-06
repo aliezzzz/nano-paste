@@ -74,8 +74,6 @@ func (h *handler) itemByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch r.Method {
-	case http.MethodGet:
-		h.detail(w, r, itemID)
 	case http.MethodDelete:
 		h.delete(w, r, itemID)
 	default:
@@ -175,16 +173,9 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summaries := make([]itemSummary, 0, len(items))
+	details := make([]map[string]any, 0, len(items))
 	for _, it := range items {
-		summaries = append(summaries, itemSummary{
-			ID:                it.ID,
-			Type:              it.Type,
-			Title:             emptyAsNil(it.Title),
-			IsFavorite:        it.IsFavorite,
-			CreatedAt:         it.CreatedAt,
-			CreatedByDeviceID: fallbackDeviceID(it.CreatedByDeviceID),
-		})
+		details = append(details, toItemDetail(it))
 	}
 
 	var nextCursor *string
@@ -194,33 +185,12 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 	}
 
 	common.WriteSuccess(w, http.StatusOK, listItemsResponse{
-		Items: summaries,
+		Items: details,
 		Page: pageMeta{
 			NextCursor: nextCursor,
 			HasMore:    hasMore,
 		},
 	}, requestID)
-}
-
-func (h *handler) detail(w http.ResponseWriter, r *http.Request, itemID string) {
-	requestID := common.RequestIDFromContext(r.Context())
-	userID, err := authx.UserIDFromRequest(r)
-	if err != nil {
-		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
-		return
-	}
-
-	item, err := h.repo.getItemByID(r.Context(), userID, itemID)
-	if err != nil {
-		if err == errItemNotFound {
-			common.WriteError(w, common.NOT_FOUND, "item not found", nil, requestID)
-			return
-		}
-		common.WriteError(w, common.INTERNAL, "failed to get item", nil, requestID)
-		return
-	}
-
-	common.WriteSuccess(w, http.StatusOK, getItemDetailResponse{Item: toItemDetail(item)}, requestID)
 }
 
 func (h *handler) delete(w http.ResponseWriter, r *http.Request, itemID string) {
@@ -316,26 +286,13 @@ type createItemResponse struct {
 }
 
 type listItemsResponse struct {
-	Items []itemSummary `json:"items"`
-	Page  pageMeta      `json:"page"`
-}
-
-type itemSummary struct {
-	ID                string  `json:"id"`
-	Type              string  `json:"type"`
-	Title             *string `json:"title,omitempty"`
-	IsFavorite        bool    `json:"isFavorite"`
-	CreatedAt         string  `json:"createdAt"`
-	CreatedByDeviceID string  `json:"createdByDeviceId"`
+	Items []map[string]any `json:"items"`
+	Page  pageMeta         `json:"page"`
 }
 
 type pageMeta struct {
 	NextCursor *string `json:"nextCursor,omitempty"`
 	HasMore    bool    `json:"hasMore"`
-}
-
-type getItemDetailResponse struct {
-	Item map[string]any `json:"item"`
 }
 
 type deleteItemResponse struct {

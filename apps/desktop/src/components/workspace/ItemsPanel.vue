@@ -7,6 +7,7 @@ export interface ItemView {
   type: "text" | "file";
   title?: string;
   content?: string;
+  fileId?: string;
   fileName?: string;
   fileSize?: number;
   isFavorite: boolean;
@@ -14,13 +15,23 @@ export interface ItemView {
   iconSvg: string;
 }
 
+type ItemActionPayload = {
+  id: string;
+  action: "copy" | "download" | "delete" | "favorite";
+  type: "text" | "file";
+  content?: string;
+  fileId?: string;
+  fileName?: string;
+  isFavorite: boolean;
+};
+
 const props = withDefaults(defineProps<{ items?: ItemView[]; loading?: boolean }>(), {
   items: () => [],
   loading: false,
 });
 
 const emit = defineEmits<{
-  (e: "item-action", payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): void;
+  (e: "item-action", payload: ItemActionPayload): void;
   (e: "refresh-items"): void;
 }>();
 
@@ -148,7 +159,7 @@ onBeforeUnmount(() => {
                     class="favorite-btn"
                     :class="item.isFavorite ? 'favorite-btn--active' : 'favorite-btn--inactive'"
                     :title="item.isFavorite ? '取消收藏' : '收藏'"
-                    @click="emit('item-action', { id: item.id, action: 'favorite' })"
+                    @click="emit('item-action', { id: item.id, action: 'favorite', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
                     <svg class="w-4 h-4" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                       <path d="M533.504 268.288q33.792-41.984 71.68-75.776 32.768-27.648 74.24-50.176t86.528-19.456q63.488 5.12 105.984 30.208t67.584 63.488 34.304 87.04 6.144 99.84-17.92 97.792-36.864 87.04-48.64 74.752-53.248 61.952q-40.96 41.984-85.504 78.336t-84.992 62.464-73.728 41.472-51.712 15.36q-20.48 1.024-52.224-14.336t-69.632-41.472-79.872-61.952-82.944-75.776q-26.624-25.6-57.344-59.392t-57.856-74.24-46.592-87.552-21.504-100.352 11.264-99.84 39.936-83.456 65.536-61.952 88.064-35.328q24.576-5.12 49.152-1.536t48.128 12.288 45.056 22.016 40.96 27.648q45.056 33.792 86.016 80.896z" fill="currentColor"></path>
@@ -170,7 +181,7 @@ onBeforeUnmount(() => {
                 <button
                   class="action-btn"
                   :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'"
-                  @click="emit('item-action', item.type === 'text' ? { id: item.id, action: 'copy', content: item.content ?? '' } : { id: item.id, action: 'download' })"
+                  @click="emit('item-action', { id: item.id, action: item.type === 'text' ? 'copy' : 'download', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                 >
                   <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -198,7 +209,7 @@ onBeforeUnmount(() => {
                     v-if="!item.isFavorite"
                     class="delete-btn"
                     title="删除"
-                    @click="emit('item-action', { id: item.id, action: 'delete' })"
+                    @click="emit('item-action', { id: item.id, action: 'delete', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
                     <svg class="delete-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path

@@ -12,6 +12,7 @@ export interface ItemView {
   type: "text" | "file";
   title?: string;
   content?: string;
+  fileId?: string;
   fileName?: string;
   fileSize?: number;
   isFavorite: boolean;

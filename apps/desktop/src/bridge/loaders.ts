@@ -20,6 +20,7 @@ export function createItemsLoader(getHooks: HooksGetter): () => Promise<void> {
         type: item.type,
         title: item.title,
         content: item.type === "text" ? item.content : undefined,
+        fileId: item.type === "file" ? item.fileId : undefined,
         fileName: item.type === "file" ? item.fileName : undefined,
         fileSize: item.type === "file" ? item.fileSize : undefined,
         isFavorite: item.isFavorite,

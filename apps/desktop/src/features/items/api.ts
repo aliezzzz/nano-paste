@@ -2,7 +2,6 @@ import type {
   CreateItemResponse,
   DeleteItemResponse,
   FavoriteItemResponse,
-  GetItemDetailResponse,
   ItemDetail,
   ListItemsResponse,
   PrepareDownloadResponse,
@@ -42,25 +41,7 @@ export async function listItemDetails(limit: number, options?: ListItemDetailsOp
     method: "GET",
   });
 
-  const details = await Promise.all(
-    list.items.map(async (summary) => {
-      const detail = await request<GetItemDetailResponse>({
-        url: `/v1/items/${encodeURIComponent(summary.id)}`,
-        method: "GET",
-      });
-      return detail.item;
-    }),
-  );
-
-  return details;
-}
-
-export async function getItemDetail(itemId: string): Promise<ItemDetail> {
-  const response = await request<GetItemDetailResponse>({
-    url: `/v1/items/${encodeURIComponent(itemId)}`,
-    method: "GET",
-  });
-  return response.item;
+  return list.items;
 }
 
 export async function prepareFileDownload(fileId: string): Promise<PrepareDownloadResponse> {

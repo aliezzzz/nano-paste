@@ -52,7 +52,7 @@ const emit = defineEmits<{
   (e: "clear-finished-upload"): void;
   (e: "send-text", payload: SendPayload): void;
   (e: "upload-files", files: File[]): void;
-  (e: "item-action", payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): void;
+  (e: "item-action", payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; type: "text" | "file"; content?: string; fileId?: string; fileName?: string; isFavorite: boolean }): void;
 }>();
 
 const activeMobileTab = ref<"send" | "items">("send");
@@ -77,7 +77,7 @@ function clearFinishedUpload(): void {
   emit("clear-finished-upload");
 }
 
-function itemAction(payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; content?: string }): void {
+function itemAction(payload: { id: string; action: "copy" | "download" | "delete" | "favorite"; type: "text" | "file"; content?: string; fileId?: string; fileName?: string; isFavorite: boolean }): void {
   emit("item-action", payload);
 }
 

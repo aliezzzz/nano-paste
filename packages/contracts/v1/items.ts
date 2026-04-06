@@ -1,5 +1,5 @@
 /**
- * 条目相关契约：create / list / detail / delete
+ * 条目相关契约：create / list / delete
  */
 
 import type { ApiResponse, PaginationInput, PaginationMeta } from './common';
@@ -53,7 +53,7 @@ export interface ListItemsRequest extends PaginationInput {
 }
 
 export interface ListItemsResponse {
-  items: ItemSummary[];
+  items: ItemDetail[];
   page: PaginationMeta;
 }
 
@@ -62,21 +62,6 @@ export type ListItemsApi = {
   method: 'GET';
   request: ListItemsRequest;
   response: ApiResponse<ListItemsResponse>;
-};
-
-export interface GetItemDetailRequest {
-  itemId: string;
-}
-
-export interface GetItemDetailResponse {
-  item: ItemDetail;
-}
-
-export type GetItemDetailApi = {
-  path: '/v1/items/:itemId';
-  method: 'GET';
-  request: GetItemDetailRequest;
-  response: ApiResponse<GetItemDetailResponse>;
 };
 
 export interface DeleteItemRequest {
@@ -113,4 +98,3 @@ export type FavoriteItemApi = {
   request: FavoriteItemRequest;
   response: ApiResponse<FavoriteItemResponse>;
 };
-
