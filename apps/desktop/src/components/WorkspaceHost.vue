@@ -194,8 +194,8 @@ function uploadFiles(files: File[]): void {
     </div>
 
     <div class="host-mobile" id="workspace-mobile">
-      <div class="host-mobile-top safe-top">
-        <header class="host-header">
+      <div class="host-mobile-top">
+        <header class="host-header host-mobile-header safe-top">
           <div class="host-brand-wrap">
             <div class="host-brand-icon-wrap">
               <svg class="host-brand-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -249,9 +249,7 @@ function uploadFiles(files: File[]): void {
           </div>
         </div>
         <div v-else class="host-mobile-items custom-scrollbar">
-          <div class="host-mobile-card host-mobile-items-card">
-            <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" @refresh-items="refreshItems" />
-          </div>
+          <ItemsPanel :items="props.items" :loading="props.itemsLoading" @item-action="itemAction" @refresh-items="refreshItems" />
         </div>
       </main>
 

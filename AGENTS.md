@@ -49,7 +49,9 @@
 - Android 开发：`npm run android:dev`
 - Android 打包：`npm run android:build`
 
-补充：以上 Android 命令会先执行 `scripts/android-enable-cleartext.mjs`，自动将 `src-tauri/gen/android/app/build.gradle.kts` 中 `usesCleartextTraffic` 设为 `true`（若该文件存在），用于 HTTP 明文后端联调与打包可用性。
+补充：以上 Android 命令会先执行 `scripts/android-enable-cleartext.mjs` 与 `scripts/android-sync-system-bars.mjs`：
+- 自动将 `src-tauri/gen/android/app/build.gradle.kts` 中 `usesCleartextTraffic` 设为 `true`（若该文件存在），用于 HTTP 明文后端联调与打包可用性。
+- 自动将 Android 主题中的状态栏/导航栏颜色同步为应用头部深色（若主题文件存在），减少顶部黑条割裂感。
 - 类型检查（lint 替代）：`npx tsc --noEmit`
 
 说明：`apps/desktop/package.json` 当前没有 `test`/`lint` 脚本。

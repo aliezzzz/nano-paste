@@ -63,6 +63,18 @@ function refreshItems(): void {
   emit("refresh-items");
 }
 
+function formatItemTime(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${month}/${day} ${hours}:${minutes}`;
+}
+
 onBeforeUnmount(() => {
   if (rotateTimer !== null) {
     window.clearTimeout(rotateTimer);
@@ -204,7 +216,7 @@ onBeforeUnmount(() => {
 
                 <!-- 右侧：时间 + 删除 -->
                 <div class="footer-meta">
-                  <span class="timestamp">{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</span>
+                  <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
                   <button
                     v-if="!item.isFavorite"
                     class="delete-btn"
