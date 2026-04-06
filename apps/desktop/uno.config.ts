@@ -9,7 +9,7 @@ export default defineConfig({
     "app-login-page": "fixed inset-0 overflow-hidden bg-[#070a14]",
     "app-login-bg": "absolute inset-0 pointer-events-none",
     "app-login-bg-radial": "absolute inset-x-0 top-0 h-[48vh] bg-[radial-gradient(ellipse_at_top,rgba(88,72,255,0.26),rgba(7,10,20,0.18)_55%,transparent_82%)]",
-    "app-login-config-btn": "absolute top-4 right-4 z-30 w-10 h-10 rounded-lg border border-slate-700/70 bg-slate-900/75 text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors flex items-center justify-center",
+    "app-login-config-btn": "absolute top-6 right-6 z-30 w-10 h-10 rounded-lg border border-slate-700/70 bg-slate-900/75 text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors flex items-center justify-center",
     "app-login-config-btn-icon": "w-5 h-5",
     "app-login-shell": "relative h-full flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 max-[700px]:py-2",
     "app-login-grid": "w-full max-w-3xl h-full max-h-[680px] max-[700px]:max-h-[620px] grid grid-cols-1 lg:grid-cols-[1fr_640px] gap-6 lg:gap-10 items-center",

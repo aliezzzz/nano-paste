@@ -39,6 +39,22 @@
 }
 
 @layer utilities {
+  .safe-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+
+  .safe-top-offset {
+    top: max(0.75rem, calc(env(safe-area-inset-top) + 0.25rem)) !important;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-bottom-tabs {
+    padding-bottom: calc(4rem + max(0.5rem, env(safe-area-inset-bottom)));
+  }
+
   .ui-input {
     width: 100%;
     height: 2.75rem;
