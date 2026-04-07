@@ -1,9 +1,10 @@
-import { getAuthSession, clearAuthSession } from "../auth/store";
-import { configureRequest } from "../api/request";
-import { createUploadQueue } from "../features/files/queue";
-import { listDevices, revokeDevice } from "../features/devices/api";
+import { getAuthSession, clearAuthSession } from "../stores/auth";
+import { configureRequest } from "../utils/request";
+import { listDevices, revokeDevice } from "../api/devices";
 import type { DeviceInfo } from "../../../../packages/contracts/v1";
-import { showToast } from "../ui/components/toast";
+import { showToast } from "../components/feedback/toast";
+import { pinia } from "../stores";
+import { useUploadQueueStore } from "../stores/upload-queue";
 import {
   getBridgeHooks,
   setBridgeHooks,
@@ -15,8 +16,9 @@ import { handleGlobalPaste } from "./paste";
 import { createBridgeRealtime } from "./network";
 
 let loadItems: (() => Promise<void>) | null = null;
-let uploadQueue: ReturnType<typeof createUploadQueue> | null = null;
 let realtime: ReturnType<typeof createBridgeRealtime> | null = null;
+let stopUploadQueueSubscription: (() => void) | null = null;
+const uploadQueue = useUploadQueueStore(pinia);
 
 export function setBridgeCallbacks(hooks: BridgeHooks): void {
   setBridgeHooks(hooks);
@@ -31,6 +33,10 @@ export async function initializeBridge(): Promise<void> {
 }
 
 function showLogin(): void {
+  uploadQueue.reset();
+  stopUploadQueueSubscription?.();
+  stopUploadQueueSubscription = null;
+
   const hooks = getBridgeHooks();
   if (!hooks.onRequireLogin) {
     throw new Error("onRequireLogin hook is required");
@@ -48,11 +54,14 @@ function showWorkspace(): void {
   });
 
   loadItems = createItemsLoader(getBridgeHooks);
-  uploadQueue = createUploadQueue({
-    onChange: renderQueue,
-    onUploadCompleted: () => {
+
+  stopUploadQueueSubscription?.();
+  let completedVersion = uploadQueue.completedVersion;
+  stopUploadQueueSubscription = uploadQueue.$subscribe((_mutation, state) => {
+    if (state.completedVersion !== completedVersion) {
+      completedVersion = state.completedVersion;
       void loadItems?.();
-    },
+    }
   });
 
   realtime = createBridgeRealtime({
@@ -71,6 +80,9 @@ function showWorkspace(): void {
 
 export function logoutSession(): void {
   clearAuthSession();
+  uploadQueue.reset();
+  stopUploadQueueSubscription?.();
+  stopUploadQueueSubscription = null;
   realtime?.disconnect();
   showLogin();
 }
@@ -86,7 +98,7 @@ export async function sendTextItem(payload: { title?: string; content: string })
 
 export function enqueueFiles(files: File[]): void {
   if (!files.length) return;
-  uploadQueue?.enqueue(files);
+  uploadQueue.enqueue(files);
 }
 
 export async function handleGlobalPasteEvent(event: ClipboardEvent): Promise<void> {
@@ -138,12 +150,11 @@ export async function executeItemAction(
 }
 
 export function retryUpload(id: string): void {
-  uploadQueue?.retry(id);
+  uploadQueue.retry(id);
 }
 
 export function clearFinishedUploads(): void {
-  uploadQueue?.clearFinished();
-  renderQueue();
+  uploadQueue.clearFinished();
 }
 
 async function loadDevices(): Promise<void> {
@@ -188,20 +199,6 @@ export async function revokeDeviceById(deviceId: string): Promise<void> {
 
 export function getCurrentDeviceId(): string {
   return getAuthSession().deviceId;
-}
-
-function renderQueue(): void {
-  if (!uploadQueue) return;
-
-  const items = uploadQueue.getItems();
-  getBridgeHooks().onUploadQueueChanged?.(
-    items.map((item) => ({
-      id: item.id,
-      fileName: item.file.name,
-      status: item.status,
-      error: item.error,
-    })),
-  );
 }
 
 export async function reloadItems(): Promise<void> {

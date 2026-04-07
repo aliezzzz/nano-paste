@@ -1,5 +1,5 @@
-import type { UploadFileResponse } from "../../../../../packages/contracts/v1";
-import { request } from "../../api/request";
+import type { UploadFileResponse } from "../../../../packages/contracts/v1";
+import { request } from "../utils/request";
 
 interface UploadFileInput {
   file: File;

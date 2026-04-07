@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { pinia } from "../stores/pinia";
+import { pinia } from ".";
 
 export interface AuthSessionState {
   accessToken: string;
@@ -83,6 +83,10 @@ function getAuthStore(): ReturnType<typeof useAuthStateStore> {
   const store = useAuthStateStore(pinia);
   store.syncRememberedDeviceIdFromLegacyStorage();
   return store;
+}
+
+export function useAuthStore() {
+  return useAuthStateStore();
 }
 
 export function getAuthSession(): AuthSessionState {

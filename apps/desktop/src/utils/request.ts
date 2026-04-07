@@ -6,8 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import type { ApiResponse } from "../../../../packages/contracts/v1";
-import { clearAuthSession, getAuthSession, getDeviceId, setAuthSession } from "../auth/store";
-import { getCurrentApiBaseUrl } from "../config/runtime";
+import { clearAuthSession, getAuthSession, getDeviceId, setAuthSession } from "../stores/auth";
+import { getCurrentApiBaseUrl } from "../stores/runtime";
 
 type RequestErrorCode = "UNKNOWN" | "INVALID_RESPONSE" | "UNAUTHORIZED";
 

@@ -1,7 +1,8 @@
-import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../features/items/api";
-import { cleanupFiles } from "../features/files/api";
-import { resolveApiUrl } from "../config/runtime";
-import { copyTextToClipboard, triggerFileDownload } from "./platform";
+import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../api/items";
+import { cleanupFiles } from "../api/files";
+import { resolveApiUrl } from "../stores/runtime";
+import { copyTextToClipboard } from "../utils/clipboard";
+import { triggerFileDownload } from "../utils/download";
 
 type ReloadItems = () => Promise<void>;
 type OnFavoriteChanged = (id: string, favorite: boolean) => void;

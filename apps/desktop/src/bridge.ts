@@ -1,4 +1,4 @@
-export type { ActiveDeviceView, BridgeHooks, ItemView, UploadQueueViewItem } from "./bridge/hooks";
+export type { ActiveDeviceView, BridgeHooks, ItemView } from "./bridge/hooks";
 
 export {
   applyRuntimeApiBaseUrlChange,

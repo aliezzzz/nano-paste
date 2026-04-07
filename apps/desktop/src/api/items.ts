@@ -5,8 +5,8 @@ import type {
   ItemDetail,
   ListItemsResponse,
   PrepareDownloadResponse,
-} from "../../../../../packages/contracts/v1";
-import { request } from "../../api/request";
+} from "../../../../packages/contracts/v1";
+import { request } from "../utils/request";
 
 export type CreateTextInput = {
   content: string;

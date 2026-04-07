@@ -1,4 +1,4 @@
-export type ToastType = 'success' | 'error';
+export type ToastType = "success" | "error";
 
 export interface ToastEvent {
   message: string;
@@ -9,7 +9,7 @@ type ToastListener = (event: ToastEvent) => void;
 
 const listeners = new Set<ToastListener>();
 
-export function showToast(message: string, type: ToastType = 'success'): void {
+export function showToast(message: string, type: ToastType = "success"): void {
   const event: ToastEvent = { message, type };
   listeners.forEach((listener) => {
     listener(event);

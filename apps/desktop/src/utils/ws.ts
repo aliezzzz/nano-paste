@@ -101,7 +101,6 @@ export function createRealtimeConnection(options: RealtimeOptions): RealtimeCont
 function toWsUrl(apiBaseUrl: string, accessToken: string): string {
   const wsBase = apiBaseUrl.replace(/^http/i, "ws");
   const url = new URL(`${wsBase}/v1/events/ws`);
-  // 浏览器 WebSocket 无法直接设置 Authorization header，使用 query token。
   url.searchParams.set("access_token", accessToken);
   return url.toString();
 }

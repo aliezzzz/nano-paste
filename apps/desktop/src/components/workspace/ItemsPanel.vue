@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
-import { formatBytes } from "../../shared/format";
+import { formatBytes } from "../../utils/format";
 
 export interface ItemView {
   id: string;
@@ -230,8 +230,8 @@ onBeforeUnmount(() => {
         </div>
       </div>
       
-      <p v-if="!props.loading && visibleItems.length === 0" id="items-empty" class="empty-state">
-        <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <p v-if="!props.loading && visibleItems.length === 0" id="items-empty" class="items-empty-state">
+        <svg class="items-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"

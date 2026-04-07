@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import { storeToRefs } from "pinia";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { loginWithPassword } from "./api/auth";
-import { getAuthSession, setAuthSession } from "./auth/store";
-import { getCurrentApiBaseUrl, isValidApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from "./config/runtime";
+import { loginWithPassword } from "./utils/auth";
+import { getAuthSession, setAuthSession } from "./stores/auth";
+import { getCurrentApiBaseUrl, isValidApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from "./stores/runtime";
 import { applyRuntimeApiBaseUrlChange, clearFinishedUploads, enqueueFiles, executeItemAction, fetchDevices, getCurrentDeviceId, handleGlobalPasteEvent, initializeBridge, logoutSession, reloadItems, retryUpload, revokeDeviceById, sendTextItem, setBridgeCallbacks } from "./bridge";
-import { showToast, subscribeToast, type ToastType } from "./ui/components/toast";
+import { showToast, subscribeToast, type ToastType } from "./components/feedback/toast";
 import WorkspaceHost from "./components/WorkspaceHost.vue";
 import type { DeviceInfo } from "../../../packages/contracts/v1";
-import type { UploadQueueViewItem } from "./components/workspace/UploadPanel.vue";
 import type { ItemView } from "./components/workspace/ItemsPanel.vue";
 import type { ActiveDeviceView } from "./bridge";
-import type { RealtimeStatus } from "./realtime/ws";
+import type { RealtimeStatus } from "./utils/ws";
+import { useUploadQueueStore } from "./stores/upload-queue";
 
 const isAuthenticated = ref(Boolean(getAuthSession().accessToken));
 const loginUsername = ref("");
@@ -31,7 +32,8 @@ const devices = ref<DeviceInfo[]>([]);
 const revokeConfirmDeviceId = ref("");
 const revokingDeviceId = ref("");
 
-const queueItems = ref<UploadQueueViewItem[]>([]);
+const uploadQueueStore = useUploadQueueStore();
+const { queueViewItems: queueItems } = storeToRefs(uploadQueueStore);
 const items = ref<ItemView[]>([]);
 const itemsLoading = ref(false);
 const activeDevices = ref<ActiveDeviceView[]>([]);
@@ -56,15 +58,11 @@ setBridgeCallbacks({
     loginStatus.value = "未登录";
     loginPassword.value = "";
     deviceModalOpen.value = false;
-    queueItems.value = [];
     items.value = [];
     itemsLoading.value = false;
     activeDevices.value = [];
     sendingText.value = false;
     connectionStatus.value = "idle";
-  },
-  onUploadQueueChanged: (nextItems) => {
-    queueItems.value = nextItems;
   },
   onItemsLoadingChanged: (loading) => {
     itemsLoading.value = loading;

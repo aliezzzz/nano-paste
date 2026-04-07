@@ -1,6 +1,6 @@
-import { createRealtimeConnection, type RealtimeStatus } from "../realtime/ws";
-import { getCurrentApiBaseUrl } from "../config/runtime";
-import { getAuthSession } from "../auth/store";
+import { createRealtimeConnection, type RealtimeStatus } from "../utils/ws";
+import { getCurrentApiBaseUrl } from "../stores/runtime";
+import { getAuthSession } from "../stores/auth";
 
 interface CreateRealtimeDeps {
   onEvent: () => void;

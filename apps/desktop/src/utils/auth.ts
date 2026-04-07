@@ -1,4 +1,4 @@
-import { getRememberedDeviceId } from "../auth/store";
+import { getRememberedDeviceId } from "../stores/auth";
 import { request } from "./request";
 
 export interface AuthTokenBundle {

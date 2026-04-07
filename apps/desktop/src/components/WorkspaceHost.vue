@@ -8,7 +8,7 @@ import trayTemplateIcon from "../../src-tauri/icons/tray-template.svg?url";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView } from "./workspace/ItemsPanel.vue";
 import type { ActiveDeviceView } from "../bridge";
-import type { RealtimeStatus } from "../realtime/ws";
+import type { RealtimeStatus } from "../utils/ws";
 
 type SendPayload = { title?: string; content: string };
 

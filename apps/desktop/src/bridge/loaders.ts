@@ -1,6 +1,6 @@
-import { getAuthSession } from "../auth/store";
-import { listItemDetails } from "../features/items/api";
-import { listDevices } from "../features/devices/api";
+import { getAuthSession } from "../stores/auth";
+import { listItemDetails } from "../api/items";
+import { listDevices } from "../api/devices";
 import { getItemIconSvg } from "./item-icons";
 import type { ActiveDeviceView, BridgeHooks, ItemView } from "./hooks";
 

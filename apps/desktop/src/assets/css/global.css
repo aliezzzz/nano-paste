@@ -2,7 +2,7 @@
   * {
     box-sizing: border-box;
   }
-  
+
   html, body {
     margin: 0;
     padding: 0;
@@ -143,25 +143,25 @@
     width: 6px;
     height: 6px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: rgba(148, 163, 184, 0.1);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(139, 92, 246, 0.5);
     border-radius: 3px;
   }
-  
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(139, 92, 246, 0.7);
   }
-  
+
   .glow-border {
     position: relative;
   }
-  
+
   .glow-border::before {
     content: '';
     position: absolute;
@@ -175,20 +175,20 @@
     mask-composite: exclude;
     pointer-events: none;
   }
-  
+
   .glass {
     background: rgba(18, 18, 26, 0.8);
   }
-  
+
   .card-hover {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
   .card-hover:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 32px rgba(139, 92, 246, 0.15), 0 0 0 1px rgba(139, 92, 246, 0.3);
   }
-  
+
   .progress-stripes {
     background-image: linear-gradient(
       45deg,
@@ -202,7 +202,7 @@
     );
     background-size: 1rem 1rem;
   }
-  
+
   .page {
     position: fixed;
     inset: 0;
@@ -212,12 +212,12 @@
     display: flex;
     flex-direction: column;
   }
-  
+
   .page.active {
     opacity: 1;
     visibility: visible;
   }
-  
+
   .gradient-text {
     background: linear-gradient(135deg, #8b5cf6, #06b6d4);
     -webkit-background-clip: text;

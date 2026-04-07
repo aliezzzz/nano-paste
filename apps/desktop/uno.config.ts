@@ -14,7 +14,7 @@ export default defineConfig({
       "absolute top-6 right-6 z-30 w-10 h-10 rounded-lg border border-slate-700/70 bg-slate-900/75 text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors flex items-center justify-center",
     "app-login-config-btn-icon": "w-5 h-5",
     "app-login-shell":
-      "relative h-full flex items-center justify-center px-4 sm:px-8 py-4 sm:py-6 max-[700px]:py-2",
+      "relative h-full flex justify-center px-4 sm:px-8 py-4 sm:py-6 max-[700px]:py-2",
     "app-login-grid":
       "w-full max-w-3xl h-full max-h-[680px] max-[700px]:max-h-[620px] grid grid-cols-1 lg:grid-cols-[1fr_640px] gap-6 lg:gap-10 items-center",
     "app-login-grid-spacer": "hidden lg:block",
@@ -269,9 +269,9 @@ export default defineConfig({
     "delete-btn":
       "flex items-center gap-1 px-1.5 md:px-2 py-1 rounded-md text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all whitespace-nowrap shrink-0",
     "delete-btn-icon": "w-3.5 h-3.5",
-    "empty-state":
+    "items-empty-state":
       "pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-slate-500",
-    "empty-icon": "w-12 h-12 mb-3 opacity-30",
+    "items-empty-icon": "w-12 h-12 mb-3 opacity-30",
   },
   content: {
     pipeline: {

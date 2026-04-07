@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
-import { pinia } from "../stores/pinia";
-import { DEFAULT_API_BASE_URL, ENV_API_BASE_URL } from "./env";
+import { pinia } from ".";
 
 const RUNTIME_CONFIG_STORAGE_KEY = "nanopaste.runtime.config";
+const DEFAULT_API_BASE_URL = "http://localhost:8080";
+const ENV_DEFAULT_API_BASE_URL = (import.meta.env.VITE_DEFAULT_APP_API_BASE_URL ?? "").trim();
 
 export interface RuntimeConfig {
   apiBaseUrl: string;
@@ -21,7 +22,7 @@ const useRuntimeConfigStore = defineStore("runtime-config", {
       this.apiBaseUrl = normalized;
     },
     resetApiBaseUrl(): void {
-      const fallbackFromEnv = normalizeApiBaseUrl(ENV_API_BASE_URL);
+      const fallbackFromEnv = normalizeApiBaseUrl(ENV_DEFAULT_API_BASE_URL);
       const fallback = isValidApiBaseUrl(fallbackFromEnv) ? fallbackFromEnv : DEFAULT_API_BASE_URL;
       this.apiBaseUrl = fallback;
     },
@@ -34,6 +35,10 @@ const useRuntimeConfigStore = defineStore("runtime-config", {
 
 function getRuntimeStore(): ReturnType<typeof useRuntimeConfigStore> {
   return useRuntimeConfigStore(pinia);
+}
+
+export function useRuntimeStore() {
+  return useRuntimeConfigStore();
 }
 
 export function getRuntimeConfig(): RuntimeConfig {
@@ -91,7 +96,7 @@ export function isValidApiBaseUrl(input: string): boolean {
 }
 
 function resolveInitialApiBaseUrl(): string {
-  const fromEnv = normalizeApiBaseUrl(ENV_API_BASE_URL);
+  const fromEnv = normalizeApiBaseUrl(ENV_DEFAULT_API_BASE_URL);
   if (isValidApiBaseUrl(fromEnv)) {
     return fromEnv;
   }

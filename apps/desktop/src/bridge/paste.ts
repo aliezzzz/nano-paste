@@ -1,4 +1,4 @@
-import { showToast } from "../ui/components/toast";
+import { showToast } from "../components/feedback/toast";
 
 interface PasteDeps {
   hasSession: () => boolean;

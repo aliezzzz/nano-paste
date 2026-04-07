@@ -1,11 +1,4 @@
-import type { RealtimeStatus } from "../realtime/ws";
-
-export interface UploadQueueViewItem {
-  id: string;
-  fileName: string;
-  status: "queued" | "uploading" | "done" | "failed";
-  error?: string;
-}
+import type { RealtimeStatus } from "../utils/ws";
 
 export interface ItemView {
   id: string;
@@ -30,7 +23,6 @@ export interface ActiveDeviceView {
 
 export interface BridgeHooks {
   onRequireLogin?: () => void;
-  onUploadQueueChanged?: (items: UploadQueueViewItem[]) => void;
   onItemsLoadingChanged?: (loading: boolean) => void;
   onItemsChanged?: (items: ItemView[]) => void;
   onActiveDevicesChanged?: (devices: ActiveDeviceView[]) => void;
