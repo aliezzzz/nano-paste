@@ -157,6 +157,7 @@ async function doRefreshAccessToken(): Promise<boolean> {
   if (!session.refreshToken || !session.deviceId) {
     return false;
   }
+  const refreshSessionVersion = session.sessionVersion;
 
   try {
     const response = await service.request<ApiResponse<RefreshApiData>>({
@@ -182,6 +183,15 @@ async function doRefreshAccessToken(): Promise<boolean> {
 
     const refreshedDeviceId = payload.data.deviceId?.trim() ?? "";
     if (!refreshedDeviceId) {
+      return false;
+    }
+
+    const latestSession = getAuthSession();
+    const sessionChanged =
+      latestSession.sessionVersion !== refreshSessionVersion
+      || latestSession.refreshToken !== session.refreshToken
+      || latestSession.deviceId !== session.deviceId;
+    if (sessionChanged) {
       return false;
     }
 

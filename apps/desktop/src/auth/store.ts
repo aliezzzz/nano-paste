@@ -1,17 +1,13 @@
-interface AuthSessionState {
+import { defineStore } from "pinia";
+import { pinia } from "../stores/pinia";
+
+export interface AuthSessionState {
   accessToken: string;
   refreshToken: string;
   expiresInSeconds: number;
   username: string;
   deviceId: string;
-}
-
-interface PersistedAuthSession {
-  accessToken?: string;
-  refreshToken?: string;
-  expiresInSeconds?: number;
-  username?: string;
-  deviceId?: string;
+  sessionVersion: number;
 }
 
 export interface TokenBundle {
@@ -22,81 +18,107 @@ export interface TokenBundle {
 
 const AUTH_STORAGE_KEY = "nanopaste.desktop.auth";
 const REMEMBERED_DEVICE_ID_STORAGE_KEY = "nanopaste.desktop.device_id";
-const session: AuthSessionState = {
-  accessToken: "",
-  refreshToken: "",
-  expiresInSeconds: 0,
-  username: "",
-  deviceId: "",
-};
 
-hydrateSession();
+interface AuthStoreState {
+  accessToken: string;
+  refreshToken: string;
+  expiresInSeconds: number;
+  username: string;
+  deviceId: string;
+  rememberedDeviceId: string;
+  sessionVersion: number;
+}
+
+const useAuthStateStore = defineStore("auth", {
+  state: (): AuthStoreState => ({
+    accessToken: "",
+    refreshToken: "",
+    expiresInSeconds: 0,
+    username: "",
+    deviceId: "",
+    rememberedDeviceId: "",
+    sessionVersion: 0,
+  }),
+  actions: {
+    syncRememberedDeviceIdFromLegacyStorage(): void {
+      if (this.rememberedDeviceId) {
+        return;
+      }
+      const raw = localStorage.getItem(REMEMBERED_DEVICE_ID_STORAGE_KEY) ?? "";
+      this.rememberedDeviceId = raw.trim();
+    },
+    setSession(tokens: TokenBundle, username?: string, deviceId?: string): void {
+      this.accessToken = tokens.accessToken;
+      this.refreshToken = tokens.refreshToken;
+      this.expiresInSeconds = tokens.expiresInSeconds;
+      if (typeof username === "string") {
+        this.username = username;
+      }
+      if (typeof deviceId === "string") {
+        const normalizedDeviceId = deviceId.trim();
+        this.deviceId = normalizedDeviceId;
+        if (normalizedDeviceId) {
+          this.rememberedDeviceId = normalizedDeviceId;
+          localStorage.setItem(REMEMBERED_DEVICE_ID_STORAGE_KEY, normalizedDeviceId);
+        }
+      }
+      this.sessionVersion += 1;
+    },
+    clearSession(): void {
+      this.accessToken = "";
+      this.refreshToken = "";
+      this.expiresInSeconds = 0;
+      this.username = "";
+      this.deviceId = "";
+      this.sessionVersion += 1;
+    },
+  },
+  persist: {
+    key: AUTH_STORAGE_KEY,
+    storage: localStorage,
+  },
+});
+
+function getAuthStore(): ReturnType<typeof useAuthStateStore> {
+  const store = useAuthStateStore(pinia);
+  store.syncRememberedDeviceIdFromLegacyStorage();
+  return store;
+}
 
 export function getAuthSession(): AuthSessionState {
-  return { ...session };
+  const store = getAuthStore();
+  return {
+    accessToken: store.accessToken,
+    refreshToken: store.refreshToken,
+    expiresInSeconds: store.expiresInSeconds,
+    username: store.username,
+    deviceId: store.deviceId,
+    sessionVersion: store.sessionVersion,
+  };
 }
 
 export function setAuthSession(tokens: TokenBundle, username?: string, deviceId?: string): void {
-  session.accessToken = tokens.accessToken;
-  session.refreshToken = tokens.refreshToken;
-  session.expiresInSeconds = tokens.expiresInSeconds;
-  if (username) {
-    session.username = username;
-  }
-  if (deviceId) {
-    session.deviceId = deviceId;
-    localStorage.setItem(REMEMBERED_DEVICE_ID_STORAGE_KEY, deviceId);
-  }
-  persistSession();
+  const store = getAuthStore();
+  store.setSession(tokens, username, deviceId);
 }
 
 export function clearAuthSession(): void {
-  session.accessToken = "";
-  session.refreshToken = "";
-  session.expiresInSeconds = 0;
-  session.username = "";
-  session.deviceId = "";
-  persistSession();
+  const store = getAuthStore();
+  store.clearSession();
 }
 
 export function getDeviceId(): string {
-  if (session.deviceId) {
-    return session.deviceId;
+  const store = getAuthStore();
+  if (store.deviceId) {
+    return store.deviceId;
   }
   return getRememberedDeviceId();
 }
 
 export function getRememberedDeviceId(): string {
-  return (localStorage.getItem(REMEMBERED_DEVICE_ID_STORAGE_KEY) ?? "").trim();
-}
-
-function hydrateSession(): void {
-  const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-  if (!raw) return;
-
-  try {
-    const parsed = JSON.parse(raw) as PersistedAuthSession;
-    session.accessToken = parsed.accessToken ?? "";
-    session.refreshToken = parsed.refreshToken ?? "";
-    session.expiresInSeconds = parsed.expiresInSeconds ?? 0;
-    session.username = parsed.username ?? "";
-    session.deviceId = parsed.deviceId ?? "";
-    if (session.deviceId) {
-      localStorage.setItem(REMEMBERED_DEVICE_ID_STORAGE_KEY, session.deviceId);
-    }
-  } catch {
-    clearAuthSession();
+  const store = getAuthStore();
+  if (store.rememberedDeviceId) {
+    return store.rememberedDeviceId;
   }
-}
-
-function persistSession(): void {
-  const payload: PersistedAuthSession = {
-    accessToken: session.accessToken,
-    refreshToken: session.refreshToken,
-    expiresInSeconds: session.expiresInSeconds,
-    username: session.username,
-    deviceId: session.deviceId,
-  };
-
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+  return (localStorage.getItem(REMEMBERED_DEVICE_ID_STORAGE_KEY) ?? "").trim();
 }

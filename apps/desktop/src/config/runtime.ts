@@ -1,25 +1,48 @@
+import { defineStore } from "pinia";
+import { pinia } from "../stores/pinia";
 import { DEFAULT_API_BASE_URL, ENV_API_BASE_URL } from "./env";
 
 const RUNTIME_CONFIG_STORAGE_KEY = "nanopaste.runtime.config";
-
-interface RuntimeConfigPayload {
-  apiBaseUrl?: string;
-}
 
 export interface RuntimeConfig {
   apiBaseUrl: string;
 }
 
-let runtimeConfig: RuntimeConfig = {
-  apiBaseUrl: resolveInitialApiBaseUrl(),
-};
+const useRuntimeConfigStore = defineStore("runtime-config", {
+  state: (): RuntimeConfig => ({
+    apiBaseUrl: resolveInitialApiBaseUrl(),
+  }),
+  actions: {
+    setApiBaseUrl(nextApiBaseUrl: string): void {
+      const normalized = normalizeApiBaseUrl(nextApiBaseUrl);
+      if (!isValidApiBaseUrl(normalized)) {
+        throw new Error("后端地址必须是合法的 http/https URL");
+      }
+      this.apiBaseUrl = normalized;
+    },
+    resetApiBaseUrl(): void {
+      const fallbackFromEnv = normalizeApiBaseUrl(ENV_API_BASE_URL);
+      const fallback = isValidApiBaseUrl(fallbackFromEnv) ? fallbackFromEnv : DEFAULT_API_BASE_URL;
+      this.apiBaseUrl = fallback;
+    },
+  },
+  persist: {
+    key: RUNTIME_CONFIG_STORAGE_KEY,
+    storage: localStorage,
+  },
+});
+
+function getRuntimeStore(): ReturnType<typeof useRuntimeConfigStore> {
+  return useRuntimeConfigStore(pinia);
+}
 
 export function getRuntimeConfig(): RuntimeConfig {
-  return { ...runtimeConfig };
+  const runtimeStore = getRuntimeStore();
+  return { apiBaseUrl: runtimeStore.apiBaseUrl };
 }
 
 export function getCurrentApiBaseUrl(): string {
-  return runtimeConfig.apiBaseUrl;
+  return getRuntimeStore().apiBaseUrl;
 }
 
 export function resolveApiUrl(pathOrUrl: string): string {
@@ -42,21 +65,14 @@ export function resolveApiUrl(pathOrUrl: string): string {
 }
 
 export function setApiBaseUrl(nextApiBaseUrl: string): RuntimeConfig {
-  const normalized = normalizeApiBaseUrl(nextApiBaseUrl);
-  if (!isValidApiBaseUrl(normalized)) {
-    throw new Error("后端地址必须是合法的 http/https URL");
-  }
-
-  runtimeConfig = { apiBaseUrl: normalized };
-  persistRuntimeConfig(runtimeConfig);
+  const runtimeStore = getRuntimeStore();
+  runtimeStore.setApiBaseUrl(nextApiBaseUrl);
   return getRuntimeConfig();
 }
 
 export function resetApiBaseUrl(): RuntimeConfig {
-  const fallbackFromEnv = normalizeApiBaseUrl(ENV_API_BASE_URL);
-  const fallback = isValidApiBaseUrl(fallbackFromEnv) ? fallbackFromEnv : DEFAULT_API_BASE_URL;
-  runtimeConfig = { apiBaseUrl: fallback };
-  persistRuntimeConfig(runtimeConfig);
+  const runtimeStore = getRuntimeStore();
+  runtimeStore.resetApiBaseUrl();
   return getRuntimeConfig();
 }
 
@@ -75,44 +91,12 @@ export function isValidApiBaseUrl(input: string): boolean {
 }
 
 function resolveInitialApiBaseUrl(): string {
-  const fromStorage = readStoredApiBaseUrl();
-  if (fromStorage) {
-    return fromStorage;
-  }
-
   const fromEnv = normalizeApiBaseUrl(ENV_API_BASE_URL);
   if (isValidApiBaseUrl(fromEnv)) {
     return fromEnv;
   }
 
   return DEFAULT_API_BASE_URL;
-}
-
-function readStoredApiBaseUrl(): string {
-  const raw = localStorage.getItem(RUNTIME_CONFIG_STORAGE_KEY);
-  if (!raw) {
-    return "";
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as RuntimeConfigPayload;
-    const normalized = normalizeApiBaseUrl(parsed.apiBaseUrl ?? "");
-    if (isValidApiBaseUrl(normalized)) {
-      return normalized;
-    }
-  } catch {
-    localStorage.removeItem(RUNTIME_CONFIG_STORAGE_KEY);
-  }
-
-  return "";
-}
-
-function persistRuntimeConfig(config: RuntimeConfig): void {
-  const payload: RuntimeConfigPayload = {
-    apiBaseUrl: config.apiBaseUrl,
-  };
-
-  localStorage.setItem(RUNTIME_CONFIG_STORAGE_KEY, JSON.stringify(payload));
 }
 
 function normalizeApiBaseUrl(input: string): string {
