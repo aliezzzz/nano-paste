@@ -1,25 +1,7 @@
 import type { RealtimeStatus } from "../utils/ws";
+import type { ItemView, ActiveDeviceView } from "../types/workspace";
 
-export interface ItemView {
-  id: string;
-  type: "text" | "file";
-  title?: string;
-  content?: string;
-  fileId?: string;
-  fileName?: string;
-  fileSize?: number;
-  isFavorite: boolean;
-  createdAt: string;
-  iconSvg: string;
-}
-
-export interface ActiveDeviceView {
-  deviceId: string;
-  deviceName: string;
-  platform: string;
-  lastSeenAt: string;
-  isCurrent: boolean;
-}
+export type { ItemView, ActiveDeviceView };
 
 export interface BridgeHooks {
   onRequireLogin?: () => void;

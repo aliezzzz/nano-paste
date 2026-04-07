@@ -4,11 +4,9 @@ import SendPanel from "./workspace/SendPanel.vue";
 import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
-import trayTemplateIcon from "../../src-tauri/icons/tray-template.svg?url";
+import trayTemplateIcon from "../assets/icons/tray-template.svg?url";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
-import type { ItemView } from "./workspace/ItemsPanel.vue";
-import type { ActiveDeviceView } from "../bridge";
-import type { RealtimeStatus } from "../utils/ws";
+import type { ItemView, ActiveDeviceView, ItemActionPayload, RealtimeStatus } from "../types/workspace";
 
 type SendPayload = { title?: string; content: string };
 
@@ -59,19 +57,8 @@ const emit = defineEmits<{
     (e: "clear-finished-upload"): void;
     (e: "send-text", payload: SendPayload): void;
     (e: "upload-files", files: File[]): void;
-    (
-        e: "item-action",
-        payload: {
-            id: string;
-            action: "copy" | "download" | "delete" | "favorite";
-            type: "text" | "file";
-            content?: string;
-            fileId?: string;
-            fileName?: string;
-            isFavorite: boolean;
-        },
-    ): void;
-}>();
+    (e: "item-action", payload: ItemActionPayload): void;
+}>(); 
 
 const activeMobileTab = ref<"send" | "items">("send");
 
@@ -95,15 +82,7 @@ function clearFinishedUpload(): void {
     emit("clear-finished-upload");
 }
 
-function itemAction(payload: {
-    id: string;
-    action: "copy" | "download" | "delete" | "favorite";
-    type: "text" | "file";
-    content?: string;
-    fileId?: string;
-    fileName?: string;
-    isFavorite: boolean;
-}): void {
+function itemAction(payload: ItemActionPayload): void {
     emit("item-action", payload);
 }
 

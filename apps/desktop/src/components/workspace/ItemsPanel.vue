@@ -1,29 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
 import { formatBytes } from "../../utils/format";
+import type { ItemView, ItemActionPayload } from "../../types/workspace";
 
-export interface ItemView {
-  id: string;
-  type: "text" | "file";
-  title?: string;
-  content?: string;
-  fileId?: string;
-  fileName?: string;
-  fileSize?: number;
-  isFavorite: boolean;
-  createdAt: string;
-  iconSvg: string;
-}
-
-type ItemActionPayload = {
-  id: string;
-  action: "copy" | "download" | "delete" | "favorite";
-  type: "text" | "file";
-  content?: string;
-  fileId?: string;
-  fileName?: string;
-  isFavorite: boolean;
-};
+export type { ItemView };
 
 const props = withDefaults(defineProps<{ items?: ItemView[]; loading?: boolean }>(), {
   items: () => [],
