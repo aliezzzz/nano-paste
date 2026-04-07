@@ -22,6 +22,25 @@ export function getCurrentApiBaseUrl(): string {
   return runtimeConfig.apiBaseUrl;
 }
 
+export function resolveApiUrl(pathOrUrl: string): string {
+  const value = (pathOrUrl ?? "").trim();
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    // ignore and treat as relative path
+  }
+
+  const normalizedPath = value.startsWith("/") ? value : `/${value}`;
+  return `${getCurrentApiBaseUrl()}${normalizedPath}`;
+}
+
 export function setApiBaseUrl(nextApiBaseUrl: string): RuntimeConfig {
   const normalized = normalizeApiBaseUrl(nextApiBaseUrl);
   if (!isValidApiBaseUrl(normalized)) {

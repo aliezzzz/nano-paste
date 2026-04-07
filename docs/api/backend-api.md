@@ -319,7 +319,7 @@
     "fileId": "file_xxx",
     "fileName": "demo.txt",
     "fileSize": 1024,
-    "downloadUrl": "https://download.mock/...",
+    "downloadUrl": "/v1/files/download/file_xxx?access_token=...",
     "expiresAt": "2026-03-27T16:10:00Z",
     "category": "other"
   }
@@ -450,4 +450,3 @@
 - 桌面端应统一使用后端 `/v1/*` 路由，不再依赖 mock path。
 - 事件连接应改为 `/v1/events/ws`。
 - 文件 category 前端需透传；缺省时使用 `other`。
-

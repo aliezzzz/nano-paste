@@ -26,6 +26,7 @@ export interface PrepareDownloadResponse {
   fileId: string;
   fileName: string;
   fileSize: number;
+  // 相对下载路径，例如 /v1/files/download/{fileId}?access_token=...
   downloadUrl: string;
   expiresAt: string;
 }

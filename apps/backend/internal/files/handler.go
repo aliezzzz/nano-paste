@@ -348,15 +348,8 @@ func (h *handler) broadcast(ev eventRow) {
 }
 
 func signedDownloadURL(r *http.Request, fileID, accessToken string) string {
-	scheme := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
-	if scheme == "" {
-		scheme = "http"
-	}
-	host := strings.TrimSpace(r.Host)
-	if host == "" {
-		host = "localhost:8080"
-	}
-	base := fmt.Sprintf("%s://%s/v1/files/download/%s", scheme, host, fileID)
+	_ = r
+	base := "/v1/files/download/" + url.PathEscape(strings.TrimSpace(fileID))
 	if strings.TrimSpace(accessToken) == "" {
 		return base
 	}

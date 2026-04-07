@@ -145,27 +145,14 @@ onBeforeUnmount(() => {
             
             <!-- 右侧内容区 -->
             <div class="item-content">
-              <!-- 标题行：标题/文件名 + [类型] + [大小] + [★] -->
+              <!-- 标题行：标题/文件名 + 收藏 -->
               <div class="item-header">
-                <div class="item-title">
+                <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">
                   {{ item.type === 'text' ? (item.title || '无标题') : (item.fileName || '无文件名') }}
                 </div>
                 
-                <!-- 右侧标签组：[类型] + [大小] + [收藏] -->
+                <!-- 右侧：收藏 -->
                 <div class="item-meta">
-                  <!-- 类型标签 -->
-                  <span
-                    class="type-badge"
-                    :class="item.type === 'text' ? 'type-badge--text' : 'type-badge--file'"
-                  >
-                    {{ item.type === 'text' ? '文本' : '文件' }}
-                  </span>
-                  
-                  <!-- 文件大小（仅文件） -->
-                  <span v-if="item.type === 'file' && item.fileSize" class="file-size">
-                    {{ formatBytes(item.fileSize) }}
-                  </span>
-                  
                   <!-- 收藏按钮 -->
                   <button
                     class="favorite-btn"
@@ -190,29 +177,32 @@ onBeforeUnmount(() => {
               <!-- 底部操作栏 -->
               <div class="item-footer">
                 <!-- 左侧操作按钮 -->
-                <button
-                  class="action-btn"
-                  :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'"
-                  @click="emit('item-action', { id: item.id, action: item.type === 'text' ? 'copy' : 'download', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
-                >
-                  <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      v-if="item.type === 'text'"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    ></path>
-                    <path
-                      v-else
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                    ></path>
-                  </svg>
-                  {{ item.type === 'text' ? '复制' : '下载' }}
-                </button>
+                <div class="item-actions-left">
+                  <button
+                    class="action-btn"
+                    :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'"
+                    @click="emit('item-action', { id: item.id, action: item.type === 'text' ? 'copy' : 'download', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
+                  >
+                    <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        v-if="item.type === 'text'"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      ></path>
+                      <path
+                        v-else
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      ></path>
+                    </svg>
+                    {{ item.type === 'text' ? '复制' : '下载' }}
+                  </button>
+                  <span v-if="item.type === 'file' && item.fileSize" class="file-size-inline">{{ formatBytes(item.fileSize) }}</span>
+                </div>
 
                 <!-- 右侧：时间 + 删除 -->
                 <div class="footer-meta">

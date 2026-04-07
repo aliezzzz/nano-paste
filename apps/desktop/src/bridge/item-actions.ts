@@ -1,5 +1,6 @@
 import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../features/items/api";
 import { cleanupFiles } from "../features/files/api";
+import { resolveApiUrl } from "../config/runtime";
 import { copyTextToClipboard, triggerFileDownload } from "./platform";
 
 type ReloadItems = () => Promise<void>;
@@ -68,10 +69,13 @@ export async function handleItemAction(
       throw new Error("不是可下载的文件条目");
     }
 
-    const prepared = await prepareFileDownload(payload.fileId);
-    await triggerFileDownload(prepared.downloadUrl, prepared.fileName || payload.fileName || "download.bin");
-    return;
-  }
+	const prepared = await prepareFileDownload(payload.fileId);
+	await triggerFileDownload(
+		resolveApiUrl(prepared.downloadUrl),
+		prepared.fileName || payload.fileName || "download.bin",
+	);
+	return;
+}
 
   if (action === "favorite") {
     const nextFavorite = !payload.isFavorite;
