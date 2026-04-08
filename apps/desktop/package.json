@@ -9,10 +9,12 @@
     "build": "npm run typecheck && tauri build",
     "build:exe": "npm run typecheck && tauri build --no-bundle",
     "android:init": "tauri android init && node ./scripts/android-enable-cleartext.mjs && node ./scripts/android-sync-system-bars.mjs && node ./scripts/android-sync-icons.mjs",
-    "android:dev": "node ./scripts/android-enable-cleartext.mjs && node ./scripts/android-sync-system-bars.mjs && node ./scripts/android-sync-icons.mjs && tauri android dev --target aarch64",
-    "android:build": "node ./scripts/android-enable-cleartext.mjs && node ./scripts/android-sync-system-bars.mjs && node ./scripts/android-sync-icons.mjs && tauri android build --target aarch64 --apk",
-    "dev:web": "vite",
-    "build:web": "npm run typecheck && vite build",
+    "android:dev": "node ./scripts/android-enable-cleartext.mjs && node ./scripts/android-sync-system-bars.mjs && node ./scripts/android-sync-icons.mjs && node ./scripts/run-with-build-target.mjs android tauri android dev --target aarch64",
+    "android:build": "node ./scripts/android-enable-cleartext.mjs && node ./scripts/android-sync-system-bars.mjs && node ./scripts/android-sync-icons.mjs && node ./scripts/run-with-build-target.mjs android tauri android build --target aarch64 --apk",
+    "dev:web": "node ./scripts/run-vite-with-build-target.mjs dev web",
+    "dev:web:tauri": "node ./scripts/run-vite-with-build-target.mjs dev desktop",
+    "build:web": "npm run typecheck && node ./scripts/run-vite-with-build-target.mjs build web",
+    "build:web:tauri": "npm run typecheck && node ./scripts/run-vite-with-build-target.mjs build desktop",
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {

@@ -163,6 +163,8 @@ async function doRefreshAccessToken(): Promise<boolean> {
     return false;
   }
   const refreshSessionVersion = authStore.sessionVersion;
+  const refreshTokenBefore = authStore.refreshToken;
+  const deviceIDBefore = authStore.deviceId;
 
   try {
     const response = await service.request<ApiResponse<RefreshApiData>>({
@@ -193,8 +195,8 @@ async function doRefreshAccessToken(): Promise<boolean> {
 
     const sessionChanged =
       authStore.sessionVersion !== refreshSessionVersion
-      || authStore.refreshToken !== authStore.refreshToken
-      || authStore.deviceId !== authStore.deviceId;
+      || authStore.refreshToken !== refreshTokenBefore
+      || authStore.deviceId !== deviceIDBefore;
     if (sessionChanged) {
       return false;
     }

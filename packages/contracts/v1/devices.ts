@@ -7,7 +7,7 @@ import type { ApiResponse } from './common';
 export interface DeviceInfo {
   deviceId: string;
   deviceName: string;
-  platform: 'macos' | 'windows' | 'linux' | 'unknown';
+  platform: 'macos' | 'windows' | 'linux' | 'web' | 'android' | 'unknown';
   lastSeenAt: string;
   createdAt: string;
   revokedAt?: string;

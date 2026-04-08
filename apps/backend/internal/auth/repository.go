@@ -95,17 +95,6 @@ func (r *repository) upsertDevice(ctx context.Context, userID, rememberedDeviceI
 		}
 	}
 
-	if strings.EqualFold(deviceName, "web") {
-		deviceID := uuid.NewString()
-		const insertQ = `
-			INSERT INTO devices(id, user_id, device_name, platform, client_version, last_seen_at)
-			VALUES(?, ?, ?, ?, ?, datetime('now'))`
-		if _, err := r.db.ExecContext(ctx, insertQ, deviceID, userID, deviceName, platform, nullIfEmpty(clientVersion)); err != nil {
-			return "", fmt.Errorf("insert web device: %w", err)
-		}
-		return deviceID, nil
-	}
-
 	const findQ = `
 		SELECT id
 		FROM devices

@@ -1,6 +1,9 @@
 import { useAuthStore } from "../stores/auth";
 import { request } from "./request";
 
+const BUILD_PLATFORM = resolveBuildPlatform();
+const BUILD_DEVICE_NAME = resolveDeviceName(BUILD_PLATFORM);
+
 export interface AuthTokenBundle {
   accessToken: string;
   refreshToken: string;
@@ -27,11 +30,11 @@ export async function loginWithPassword(input: LoginInput): Promise<LoginResult>
     username: input.username,
     account: input.username,
     password: input.password,
-    device_name: "web",
-    deviceName: "web",
+    device_name: BUILD_DEVICE_NAME,
+    deviceName: BUILD_DEVICE_NAME,
     remembered_device_id: rememberedDeviceId,
     rememberedDeviceId,
-    platform: detectPlatform(),
+    platform: BUILD_PLATFORM,
     client_version: "0.1.0",
     clientVersion: "0.1.0",
   });
@@ -139,4 +142,26 @@ function detectPlatform(): string {
   if (value.includes("win")) return "windows";
   if (value.includes("linux")) return "linux";
   return "unknown";
+}
+
+function resolveBuildPlatform(): string {
+  const buildPlatform = (import.meta.env.VITE_BUILD_PLATFORM ?? "").trim().toLowerCase();
+  if (buildPlatform) {
+    return buildPlatform;
+  }
+  return detectPlatform();
+}
+
+function resolveDeviceName(platform: string): string {
+  const configuredDeviceName = (import.meta.env.VITE_DEVICE_NAME ?? "").trim();
+  if (configuredDeviceName) {
+    return configuredDeviceName;
+  }
+  if (platform === "web") {
+    return "web";
+  }
+  if (platform === "android") {
+    return "nanopaste-android";
+  }
+  return "nanopaste-desktop";
 }

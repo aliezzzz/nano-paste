@@ -1,5 +1,7 @@
 interface ImportMetaEnv {
   readonly VITE_DEFAULT_APP_API_BASE_URL?: string;
+  readonly VITE_BUILD_PLATFORM?: string;
+  readonly VITE_DEVICE_NAME?: string;
 }
 
 interface ImportMeta {

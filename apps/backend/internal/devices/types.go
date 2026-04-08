@@ -105,7 +105,7 @@ func toDeviceInfo(row deviceRow) deviceInfo {
 
 func normalizePlatform(platform string) string {
 	switch strings.ToLower(strings.TrimSpace(platform)) {
-	case "macos", "windows", "linux":
+	case "macos", "windows", "linux", "web", "android":
 		return strings.ToLower(strings.TrimSpace(platform))
 	default:
 		return "unknown"
