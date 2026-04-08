@@ -1,9 +1,11 @@
 import { onBeforeUnmount, onMounted } from "vue";
-import { handleGlobalPasteEvent } from "../bridge";
+import { useBridge } from "./useBridge";
 
-export function useGlobalPaste() {
+export function useGlobalPaste(onLoggedOut?: () => void) {
+  const bridge = useBridge(onLoggedOut ?? (() => {}));
+
   function onPaste(event: ClipboardEvent): void {
-    void handleGlobalPasteEvent(event);
+    void bridge.handleGlobalPasteEvent(event);
   }
 
   onMounted(() => {
@@ -13,4 +15,6 @@ export function useGlobalPaste() {
   onBeforeUnmount(() => {
     window.removeEventListener("paste", onPaste);
   });
+
+  return { handleGlobalPasteEvent: bridge.handleGlobalPasteEvent };
 }

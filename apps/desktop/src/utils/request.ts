@@ -6,8 +6,8 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import type { ApiResponse } from "../../../../packages/contracts/v1";
-import { clearAuthSession, getAuthSession, getDeviceId, setAuthSession } from "../stores/auth";
-import { getCurrentApiBaseUrl } from "../stores/runtime";
+import { useAuthStore } from "../stores/auth";
+import { useRuntimeStore } from "../stores/runtime";
 
 type RequestErrorCode = "UNKNOWN" | "INVALID_RESPONSE" | "UNAUTHORIZED";
 
@@ -49,7 +49,8 @@ const service: AxiosInstance = axios.create({
 
 let refreshPromise: Promise<boolean> | null = null;
 let unauthorizedHandler: () => void = () => {
-  clearAuthSession();
+  const authStore = useAuthStore();
+  authStore.clearSession();
 };
 
 export function configureRequest(options: { onUnauthorized?: () => void } = {}): void {
@@ -60,15 +61,17 @@ export function configureRequest(options: { onUnauthorized?: () => void } = {}):
 
 service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const next = config;
+  const authStore = useAuthStore();
+  const runtimeStore = useRuntimeStore();
 
   if (!next.skipBaseUrl && !next.baseURL) {
-    next.baseURL = getCurrentApiBaseUrl();
+    next.baseURL = runtimeStore.apiBaseUrl;
   }
 
   const headers = next.headers ?? {};
   const authRequired = next.authRequired ?? true;
   if (authRequired) {
-    const accessToken = getAuthSession().accessToken;
+    const accessToken = authStore.accessToken;
     if (accessToken) {
       headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -76,7 +79,7 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
   const withDeviceId = next.withDeviceId ?? true;
   if (withDeviceId) {
-    const deviceId = getDeviceId().trim();
+    const deviceId = (authStore.deviceId || authStore.rememberedDeviceId).trim();
     if (deviceId) {
       headers["X-Device-Id"] = deviceId;
     }
@@ -153,26 +156,28 @@ async function refreshAccessToken(): Promise<boolean> {
 }
 
 async function doRefreshAccessToken(): Promise<boolean> {
-  const session = getAuthSession();
-  if (!session.refreshToken || !session.deviceId) {
+  const authStore = useAuthStore();
+  const runtimeStore = useRuntimeStore();
+
+  if (!authStore.refreshToken || !authStore.deviceId) {
     return false;
   }
-  const refreshSessionVersion = session.sessionVersion;
+  const refreshSessionVersion = authStore.sessionVersion;
 
   try {
     const response = await service.request<ApiResponse<RefreshApiData>>({
       method: "POST",
       url: "/v1/auth/refresh",
       data: {
-        refresh_token: session.refreshToken,
-        refreshToken: session.refreshToken,
+        refresh_token: authStore.refreshToken,
+        refreshToken: authStore.refreshToken,
       },
-      baseURL: getCurrentApiBaseUrl(),
+      baseURL: runtimeStore.apiBaseUrl,
       authRequired: false,
       retryOnUnauthorized: false,
       withDeviceId: false,
       headers: {
-        "X-Device-Id": session.deviceId,
+        "X-Device-Id": authStore.deviceId,
       },
     });
 
@@ -186,16 +191,15 @@ async function doRefreshAccessToken(): Promise<boolean> {
       return false;
     }
 
-    const latestSession = getAuthSession();
     const sessionChanged =
-      latestSession.sessionVersion !== refreshSessionVersion
-      || latestSession.refreshToken !== session.refreshToken
-      || latestSession.deviceId !== session.deviceId;
+      authStore.sessionVersion !== refreshSessionVersion
+      || authStore.refreshToken !== authStore.refreshToken
+      || authStore.deviceId !== authStore.deviceId;
     if (sessionChanged) {
       return false;
     }
 
-    setAuthSession(mapTokenPayload(payload.data.tokens), session.username, refreshedDeviceId);
+    authStore.setSession(mapTokenPayload(payload.data.tokens), authStore.username, refreshedDeviceId);
     return true;
   } catch {
     return false;

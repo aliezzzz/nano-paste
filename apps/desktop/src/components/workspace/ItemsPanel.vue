@@ -2,6 +2,13 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 import { formatBytes } from "../../utils/format";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
+import clockIcon from "../../assets/icons/clock.svg?url";
+import refreshIcon from "../../assets/icons/refresh.svg?url";
+import starIcon from "../../assets/icons/star.svg?url";
+import copyIcon from "../../assets/icons/copy.svg?url";
+import downloadIcon from "../../assets/icons/download.svg?url";
+import deleteIcon from "../../assets/icons/delete.svg?url";
+import inboxEmptyIcon from "../../assets/icons/inbox-empty.svg?url";
 
 export type { ItemView };
 
@@ -67,9 +74,7 @@ onBeforeUnmount(() => {
   <div class="items-panel">
     <div class="panel-header">
       <h2 class="panel-title">
-        <svg class="panel-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+        <img :src="clockIcon" class="panel-title-icon" alt="">
         最近条目
       </h2>
       <div class="panel-actions">
@@ -81,16 +86,13 @@ onBeforeUnmount(() => {
           title="刷新条目"
           @click="refreshItems"
         >
-          <svg
+          <img
+            :src="refreshIcon"
             class="refresh-icon"
             :class="rotating ? 'refresh-icon--rotating' : ''"
-            viewBox="0 0 1024 1024"
-            xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
+            alt=""
           >
-            <path d="M499.72 872.52c-179.31 0-325.19-143.88-325.19-320.75 0-176.84 145.88-320.72 325.19-320.72 54.31 0 108.12 13.5 155.62 39.03 23.31 12.56 32.06 41.69 19.5 65.03-12.44 23.38-41.56 32.12-65 19.53-33.56-18.06-71.62-27.59-110.12-27.59-126.38 0-229.19 100.81-229.19 224.72 0 123.94 102.81 224.75 229.19 224.75 104.5 0 195.75-69.22 221.87-168.31 6.81-25.62 33.12-40.88 58.69-34.16 25.62 6.78 40.94 33.03 34.19 58.66-37.32 141.18-166.75 239.81-314.75 239.81z" fill="currentColor"></path>
-            <path d="M799.24 407.04l-89.26-228.19c-6.2-15.85-27.38-18.78-37.64-5.2l-154.62 204.6c-10.26 13.58-1.67 33.16 15.27 34.8l243.89 23.59c16.15 1.57 28.27-14.48 22.36-29.6z" fill="currentColor"></path>
-          </svg>
         </button>
 
         <div class="filter-tabs">
@@ -140,9 +142,7 @@ onBeforeUnmount(() => {
                     :title="item.isFavorite ? '取消收藏' : '收藏'"
                     @click="emit('item-action', { id: item.id, action: 'favorite', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <svg class="w-4 h-4" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M533.504 268.288q33.792-41.984 71.68-75.776 32.768-27.648 74.24-50.176t86.528-19.456q63.488 5.12 105.984 30.208t67.584 63.488 34.304 87.04 6.144 99.84-17.92 97.792-36.864 87.04-48.64 74.752-53.248 61.952q-40.96 41.984-85.504 78.336t-84.992 62.464-73.728 41.472-51.712 15.36q-20.48 1.024-52.224-14.336t-69.632-41.472-79.872-61.952-82.944-75.776q-26.624-25.6-57.344-59.392t-57.856-74.24-46.592-87.552-21.504-100.352 11.264-99.84 39.936-83.456 65.536-61.952 88.064-35.328q24.576-5.12 49.152-1.536t48.128 12.288 45.056 22.016 40.96 27.648q45.056 33.792 86.016 80.896z" fill="currentColor"></path>
-                    </svg>
+                    <img :src="starIcon" class="w-4 h-4" aria-hidden="true" alt="">
                   </button>
                 </div>
               </div>
@@ -163,22 +163,7 @@ onBeforeUnmount(() => {
                     :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'"
                     @click="emit('item-action', { id: item.id, action: item.type === 'text' ? 'copy' : 'download', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <svg class="action-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        v-if="item.type === 'text'"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      ></path>
-                      <path
-                        v-else
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      ></path>
-                    </svg>
+                    <img :src="item.type === 'text' ? copyIcon : downloadIcon" class="action-btn-icon" alt="">
                     {{ item.type === 'text' ? '复制' : '下载' }}
                   </button>
                   <span v-if="item.type === 'file' && item.fileSize" class="file-size-inline">{{ formatBytes(item.fileSize) }}</span>
@@ -193,14 +178,7 @@ onBeforeUnmount(() => {
                     title="删除"
                     @click="emit('item-action', { id: item.id, action: 'delete', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <svg class="delete-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      ></path>
-                    </svg>
+                    <img :src="deleteIcon" class="delete-btn-icon" alt="">
                     删除
                   </button>
                 </div>
@@ -211,14 +189,7 @@ onBeforeUnmount(() => {
       </div>
       
       <p v-if="!props.loading && visibleItems.length === 0" id="items-empty" class="items-empty-state">
-        <svg class="items-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-          ></path>
-        </svg>
+        <img :src="inboxEmptyIcon" class="items-empty-icon" alt="">
         {{ favoriteOnly ? '暂无收藏条目' : '暂无条目' }}
       </p>
     </div>

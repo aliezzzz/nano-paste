@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import uploadCloudIcon from "../../assets/icons/upload-cloud.svg?url";
+import folderIcon from "../../assets/icons/folder.svg?url";
+import spinnerIcon from "../../assets/icons/spinner.svg?url";
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
@@ -56,17 +59,13 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
 <template>
   <div :class="props.compact ? 'upload-panel' : 'upload-panel upload-panel--full'">
     <h2 class="upload-panel-title">
-      <svg class="upload-panel-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-      </svg>
+      <img :src="uploadCloudIcon" class="upload-panel-title-icon" alt="">
       上传文件
     </h2>
 
     <div id="upload-dropzone" class="upload-dropzone" @click="chooseFiles" @dragover="handleDragOver" @drop="handleDrop">
       <div class="upload-dropzone-icon-wrap">
-        <svg class="upload-dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-        </svg>
+        <img :src="uploadCloudIcon" class="upload-dropzone-icon" alt="">
       </div>
       <p class="upload-dropzone-title">拖拽文件到这里</p>
       <p class="upload-dropzone-hint">或点击选择文件</p>
@@ -80,9 +79,7 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
 
     <div id="upload-queue" :class="[props.compact ? 'upload-queue' : 'upload-queue upload-queue--full custom-scrollbar']">
       <div v-if="props.queueItems.length === 0" class="upload-queue-empty">
-        <svg class="upload-queue-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
-        </svg>
+        <img :src="folderIcon" class="upload-queue-empty-icon" alt="">
         队列为空
       </div>
       <div v-else v-for="item in props.queueItems" :key="item.id" class="upload-queue-item">
@@ -90,10 +87,7 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
           <div class="upload-queue-item-info">
             <p class="upload-queue-item-name">{{ item.fileName }}</p>
             <p class="upload-queue-item-status inline-flex items-center gap-2" :class="statusMap[item.status].color">
-              <svg v-if="item.status === 'uploading'" class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" opacity="0.28"></circle>
-                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
-              </svg>
+              <img v-if="item.status === 'uploading'" :src="spinnerIcon" class="h-3.5 w-3.5 animate-spin" aria-hidden="true" alt="">
               {{ statusMap[item.status].text }}
             </p>
           </div>

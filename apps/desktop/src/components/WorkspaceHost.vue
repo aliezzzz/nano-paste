@@ -5,6 +5,9 @@ import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
 import trayTemplateIcon from "../assets/icons/tray-template.svg?url";
+import chevronDownIcon from "../assets/icons/chevron-down.svg?url";
+import settingsIcon from "../assets/icons/settings.svg?url";
+import logoutIcon from "../assets/icons/logout.svg?url";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ActiveDeviceView, ItemActionPayload, RealtimeStatus } from "../types/workspace";
 
@@ -140,19 +143,11 @@ function uploadFiles(files: File[]): void {
                             <span class="host-device-count">
                                 <span>{{ props.activeDevices.length }}</span>
                                 设备
-                                <svg
+                                <img
+                                    :src="chevronDownIcon"
                                     class="host-device-count-icon"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    alt=""
                                 >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M19 9l-7 7-7-7"
-                                    ></path>
-                                </svg>
                             </span>
                         </div>
 
@@ -215,17 +210,12 @@ function uploadFiles(files: File[]): void {
                         class="host-icon-btn"
                         @click="openConfig"
                     >
-                        <svg
-                            viewBox="0 0 1024 1024"
+                        <img
+                            :src="settingsIcon"
                             class="host-icon-btn-icon"
-                            xmlns="http://www.w3.org/2000/svg"
                             aria-hidden="true"
+                            alt=""
                         >
-                            <path
-                                d="M512 426.666667c-46.933333 0-85.333333 38.4-85.333333 85.333333s38.4 85.333333 85.333333 85.333333 85.333333-38.4 85.333333-85.333333-38.4-85.333333-85.333333-85.333333z m298.666667-298.666667H213.333333a85.333333 85.333333 0 0 0-85.333333 85.333333v597.333334a85.333333 85.333333 0 0 0 85.333333 85.333333h597.333334a85.333333 85.333333 0 0 0 85.333333-85.333333V213.333333a85.333333 85.333333 0 0 0-85.333333-85.333333z m-74.666667 384c0 9.813333-0.853333 19.626667-2.133333 29.013333l63.146666 49.493334c5.546667 4.693333 7.253333 12.8 3.413334 19.2l-59.733334 103.253333c-3.84 6.4-11.52 8.96-18.346666 6.4l-74.24-29.866667c-15.36 11.946667-32.426667 21.76-50.346667 29.44l-11.093333 78.933334c-1.28 7.253333-7.68 12.8-14.933334 12.8h-119.466666c-7.253333 0-13.653333-5.546667-14.933334-12.373334l-11.093333-78.933333c-18.346667-7.68-34.986667-17.493333-50.346667-29.44l-74.24 29.866667c-6.826667 2.56-14.506667 0-18.346666-6.4l-59.733334-103.253334a15.061333 15.061333 0 0 1 3.413334-19.2l63.146666-49.493333c-1.28-9.813333-2.133333-19.626667-2.133333-29.44 0-9.813333 0.853333-19.626667 2.133333-29.013333l-63.146666-49.493334a15.061333 15.061333 0 0 1-3.413334-19.2l59.733334-103.253333c3.84-6.4 11.52-8.96 18.346666-6.4l74.24 29.866667c15.36-11.946667 32.426667-21.76 50.346667-29.44l11.093333-78.933334c1.28-7.253333 7.68-12.8 14.933334-12.8h119.466666c7.253333 0 13.653333 5.546667 14.933334 12.373334l11.093333 78.933333c18.346667 7.68 34.986667 17.493333 50.346667 29.44l74.24-29.866667c6.826667-2.56 14.506667 0 18.346666 6.4l59.733334 103.253334c3.84 6.4 2.133333 14.506667-3.413334 19.2l-63.146666 49.493333c1.28 9.813333 2.133333 19.626667 2.133333 29.44z"
-                                fill="currentColor"
-                            ></path>
-                        </svg>
                     </button>
 
                     <div class="host-user-wrap group">
@@ -260,19 +250,11 @@ function uploadFiles(files: File[]): void {
                                     class="host-logout-btn"
                                     @click="logout"
                                 >
-                                    <svg
+                                    <img
+                                        :src="logoutIcon"
                                         class="host-logout-btn-icon"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
+                                        alt=""
                                     >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                        ></path>
-                                    </svg>
                                     退出登录
                                 </button>
                             </div>
@@ -327,17 +309,12 @@ function uploadFiles(files: File[]): void {
                             class="host-icon-btn"
                             @click="openConfig"
                         >
-                            <svg
-                                viewBox="0 0 1024 1024"
+                            <img
+                                :src="settingsIcon"
                                 class="host-icon-btn-icon"
-                                xmlns="http://www.w3.org/2000/svg"
                                 aria-hidden="true"
+                                alt=""
                             >
-                                <path
-                                    d="M512 426.666667c-46.933333 0-85.333333 38.4-85.333333 85.333333s38.4 85.333333 85.333333 85.333333 85.333333-38.4 85.333333-85.333333-38.4-85.333333-85.333333-85.333333z m298.666667-298.666667H213.333333a85.333333 85.333333 0 0 0-85.333333 85.333333v597.333334a85.333333 85.333333 0 0 0 85.333333 85.333333h597.333334a85.333333 85.333333 0 0 0 85.333333-85.333333V213.333333a85.333333 85.333333 0 0 0-85.333333-85.333333z m-74.666667 384c0 9.813333-0.853333 19.626667-2.133333 29.013333l63.146666 49.493334c5.546667 4.693333 7.253333 12.8 3.413334 19.2l-59.733334 103.253333c-3.84 6.4-11.52 8.96-18.346666 6.4l-74.24-29.866667c-15.36 11.946667-32.426667 21.76-50.346667 29.44l-11.093333 78.933334c-1.28 7.253333-7.68 12.8-14.933334 12.8h-119.466666c-7.253333 0-13.653333-5.546667-14.933334-12.373334l-11.093333-78.933333c-18.346667-7.68-34.986667-17.493333-50.346667-29.44l-74.24 29.866667c-6.826667 2.56-14.506667 0-18.346666-6.4l-59.733334-103.253334a15.061333 15.061333 0 0 1 3.413334-19.2l63.146666-49.493333c-1.28-9.813333-2.133333-19.626667-2.133333-29.44 0-9.813333 0.853333-19.626667 2.133333-29.013333l-63.146666-49.493334a15.061333 15.061333 0 0 1-3.413334-19.2l59.733334-103.253333c3.84-6.4 11.52-8.96 18.346666-6.4l74.24 29.866667c15.36-11.946667 32.426667-21.76 50.346667-29.44l11.093333-78.933334c1.28-7.253333 7.68-12.8 14.933334-12.8h119.466666c7.253333 0 13.653333 5.546667 14.933334 12.373334l11.093333 78.933333c18.346667 7.68 34.986667 17.493333 50.346667 29.44l74.24-29.866667c6.826667-2.56 14.506667 0 18.346666 6.4l59.733334 103.253334c3.84 6.4 2.133333 14.506667-3.413334 19.2l-63.146666 49.493333c1.28 9.813333 2.133333 19.626667 2.133333 29.44z"
-                                    fill="currentColor"
-                                ></path>
-                            </svg>
                         </button>
                         <div class="host-user-wrap group">
                             <button
@@ -371,19 +348,11 @@ function uploadFiles(files: File[]): void {
                                         class="host-logout-btn"
                                         @click="logout"
                                     >
-                                        <svg
+                                        <img
+                                            :src="logoutIcon"
                                             class="host-logout-btn-icon"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
+                                            alt=""
                                         >
-                                            <path
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                                stroke-width="2"
-                                                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                                            ></path>
-                                        </svg>
                                         退出登录
                                     </button>
                                 </div>

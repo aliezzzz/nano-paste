@@ -1,5 +1,6 @@
 import { ref } from "vue";
-import { fetchDevices, getCurrentDeviceId, revokeDeviceById } from "../bridge";
+import { listDevices, revokeDevice } from "../api/devices";
+import { useAuthStore } from "../stores/auth";
 import { showToast } from "../components/feedback/toast";
 import type { DeviceInfo } from "../../../../packages/contracts/v1";
 
@@ -10,6 +11,8 @@ export function useDeviceManagerModal() {
   const devices = ref<DeviceInfo[]>([]);
   const revokeConfirmDeviceId = ref("");
   const revokingDeviceId = ref("");
+
+  const authStore = useAuthStore();
 
   async function openDeviceManager(): Promise<void> {
     deviceModalOpen.value = true;
@@ -26,7 +29,7 @@ export function useDeviceManagerModal() {
     try {
       devicesLoading.value = true;
       devicesError.value = "";
-      devices.value = await fetchDevices();
+      devices.value = await listDevices();
     } catch (error) {
       devicesError.value = error instanceof Error ? error.message : "加载设备失败";
     } finally {
@@ -43,13 +46,13 @@ export function useDeviceManagerModal() {
   }
 
   async function confirmRevokeDevice(deviceId: string): Promise<void> {
-    if (deviceId === getCurrentDeviceId()) {
+    if (deviceId === authStore.deviceId) {
       showToast("当前设备不能下线", "error");
       return;
     }
     try {
       revokingDeviceId.value = deviceId;
-      await revokeDeviceById(deviceId);
+      await revokeDevice(deviceId);
       showToast("设备已下线", "success");
       revokeConfirmDeviceId.value = "";
       await loadDevices();
@@ -81,7 +84,6 @@ export function useDeviceManagerModal() {
     devices,
     revokeConfirmDeviceId,
     revokingDeviceId,
-    getCurrentDeviceId,
     openDeviceManager,
     closeDeviceManager,
     askRevokeDevice,

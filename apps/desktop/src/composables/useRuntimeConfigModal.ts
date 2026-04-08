@@ -1,17 +1,31 @@
-import { ref, computed } from "vue";
-import { getCurrentApiBaseUrl, isValidApiBaseUrl, resetApiBaseUrl, setApiBaseUrl } from "../stores/runtime";
-import { applyRuntimeApiBaseUrlChange } from "../bridge";
+import { ref, computed, type Ref } from "vue";
+import { useRuntimeStore } from "../stores/runtime";
+import { useBridge } from "./useBridge";
 import { showToast } from "../components/feedback/toast";
 
-export function useRuntimeConfigModal(isAuthenticated: { value: boolean }) {
+export function useRuntimeConfigModal(isAuthenticated: Ref<boolean>) {
+  const runtimeStore = useRuntimeStore();
+  const bridge = useBridge(() => {});
+
   const configOpen = ref(false);
   const configSubmitting = ref(false);
-  const configApiBaseUrl = ref(getCurrentApiBaseUrl());
+  const configApiBaseUrl = ref(runtimeStore.apiBaseUrl);
   const configError = ref("");
-  const currentApiBaseUrl = computed(() => getCurrentApiBaseUrl());
+  const currentApiBaseUrl = computed(() => runtimeStore.apiBaseUrl);
+
+  function isValidApiBaseUrl(input: string): boolean {
+    const normalized = input.trim();
+    if (!normalized) return false;
+    try {
+      const parsed = new URL(normalized);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }
 
   function openConfig(): void {
-    configApiBaseUrl.value = getCurrentApiBaseUrl();
+    configApiBaseUrl.value = runtimeStore.apiBaseUrl;
     configError.value = "";
     configOpen.value = true;
   }
@@ -30,9 +44,9 @@ export function useRuntimeConfigModal(isAuthenticated: { value: boolean }) {
     try {
       configSubmitting.value = true;
       configError.value = "";
-      setApiBaseUrl(nextUrl);
+      runtimeStore.setApiBaseUrl(nextUrl);
       if (isAuthenticated.value) {
-        await applyRuntimeApiBaseUrlChange();
+        await bridge.applyRuntimeApiBaseUrlChange();
       }
       showToast("后端地址已更新并生效", "success");
       closeConfig();
@@ -49,10 +63,10 @@ export function useRuntimeConfigModal(isAuthenticated: { value: boolean }) {
     try {
       configSubmitting.value = true;
       configError.value = "";
-      resetApiBaseUrl();
-      configApiBaseUrl.value = getCurrentApiBaseUrl();
+      runtimeStore.resetApiBaseUrl();
+      configApiBaseUrl.value = runtimeStore.apiBaseUrl;
       if (isAuthenticated.value) {
-        await applyRuntimeApiBaseUrlChange();
+        await bridge.applyRuntimeApiBaseUrlChange();
       }
       showToast("已恢复默认地址并生效", "success");
       closeConfig();

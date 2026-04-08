@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import editIcon from "../../assets/icons/edit.svg?url";
+import sendIcon from "../../assets/icons/send.svg?url";
 
 const props = withDefaults(defineProps<{ submitting?: boolean }>(), {
   submitting: false,
@@ -35,18 +37,14 @@ defineExpose({ clear });
 <template>
   <div class="send-panel">
     <h2 class="send-panel-title">
-      <svg class="send-panel-title-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-      </svg>
+      <img :src="editIcon" class="send-panel-title-icon" alt="">
       发送文本
     </h2>
     <form id="text-form" class="send-panel-form" @submit="handleSubmit">
       <input v-model="title" type="text" id="text-title" placeholder="标题（可选）" maxlength="80" class="ui-input">
       <textarea v-model="content" id="text-content" placeholder="输入要同步的文本..." rows="3" maxlength="500" class="ui-input ui-textarea"></textarea>
       <button type="submit" id="text-submit-btn" class="send-panel-submit" :disabled="props.submitting">
-        <svg class="send-panel-submit-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-        </svg>
+        <img :src="sendIcon" class="send-panel-submit-icon" alt="">
         {{ props.submitting ? "发送中..." : "发送" }}
       </button>
     </form>

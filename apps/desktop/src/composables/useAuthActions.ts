@@ -1,10 +1,13 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { loginWithPassword } from "../utils/auth";
-import { getAuthSession, setAuthSession } from "../stores/auth";
-import { getCurrentApiBaseUrl } from "../stores/runtime";
+import { useAuthStore } from "../stores/auth";
+import { useRuntimeStore } from "../stores/runtime";
 
 export function useAuthActions() {
-  const isAuthenticated = ref(Boolean(getAuthSession().accessToken));
+  const authStore = useAuthStore();
+  const runtimeStore = useRuntimeStore();
+
+  const isAuthenticated = computed(() => Boolean(authStore.accessToken));
   const loginUsername = ref("");
   const loginPassword = ref("");
   const loginStatus = ref("未登录");
@@ -20,13 +23,12 @@ export function useAuthActions() {
       loginSubmitting.value = true;
       loginStatus.value = "登录中...";
       const session = await loginWithPassword({
-        baseUrl: getCurrentApiBaseUrl(),
+        baseUrl: runtimeStore.apiBaseUrl,
         username,
         password,
       });
-      setAuthSession(session.tokens, session.username, session.deviceId);
+      authStore.setSession(session.tokens, session.username, session.deviceId);
       loginStatus.value = "登录成功";
-      isAuthenticated.value = true;
     } catch (error) {
       loginStatus.value = `登录失败: ${error instanceof Error ? error.message : "未知错误"}`;
     } finally {
@@ -35,7 +37,6 @@ export function useAuthActions() {
   }
 
   function onLoggedOut(): void {
-    isAuthenticated.value = false;
     loginStatus.value = "未登录";
     loginPassword.value = "";
   }

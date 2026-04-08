@@ -1,16 +1,35 @@
 import { defineStore } from "pinia";
-import { pinia } from ".";
 
 const RUNTIME_CONFIG_STORAGE_KEY = "nanopaste.runtime.config";
 const DEFAULT_API_BASE_URL = "http://localhost:8080";
 const ENV_DEFAULT_API_BASE_URL = (import.meta.env.VITE_DEFAULT_APP_API_BASE_URL ?? "").trim();
 
-export interface RuntimeConfig {
-  apiBaseUrl: string;
+function normalizeApiBaseUrl(input: string): string {
+  const normalized = input.trim();
+  return normalized.replace(/\/+$/, "");
 }
 
-const useRuntimeConfigStore = defineStore("runtime-config", {
-  state: (): RuntimeConfig => ({
+function isValidApiBaseUrl(input: string): boolean {
+  const normalized = normalizeApiBaseUrl(input);
+  if (!normalized) return false;
+  try {
+    const parsed = new URL(normalized);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function resolveInitialApiBaseUrl(): string {
+  const fromEnv = normalizeApiBaseUrl(ENV_DEFAULT_API_BASE_URL);
+  if (isValidApiBaseUrl(fromEnv)) {
+    return fromEnv;
+  }
+  return DEFAULT_API_BASE_URL;
+}
+
+export const useRuntimeStore = defineStore("runtime-config", {
+  state: () => ({
     apiBaseUrl: resolveInitialApiBaseUrl(),
   }),
   actions: {
@@ -33,23 +52,6 @@ const useRuntimeConfigStore = defineStore("runtime-config", {
   },
 });
 
-function getRuntimeStore(): ReturnType<typeof useRuntimeConfigStore> {
-  return useRuntimeConfigStore(pinia);
-}
-
-export function useRuntimeStore() {
-  return useRuntimeConfigStore();
-}
-
-export function getRuntimeConfig(): RuntimeConfig {
-  const runtimeStore = getRuntimeStore();
-  return { apiBaseUrl: runtimeStore.apiBaseUrl };
-}
-
-export function getCurrentApiBaseUrl(): string {
-  return getRuntimeStore().apiBaseUrl;
-}
-
 export function resolveApiUrl(pathOrUrl: string): string {
   const value = (pathOrUrl ?? "").trim();
   if (!value) {
@@ -65,46 +67,7 @@ export function resolveApiUrl(pathOrUrl: string): string {
     // ignore and treat as relative path
   }
 
+  const runtimeStore = useRuntimeStore();
   const normalizedPath = value.startsWith("/") ? value : `/${value}`;
-  return `${getCurrentApiBaseUrl()}${normalizedPath}`;
-}
-
-export function setApiBaseUrl(nextApiBaseUrl: string): RuntimeConfig {
-  const runtimeStore = getRuntimeStore();
-  runtimeStore.setApiBaseUrl(nextApiBaseUrl);
-  return getRuntimeConfig();
-}
-
-export function resetApiBaseUrl(): RuntimeConfig {
-  const runtimeStore = getRuntimeStore();
-  runtimeStore.resetApiBaseUrl();
-  return getRuntimeConfig();
-}
-
-export function isValidApiBaseUrl(input: string): boolean {
-  const normalized = normalizeApiBaseUrl(input);
-  if (!normalized) {
-    return false;
-  }
-
-  try {
-    const parsed = new URL(normalized);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function resolveInitialApiBaseUrl(): string {
-  const fromEnv = normalizeApiBaseUrl(ENV_DEFAULT_API_BASE_URL);
-  if (isValidApiBaseUrl(fromEnv)) {
-    return fromEnv;
-  }
-
-  return DEFAULT_API_BASE_URL;
-}
-
-function normalizeApiBaseUrl(input: string): string {
-  const normalized = input.trim();
-  return normalized.replace(/\/+$/, "");
+  return `${runtimeStore.apiBaseUrl}${normalizedPath}`;
 }

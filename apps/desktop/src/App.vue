@@ -1,19 +1,29 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed } from "vue";
 import LoginPage from "./pages/LoginPage.vue";
 import WorkspacePage from "./pages/WorkspacePage.vue";
 import ToastStack from "./components/feedback/ToastStack.vue";
 import ConfigModal from "./components/modals/ConfigModal.vue";
 import { useAuthActions } from "./composables/useAuthActions";
 import { useRuntimeConfigModal } from "./composables/useRuntimeConfigModal";
+import { useAuthStore } from "./stores/auth";
 
-const { isAuthenticated, loginUsername, loginPassword, loginStatus, loginSubmitting, handleLoginSubmit, onLoggedOut } = useAuthActions();
+const auth = useAuthActions();
+const authStore = useAuthStore();
+const config = useRuntimeConfigModal(computed(() => Boolean(authStore.accessToken)));
 
-// 登录页也需要配置弹窗（修改后端地址）
-const { configOpen, configSubmitting, configApiBaseUrl, configError, currentApiBaseUrl, openConfig, closeConfig, saveConfig, restoreDefaultConfig } = useRuntimeConfigModal(isAuthenticated);
+const isAuthenticated = computed(() => Boolean(authStore.accessToken));
 
-function handleLoggedOut(): void {
-  onLoggedOut();
+function updateAuthUsername(value: string): void {
+  auth.loginUsername.value = value;
+}
+
+function updateAuthPassword(value: string): void {
+  auth.loginPassword.value = value;
+}
+
+function updateConfigApiUrl(value: string): void {
+  config.configApiBaseUrl.value = value;
 }
 </script>
 
@@ -21,33 +31,33 @@ function handleLoggedOut(): void {
   <div class="app-root">
     <LoginPage
       v-if="!isAuthenticated"
-      :login-username="loginUsername"
-      :login-password="loginPassword"
-      :login-status="loginStatus"
-      :login-submitting="loginSubmitting"
-      @update:login-username="loginUsername = $event"
-      @update:login-password="loginPassword = $event"
-      @submit="handleLoginSubmit"
-      @open-config="openConfig"
+      :login-username="auth.loginUsername.value"
+      :login-password="auth.loginPassword.value"
+      :login-status="auth.loginStatus.value"
+      :login-submitting="auth.loginSubmitting.value"
+      @update:login-username="updateAuthUsername"
+      @update:login-password="updateAuthPassword"
+      @submit="auth.handleLoginSubmit"
+      @open-config="config.openConfig"
     />
 
     <WorkspacePage
       v-else
       :is-authenticated="isAuthenticated"
-      @logged-out="handleLoggedOut"
-      @open-config="openConfig"
+      @logged-out="auth.onLoggedOut"
+      @open-config="config.openConfig"
     />
 
     <ConfigModal
-      v-if="configOpen"
-      :submitting="configSubmitting"
-      :api-base-url="configApiBaseUrl"
-      :current-api-base-url="currentApiBaseUrl"
-      :error="configError"
-      @update:api-base-url="configApiBaseUrl = $event"
-      @save="saveConfig"
-      @restore-default="restoreDefaultConfig"
-      @close="closeConfig"
+      v-if="config.configOpen.value"
+      :submitting="config.configSubmitting.value"
+      :api-base-url="config.configApiBaseUrl.value"
+      :current-api-base-url="config.currentApiBaseUrl.value"
+      :error="config.configError.value"
+      @update:api-base-url="updateConfigApiUrl"
+      @save="config.saveConfig"
+      @restore-default="config.restoreDefaultConfig"
+      @close="config.closeConfig"
     />
 
     <ToastStack />

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd apps/desktop && npx vue-tsc --noEmit 2>&1 | head -100)",
+      "Bash(cd apps/desktop && npx vue-tsc --noEmit 2>&1 | head -50)",
+      "Bash(npx vue-tsc --noEmit 2>&1 | head -60)",
+      "Bash(npm run build 2>&1 | tail -30)",
+      "Bash(npx vite build 2>&1)",
+      "Bash(npx vue-tsc --noEmit 2>&1 && echo \"类型检查通过\")",
+      "Bash(npx vue-tsc --noEmit 2>&1 && echo \"✓ 类型检查通过\")",
+      "Bash(npx vue-tsc --noEmit 2>&1 && npx vite build 2>&1 | tail -10)",
+      "Bash(ls -la *.config.* vite.config.* 2>/dev/null || find . -name \"vite.config.*\" -not -path \"*/node_modules/*\" | head -5)",
+      "Bash(cd apps/desktop && npm run type-check 2>&1 || npx vue-tsc --noEmit 2>&1)",
+      "Bash(cd apps/desktop && npm run typecheck 2>&1)",
+      "Bash(npm run typecheck 2>&1)",
+      "Bash(npm run build 2>&1 | head -100)"
+    ]
+  }
+}

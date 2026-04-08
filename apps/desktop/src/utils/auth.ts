@@ -1,4 +1,4 @@
-import { getRememberedDeviceId } from "../stores/auth";
+import { useAuthStore } from "../stores/auth";
 import { request } from "./request";
 
 export interface AuthTokenBundle {
@@ -20,7 +20,8 @@ interface LoginResult {
 }
 
 export async function loginWithPassword(input: LoginInput): Promise<LoginResult> {
-  const rememberedDeviceId = getRememberedDeviceId();
+  const authStore = useAuthStore();
+  const rememberedDeviceId = authStore.rememberedDeviceId;
 
   const payload = await postApi<LoginApiData>(`${input.baseUrl}/v1/auth/login`, {
     username: input.username,

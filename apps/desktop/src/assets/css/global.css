@@ -224,4 +224,40 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* 图标颜色样式 - 白色 (用于深色背景) */
+  .icon-white {
+    filter: brightness(0) invert(1);
+  }
+
+  /* 图标颜色样式 - 继承父元素颜色 (模拟 currentColor 效果) */
+  .icon-inherit {
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+  }
+
+  /* 图标颜色样式 - slate-400 */
+  .icon-slate-400 {
+    filter: brightness(0) saturate(100%) invert(65%) sepia(13%) saturate(435%) hue-rotate(174deg) brightness(95%) contrast(88%);
+  }
+
+  /* 图标颜色样式 - violet-400 */
+  .icon-violet-400 {
+    filter: brightness(0) saturate(100%) invert(61%) sepia(95%) saturate(4065%) hue-rotate(226deg) brightness(98%) contrast(96%);
+  }
+
+  /* 图标颜色样式 - emerald-400 */
+  .icon-emerald-400 {
+    filter: brightness(0) saturate(100%) invert(70%) sepia(81%) saturate(414%) hue-rotate(108deg) brightness(92%) contrast(91%);
+  }
+
+  /* 图标颜色样式 - red-400 */
+  .icon-red-400 {
+    filter: brightness(0) saturate(100%) invert(58%) sepia(87%) saturate(4202%) hue-rotate(338deg) brightness(98%) contrast(96%);
+  }
+
+  /* 图标颜色样式 - slate-500 */
+  .icon-slate-500 {
+    filter: brightness(0) saturate(100%) invert(43%) sepia(15%) saturate(801%) hue-rotate(174deg) brightness(92%) contrast(91%);
+  }
 }
