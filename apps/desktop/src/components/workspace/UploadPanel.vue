@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import uploadCloudIcon from "../../assets/icons/upload-cloud.svg?url";
-import folderIcon from "../../assets/icons/folder.svg?url";
-import spinnerIcon from "../../assets/icons/spinner.svg?url";
+import UploadCloudIcon from "../../assets/icons/upload-cloud.svg";
+import FolderIcon from "../../assets/icons/folder.svg";
+import SpinnerIcon from "../../assets/icons/spinner.svg";
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
@@ -59,13 +59,13 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
 <template>
   <div :class="props.compact ? 'upload-panel' : 'upload-panel upload-panel--full'">
     <h2 class="upload-panel-title">
-      <img :src="uploadCloudIcon" class="upload-panel-title-icon" alt="">
+      <UploadCloudIcon class="upload-panel-title-icon" />
       上传文件
     </h2>
 
     <div id="upload-dropzone" class="upload-dropzone" @click="chooseFiles" @dragover="handleDragOver" @drop="handleDrop">
       <div class="upload-dropzone-icon-wrap">
-        <img :src="uploadCloudIcon" class="upload-dropzone-icon" alt="">
+        <UploadCloudIcon class="upload-dropzone-icon" />
       </div>
       <p class="upload-dropzone-title">拖拽文件到这里</p>
       <p class="upload-dropzone-hint">或点击选择文件</p>
@@ -79,7 +79,7 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
 
     <div id="upload-queue" :class="[props.compact ? 'upload-queue' : 'upload-queue upload-queue--full custom-scrollbar']">
       <div v-if="props.queueItems.length === 0" class="upload-queue-empty">
-        <img :src="folderIcon" class="upload-queue-empty-icon" alt="">
+        <FolderIcon class="upload-queue-empty-icon" />
         队列为空
       </div>
       <div v-else v-for="item in props.queueItems" :key="item.id" class="upload-queue-item">
@@ -87,7 +87,7 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
           <div class="upload-queue-item-info">
             <p class="upload-queue-item-name">{{ item.fileName }}</p>
             <p class="upload-queue-item-status inline-flex items-center gap-2" :class="statusMap[item.status].color">
-              <img v-if="item.status === 'uploading'" :src="spinnerIcon" class="h-3.5 w-3.5 animate-spin" aria-hidden="true" alt="">
+              <SpinnerIcon v-if="item.status === 'uploading'" class="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               {{ statusMap[item.status].text }}
             </p>
           </div>

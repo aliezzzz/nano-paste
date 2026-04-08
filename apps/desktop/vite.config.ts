@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import UnoCSS from "unocss/vite";
+import svgLoader from "vite-svg-loader";
 
 export default defineConfig({
-  plugins: [vue(), UnoCSS()],
+  plugins: [vue(), UnoCSS(), svgLoader()],
   clearScreen: false,
   base: './',
   server: {

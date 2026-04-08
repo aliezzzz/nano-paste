@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import trayTemplateIcon from "../assets/icons/tray-template.svg?url";
-import settingsIcon from "../assets/icons/settings.svg?url";
+import TrayTemplateIcon from "../assets/icons/tray-template.svg";
+import SettingsIcon from "../assets/icons/settings.svg";
 
 const props = defineProps<{
   loginUsername: string;
@@ -31,7 +31,7 @@ const emit = defineEmits<{
       class="app-login-config-btn safe-top-offset"
       @click="emit('open-config')"
     >
-      <img :src="settingsIcon" class="app-login-config-btn-icon" aria-hidden="true" alt="">
+      <SettingsIcon class="app-login-config-btn-icon" aria-hidden="true" />
     </button>
 
     <div class="app-login-shell safe-top safe-bottom">
@@ -41,7 +41,7 @@ const emit = defineEmits<{
         <div class="app-login-card-shell">
           <div class="app-login-brand">
             <div class="app-login-brand-icon-wrap">
-              <img class="app-login-brand-icon" :src="trayTemplateIcon" alt="NanoPaste logo">
+              <TrayTemplateIcon class="app-login-brand-icon" />
             </div>
             <h1 class="app-login-title">NanoPaste</h1>
             <p class="app-login-subtitle">跨设备同步，即刻开始</p>

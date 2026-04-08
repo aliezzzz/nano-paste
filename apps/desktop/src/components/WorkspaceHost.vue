@@ -4,10 +4,10 @@ import SendPanel from "./workspace/SendPanel.vue";
 import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
-import trayTemplateIcon from "../assets/icons/tray-template.svg?url";
-import chevronDownIcon from "../assets/icons/chevron-down.svg?url";
-import settingsIcon from "../assets/icons/settings.svg?url";
-import logoutIcon from "../assets/icons/logout.svg?url";
+import TrayTemplateIcon from "../assets/icons/tray-template.svg";
+import ChevronDownIcon from "../assets/icons/chevron-down.svg";
+import SettingsIcon from "../assets/icons/settings.svg";
+import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ActiveDeviceView, ItemActionPayload, RealtimeStatus } from "../types/workspace";
 
@@ -112,11 +112,7 @@ function uploadFiles(files: File[]): void {
             <header class="host-header">
                 <div class="host-brand-wrap">
                     <div class="host-brand-icon-wrap">
-                        <img
-                            class="host-brand-icon"
-                            :src="trayTemplateIcon"
-                            alt="NanoPaste logo"
-                        >
+                        <TrayTemplateIcon class="host-brand-icon" />
                     </div>
                     <span class="host-brand-text">NanoPaste</span>
                 </div>
@@ -143,11 +139,7 @@ function uploadFiles(files: File[]): void {
                             <span class="host-device-count">
                                 <span>{{ props.activeDevices.length }}</span>
                                 设备
-                                <img
-                                    :src="chevronDownIcon"
-                                    class="host-device-count-icon"
-                                    alt=""
-                                >
+                                <ChevronDownIcon class="host-device-count-icon" />
                             </span>
                         </div>
 
@@ -210,12 +202,10 @@ function uploadFiles(files: File[]): void {
                         class="host-icon-btn"
                         @click="openConfig"
                     >
-                        <img
-                            :src="settingsIcon"
+                        <SettingsIcon
                             class="host-icon-btn-icon"
                             aria-hidden="true"
-                            alt=""
-                        >
+                        />
                     </button>
 
                     <div class="host-user-wrap group">
@@ -250,11 +240,7 @@ function uploadFiles(files: File[]): void {
                                     class="host-logout-btn"
                                     @click="logout"
                                 >
-                                    <img
-                                        :src="logoutIcon"
-                                        class="host-logout-btn-icon"
-                                        alt=""
-                                    >
+                                    <LogoutIcon class="host-logout-btn-icon" />
                                     退出登录
                                 </button>
                             </div>
@@ -292,11 +278,7 @@ function uploadFiles(files: File[]): void {
                 <header class="host-header host-mobile-header safe-top">
                     <div class="host-brand-wrap">
                         <div class="host-brand-icon-wrap">
-                            <img
-                                class="host-brand-icon"
-                                :src="trayTemplateIcon"
-                                alt="NanoPaste logo"
-                            >
+                            <TrayTemplateIcon class="host-brand-icon" />
                         </div>
                         <span class="host-brand-text-mobile">NanoPaste</span>
                     </div>
@@ -309,12 +291,10 @@ function uploadFiles(files: File[]): void {
                             class="host-icon-btn"
                             @click="openConfig"
                         >
-                            <img
-                                :src="settingsIcon"
+                            <SettingsIcon
                                 class="host-icon-btn-icon"
                                 aria-hidden="true"
-                                alt=""
-                            >
+                            />
                         </button>
                         <div class="host-user-wrap group">
                             <button
@@ -348,11 +328,7 @@ function uploadFiles(files: File[]): void {
                                         class="host-logout-btn"
                                         @click="logout"
                                     >
-                                        <img
-                                            :src="logoutIcon"
-                                            class="host-logout-btn-icon"
-                                            alt=""
-                                        >
+                                        <LogoutIcon class="host-logout-btn-icon" />
                                         退出登录
                                     </button>
                                 </div>

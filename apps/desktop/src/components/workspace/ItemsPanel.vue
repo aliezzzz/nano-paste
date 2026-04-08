@@ -2,13 +2,13 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 import { formatBytes } from "../../utils/format";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
-import clockIcon from "../../assets/icons/clock.svg?url";
-import refreshIcon from "../../assets/icons/refresh.svg?url";
-import starIcon from "../../assets/icons/star.svg?url";
-import copyIcon from "../../assets/icons/copy.svg?url";
-import downloadIcon from "../../assets/icons/download.svg?url";
-import deleteIcon from "../../assets/icons/delete.svg?url";
-import inboxEmptyIcon from "../../assets/icons/inbox-empty.svg?url";
+import ClockIcon from "../../assets/icons/clock.svg";
+import RefreshIcon from "../../assets/icons/refresh.svg";
+import StarIcon from "../../assets/icons/star.svg";
+import CopyIcon from "../../assets/icons/copy.svg";
+import DownloadIcon from "../../assets/icons/download.svg";
+import DeleteIcon from "../../assets/icons/delete.svg";
+import InboxEmptyIcon from "../../assets/icons/inbox-empty.svg";
 
 export type { ItemView };
 
@@ -74,7 +74,7 @@ onBeforeUnmount(() => {
   <div class="items-panel">
     <div class="panel-header">
       <h2 class="panel-title">
-        <img :src="clockIcon" class="panel-title-icon" alt="">
+        <ClockIcon class="panel-title-icon" />
         最近条目
       </h2>
       <div class="panel-actions">
@@ -86,13 +86,11 @@ onBeforeUnmount(() => {
           title="刷新条目"
           @click="refreshItems"
         >
-          <img
-            :src="refreshIcon"
+          <RefreshIcon
             class="refresh-icon"
             :class="rotating ? 'refresh-icon--rotating' : ''"
             aria-hidden="true"
-            alt=""
-          >
+          />
         </button>
 
         <div class="filter-tabs">
@@ -142,7 +140,7 @@ onBeforeUnmount(() => {
                     :title="item.isFavorite ? '取消收藏' : '收藏'"
                     @click="emit('item-action', { id: item.id, action: 'favorite', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <img :src="starIcon" class="w-4 h-4" aria-hidden="true" alt="">
+                    <StarIcon class="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -163,7 +161,7 @@ onBeforeUnmount(() => {
                     :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'"
                     @click="emit('item-action', { id: item.id, action: item.type === 'text' ? 'copy' : 'download', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <img :src="item.type === 'text' ? copyIcon : downloadIcon" class="action-btn-icon" alt="">
+                    <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
                     {{ item.type === 'text' ? '复制' : '下载' }}
                   </button>
                   <span v-if="item.type === 'file' && item.fileSize" class="file-size-inline">{{ formatBytes(item.fileSize) }}</span>
@@ -178,7 +176,7 @@ onBeforeUnmount(() => {
                     title="删除"
                     @click="emit('item-action', { id: item.id, action: 'delete', type: item.type, content: item.content, fileId: item.fileId, fileName: item.fileName, isFavorite: item.isFavorite })"
                   >
-                    <img :src="deleteIcon" class="delete-btn-icon" alt="">
+                    <DeleteIcon class="delete-btn-icon" />
                     删除
                   </button>
                 </div>
@@ -189,7 +187,7 @@ onBeforeUnmount(() => {
       </div>
       
       <p v-if="!props.loading && visibleItems.length === 0" id="items-empty" class="items-empty-state">
-        <img :src="inboxEmptyIcon" class="items-empty-icon" alt="">
+        <InboxEmptyIcon class="items-empty-icon" />
         {{ favoriteOnly ? '暂无收藏条目' : '暂无条目' }}
       </p>
     </div>

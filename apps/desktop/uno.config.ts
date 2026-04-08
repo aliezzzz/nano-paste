@@ -107,7 +107,7 @@ export default defineConfig({
     "host-device-count":
       "text-slate-400 font-mono text-xs flex items-center gap-1",
     "host-device-count-icon":
-      "w-3 h-3 transition-transform group-hover:rotate-180 [filter:brightness(0)_saturate(100%)_invert(65%)_sepia(13%)_saturate(435%)_hue-rotate(174deg)_brightness(95%)_contrast(88%)]",
+      "w-3 h-3 transition-transform group-hover:rotate-180 text-slate-400",
     "host-device-dropdown":
       "absolute top-full right-0 mt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100]",
     "host-device-dropdown-card":
@@ -126,7 +126,7 @@ export default defineConfig({
       "w-full text-xs text-violet-400 hover:text-violet-300 py-1.5 rounded-lg hover:bg-slate-800/50 transition-colors",
     "host-icon-btn":
       "w-10 h-10 rounded-xl border border-slate-700/60 bg-slate-800/55 text-slate-300 hover:text-white hover:bg-slate-700/75 transition-colors flex items-center justify-center",
-    "host-icon-btn-icon": "w-4 h-4 [filter:brightness(0)_invert(1)]",
+    "host-icon-btn-icon": "w-4 h-4",
     "host-user-trigger":
       "w-10 h-10 rounded-xl border border-slate-700/60 bg-gradient-to-br from-violet-600/80 to-cyan-500/80 text-white font-semibold text-sm hover:from-violet-500 hover:to-cyan-400 transition-all flex items-center justify-center shadow-lg shadow-violet-500/20",
     "host-user-dropdown":
@@ -141,7 +141,7 @@ export default defineConfig({
     "host-user-name": "text-sm text-slate-200 truncate",
     "host-logout-btn":
       "w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-300 hover:text-red-200 hover:bg-red-500/10 transition-colors",
-    "host-logout-btn-icon": "w-4 h-4 [filter:brightness(0)_saturate(100%)_invert(58%)_sepia(87%)_saturate(4202%)_hue-rotate(338deg)_brightness(98%)_contrast(96%)]",
+    "host-logout-btn-icon": "w-4 h-4 text-red-300",
     "host-main": "relative z-0 flex-1 overflow-hidden flex",
     "host-sidebar":
       "w-96 border-r border-slate-800/50 bg-slate-900/30 flex flex-col shrink-0",
@@ -160,23 +160,23 @@ export default defineConfig({
     "send-panel": "p-0 md:p-4 lg:p-5 md:border-b md:border-slate-800/50",
     "send-panel-title":
       "text-sm font-semibold text-slate-300 mb-2 md:mb-3 flex items-center gap-2",
-    "send-panel-title-icon": "w-4 h-4 [filter:brightness(0)_saturate(100%)_invert(61%)_sepia(95%)_saturate(4065%)_hue-rotate(226deg)_brightness(98%)_contrast(96%)]",
+    "send-panel-title-icon": "w-4 h-4 text-violet-500",
     "send-panel-form": "space-y-2.5 md:space-y-3",
     "send-panel-submit":
       "w-full py-2 px-4 bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-70",
-    "send-panel-submit-icon": "w-4 h-4 [filter:brightness(0)_invert(1)]",
+    "send-panel-submit-icon": "w-4 h-4",
 
     // UploadPanel.vue
     "upload-panel": "p-0 md:p-4",
     "upload-panel--full": "flex-1 flex flex-col min-h-0 sm:p-5",
     "upload-panel-title":
       "text-sm font-semibold text-slate-300 mb-2 md:mb-3 flex items-center gap-2",
-    "upload-panel-title-icon": "w-4 h-4 [filter:brightness(0)_saturate(100%)_invert(78%)_sepia(52%)_saturate(4726%)_hue-rotate(144deg)_brightness(97%)_contrast(90%)]",
+    "upload-panel-title-icon": "w-4 h-4 text-cyan-500",
     "upload-dropzone":
       "border-2 border-dashed border-slate-700 rounded-xl p-4 md:p-6 text-center cursor-pointer transition-all hover:border-slate-500 hover:bg-slate-800/30 mb-3 md:mb-4",
     "upload-dropzone-icon-wrap":
       "w-10 h-10 md:w-12 md:h-12 mx-auto mb-2.5 md:mb-3 rounded-full bg-slate-800 flex items-center justify-center",
-    "upload-dropzone-icon": "w-5 h-5 md:w-6 md:h-6 [filter:brightness(0)_saturate(100%)_invert(65%)_sepia(13%)_saturate(435%)_hue-rotate(174deg)_brightness(95%)_contrast(88%)]",
+    "upload-dropzone-icon": "w-5 h-5 md:w-6 md:h-6 text-slate-400",
     "upload-dropzone-title": "text-sm text-slate-300 font-medium mb-1",
     "upload-dropzone-hint": "text-xs text-slate-500",
     "upload-queue-header": "flex items-center justify-between mb-2",
@@ -187,7 +187,7 @@ export default defineConfig({
     "upload-queue--full": "flex-1 overflow-y-auto min-h-0",
     "upload-queue-empty": "text-center py-5 md:py-8 text-slate-500 text-sm",
     "upload-queue-empty-icon":
-      "w-8 h-8 mx-auto mb-2 opacity-50 flex items-center [filter:brightness(0)_saturate(100%)_invert(65%)_sepia(13%)_saturate(435%)_hue-rotate(174deg)_brightness(95%)_contrast(88%)]",
+      "w-8 h-8 mx-auto mb-2 opacity-50 flex items-center text-slate-400",
     "upload-queue-item":
       "rounded-lg border border-slate-700/60 bg-slate-900/50 p-2 md:p-2.5",
     "upload-queue-item-head": "flex items-center justify-between gap-3",
@@ -206,8 +206,6 @@ export default defineConfig({
     "mobile-tab-btn--active": "text-violet-400",
     "mobile-tab-btn--inactive": "text-slate-400",
     "mobile-tab-icon": "w-6 h-6",
-    "mobile-tab-btn--active": "[filter:brightness(0)_saturate(100%)_invert(61%)_sepia(95%)_saturate(4065%)_hue-rotate(226deg)_brightness(98%)_contrast(96%)]",
-    "mobile-tab-btn--inactive": "[filter:brightness(0)_saturate(100%)_invert(65%)_sepia(13%)_saturate(435%)_hue-rotate(174deg)_brightness(95%)_contrast(88%)]",
     "mobile-tab-label": "text-xs font-medium",
 
     // ItemsPanel.vue
@@ -215,7 +213,7 @@ export default defineConfig({
     "panel-header": "flex items-center justify-between mb-2.5 md:mb-4",
     "panel-title":
       "text-sm font-semibold text-slate-300 flex items-center gap-2",
-    "panel-title-icon": "w-4 h-4 [filter:brightness(0)_saturate(100%)_invert(61%)_sepia(95%)_saturate(4065%)_hue-rotate(226deg)_brightness(98%)_contrast(96%)]",
+    "panel-title-icon": "w-4 h-4 text-violet-500",
     "panel-actions": "flex items-center gap-1.5 md:gap-2",
     "refresh-btn":
       "w-9 h-9 md:w-8 md:h-8 rounded-lg border flex items-center justify-center transition-colors",
@@ -223,7 +221,7 @@ export default defineConfig({
       "text-slate-500 bg-slate-800/50 border-slate-700/60 cursor-not-allowed",
     "refresh-btn--idle":
       "text-cyan-200 bg-cyan-500/15 border-cyan-400/40 hover:bg-cyan-500/25 hover:text-cyan-100",
-    "refresh-icon": "w-4 h-4 [filter:brightness(0)_invert(1)]",
+    "refresh-icon": "w-4 h-4",
     "filter-tabs":
       "inline-flex rounded-lg border border-slate-700/60 bg-slate-900/70 p-0.5",
     "filter-tab": "px-2 py-1 text-xs rounded-md transition-colors",
@@ -248,9 +246,9 @@ export default defineConfig({
     "favorite-btn":
       "w-7 h-7 rounded-lg transition-all flex items-center justify-center",
     "favorite-btn--active":
-      "[filter:brightness(0)_saturate(100%)_invert(80%)_sepia(44%)_saturate(1098%)_hue-rotate(360deg)_brightness(102%)_contrast(101%)] bg-amber-500/15 hover:bg-amber-500/25",
+      "text-amber-300 bg-amber-500/15 hover:bg-amber-500/25",
     "favorite-btn--inactive":
-      "[filter:brightness(0)_saturate(100%)_invert(43%)_sepia(15%)_saturate(801%)_hue-rotate(174deg)_brightness(92%)_contrast(91%)] hover:[filter:brightness(0)_saturate(100%)_invert(80%)_sepia(44%)_saturate(1098%)_hue-rotate(360deg)_brightness(102%)_contrast(101%)] hover:bg-amber-500/10",
+      "text-slate-500 hover:text-amber-300 hover:bg-amber-500/10",
     "item-body": "mb-2 md:mb-3",
     "item-text-content":
       "text-sm md:text-base text-slate-200 whitespace-pre-wrap leading-snug md:leading-relaxed",
@@ -262,7 +260,7 @@ export default defineConfig({
     "action-btn--text":
       "text-violet-300 bg-violet-500/10 hover:bg-violet-500/20",
     "action-btn--file": "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20",
-    "action-btn-icon": "w-4 h-4 [filter:brightness(0)_invert(1)]",
+    "action-btn-icon": "w-4 h-4",
     "footer-meta": "flex items-center gap-2 md:gap-3 shrink-0",
     "file-size-inline":
       "text-[10px] md:text-[11px] text-slate-400 whitespace-nowrap",
@@ -270,10 +268,10 @@ export default defineConfig({
       "text-[11px] md:text-xs text-slate-500 leading-tight whitespace-nowrap",
     "delete-btn":
       "flex items-center gap-1 px-1.5 md:px-2 py-1 rounded-md text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all whitespace-nowrap shrink-0",
-    "delete-btn-icon": "w-3.5 h-3.5 [filter:brightness(0)_saturate(100%)_invert(58%)_sepia(87%)_saturate(4202%)_hue-rotate(338deg)_brightness(98%)_contrast(96%)]",
+    "delete-btn-icon": "w-3.5 h-3.5 text-red-400",
     "items-empty-state":
       "pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-slate-500",
-    "items-empty-icon": "w-12 h-12 mb-3 opacity-30 [filter:brightness(0)_saturate(100%)_invert(43%)_sepia(15%)_saturate(801%)_hue-rotate(174deg)_brightness(92%)_contrast(91%)]",
+    "items-empty-icon": "w-12 h-12 mb-3 opacity-30 text-slate-500",
   },
   content: {
     pipeline: {
