@@ -69,12 +69,6 @@ func (h *handler) uploadDirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID, err := authx.DeviceIDFromRequest(r)
-	if err != nil {
-		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
-		return
-	}
-
 	if err = r.ParseMultipartForm(32 << 20); err != nil {
 		common.WriteError(w, common.VALIDATION_ERROR, "invalid multipart form", nil, requestID)
 		return
@@ -141,7 +135,6 @@ func (h *handler) uploadDirect(w http.ResponseWriter, r *http.Request) {
 	out, err := h.repo.directUpload(r.Context(), directUploadInput{
 		FileID:   fileID,
 		UserID:   userID,
-		DeviceID: deviceID,
 		FileName: fileName,
 		FileSize: fileSize,
 		MimeType: mimeType,

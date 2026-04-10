@@ -21,29 +21,11 @@ func UserIDFromRequest(r *http.Request) (string, error) {
 		return "", errUnauthorized
 	}
 
-	if strings.TrimSpace(claims.deviceID) == "" {
-		return "", errUnauthorized
-	}
-
 	return claims.userID, nil
 }
 
-func DeviceIDFromRequest(r *http.Request) (string, error) {
-	claims, err := claimsFromRequest(r)
-	if err != nil {
-		return "", err
-	}
-
-	if strings.TrimSpace(claims.deviceID) == "" {
-		return "", errUnauthorized
-	}
-
-	return claims.deviceID, nil
-}
-
 type tokenClaims struct {
-	userID   string
-	deviceID string
+	userID string
 }
 
 func claimsFromRequest(r *http.Request) (tokenClaims, error) {
@@ -76,15 +58,12 @@ func claimsFromRequest(r *http.Request) (tokenClaims, error) {
 	}
 
 	sub, _ := claims["sub"].(string)
-	did, _ := claims["did"].(string)
-
-	if strings.TrimSpace(sub) == "" || strings.TrimSpace(did) == "" {
+	if strings.TrimSpace(sub) == "" {
 		return tokenClaims{}, errUnauthorized
 	}
 
 	return tokenClaims{
-		userID:   strings.TrimSpace(sub),
-		deviceID: strings.TrimSpace(did),
+		userID: strings.TrimSpace(sub),
 	}, nil
 }
 

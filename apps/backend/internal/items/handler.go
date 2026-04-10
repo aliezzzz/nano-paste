@@ -103,13 +103,7 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deviceID, err := authx.DeviceIDFromRequest(r)
-	if err != nil {
-		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
-		return
-	}
-
-	item, err := h.repo.createTextItem(r.Context(), userID, deviceID, req.Title, req.Content, req.clientEventID())
+	item, err := h.repo.createTextItem(r.Context(), userID, req.Title, req.Content, req.clientEventID())
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to create item", nil, requestID)
 		return
@@ -292,11 +286,10 @@ type favoriteItemResponse struct {
 
 func toItemDetail(item itemRecord) map[string]any {
 	base := map[string]any{
-		"id":                item.ID,
-		"type":              item.Type,
-		"isFavorite":        item.IsFavorite,
-		"createdAt":         item.CreatedAt,
-		"createdByDeviceId": fallbackDeviceID(item.CreatedByDeviceID),
+		"id":         item.ID,
+		"type":       item.Type,
+		"isFavorite": item.IsFavorite,
+		"createdAt":  item.CreatedAt,
 	}
 	if strings.TrimSpace(item.Title) != "" {
 		base["title"] = item.Title
@@ -314,11 +307,4 @@ func toItemDetail(item itemRecord) map[string]any {
 
 	base["content"] = item.Content
 	return base
-}
-
-func fallbackDeviceID(raw string) string {
-	if strings.TrimSpace(raw) == "" {
-		return "device_unknown"
-	}
-	return raw
 }

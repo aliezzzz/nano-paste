@@ -14,8 +14,8 @@ const config = useRuntimeConfigModal(computed(() => Boolean(authStore.accessToke
 
 const isAuthenticated = computed(() => Boolean(authStore.accessToken));
 
-function updateAuthUsername(value: string): void {
-  auth.loginUsername.value = value;
+function updateUsername(value: string): void {
+  auth.username.value = value;
 }
 
 function updateAuthPassword(value: string): void {
@@ -31,11 +31,11 @@ function updateConfigApiUrl(value: string): void {
   <div class="app-root">
     <LoginPage
       v-if="!isAuthenticated"
-      :login-username="auth.loginUsername.value"
+      :username="auth.username.value"
       :login-password="auth.loginPassword.value"
       :login-status="auth.loginStatus.value"
       :login-submitting="auth.loginSubmitting.value"
-      @update:login-username="updateAuthUsername"
+      @update:username="updateUsername"
       @update:login-password="updateAuthPassword"
       @submit="auth.handleLoginSubmit"
       @open-config="config.openConfig"

@@ -83,28 +83,15 @@ func ensureAuthTables(db *sql.DB) error {
 		  created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 		);`,
-		`CREATE TABLE IF NOT EXISTS devices (
-		  id TEXT PRIMARY KEY,
-		  user_id TEXT NOT NULL,
-		  device_name TEXT NOT NULL,
-		  platform TEXT NOT NULL DEFAULT 'unknown',
-		  client_version TEXT,
-		  last_seen_at TEXT NOT NULL,
-		  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-		  revoked_at TEXT,
-		  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-		);`,
 		`CREATE TABLE IF NOT EXISTS sessions (
 		  id TEXT PRIMARY KEY,
 		  user_id TEXT NOT NULL,
-		  device_id TEXT,
 		  refresh_token TEXT NOT NULL UNIQUE,
 		  access_expires_at TEXT,
 		  refresh_expires_at TEXT,
 		  created_at TEXT NOT NULL DEFAULT (datetime('now')),
 		  revoked_at TEXT,
-		  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-		  FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL
+		  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
 	}
 
@@ -144,12 +131,10 @@ func ensureCoreSyncTables(db *sql.DB) error {
 		  content TEXT,
 		  file_id TEXT,
 		  is_favorite INTEGER NOT NULL DEFAULT 0,
-		  created_by_device_id TEXT,
 		  created_at TEXT NOT NULL,
 		  deleted_at TEXT,
 		  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
 		  FOREIGN KEY (file_id) REFERENCES file_objects(id) ON DELETE SET NULL,
-		  FOREIGN KEY (created_by_device_id) REFERENCES devices(id) ON DELETE SET NULL,
 		  CHECK (type IN ('text', 'file'))
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_items_user_created ON clipboard_items(user_id, created_at DESC);`,

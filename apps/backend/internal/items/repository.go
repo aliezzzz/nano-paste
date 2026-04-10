@@ -14,19 +14,18 @@ import (
 var errItemNotFound = errors.New("item not found")
 
 type itemRecord struct {
-	ID                string
-	UserID            string
-	Type              string
-	Title             string
-	Content           string
-	FileID            string
-	IsFavorite        bool
-	FileName          string
-	FileSize          int64
-	MimeType          string
-	CreatedByDeviceID string
-	CreatedAt         string
-	DeletedAt         string
+	ID         string
+	UserID     string
+	Type       string
+	Title      string
+	Content    string
+	FileID     string
+	IsFavorite bool
+	FileName   string
+	FileSize   int64
+	MimeType   string
+	CreatedAt  string
+	DeletedAt  string
 }
 
 type repository struct {
@@ -37,7 +36,7 @@ func newRepository(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
-func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title, content, clientEventID string) (itemRecord, error) {
+func (r *repository) createTextItem(ctx context.Context, userID, title, content, clientEventID string) (itemRecord, error) {
 	if strings.TrimSpace(content) == "" {
 		return itemRecord{}, fmt.Errorf("content required")
 	}
@@ -56,9 +55,9 @@ func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title
 	defer func() { _ = tx.Rollback() }()
 
 	insertQ := `
-		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, created_by_device_id, created_at)
-		VALUES(?, ?, 'text', ?, ?, NULL, ?, ?)`
-	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, nullIfEmpty(deviceID), now); err != nil {
+		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, created_at)
+		VALUES(?, ?, 'text', ?, ?, NULL, ?)`
+	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, now); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") && strings.TrimSpace(clientEventID) != "" {
 			existing, existingErr := queryItemByID(ctx, tx, userID, itemID)
 			if existingErr != nil {
@@ -98,7 +97,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 	query := `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
-		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
+		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
 		LEFT JOIN file_objects f ON f.id = i.file_id
 		WHERE i.user_id = ? AND i.deleted_at IS NULL`
@@ -144,7 +143,7 @@ func (r *repository) getItemByID(ctx context.Context, userID, itemID string) (it
 	row := r.db.QueryRowContext(ctx, `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
-		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
+		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
 		LEFT JOIN file_objects f ON f.id = i.file_id
 		WHERE i.user_id = ? AND i.id = ? AND i.deleted_at IS NULL
@@ -215,7 +214,7 @@ func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (ite
 	row := q.QueryRowContext(ctx, `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
-		       COALESCE(i.created_by_device_id, ''), i.created_at, COALESCE(i.deleted_at, '')
+		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
 		LEFT JOIN file_objects f ON f.id = i.file_id
 		WHERE i.user_id = ? AND i.id = ?
@@ -255,16 +254,12 @@ func scanItemOne(row scanner) (itemRecord, error) {
 		&it.FileName,
 		&it.FileSize,
 		&it.MimeType,
-		&it.CreatedByDeviceID,
 		&it.CreatedAt,
 		&it.DeletedAt,
 	); err != nil {
 		return itemRecord{}, err
 	}
 	it.IsFavorite = isFavorite > 0
-	if strings.TrimSpace(it.CreatedByDeviceID) == "" {
-		it.CreatedByDeviceID = "device_unknown"
-	}
 	return it, nil
 }
 

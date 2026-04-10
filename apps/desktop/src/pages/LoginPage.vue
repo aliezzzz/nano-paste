@@ -3,7 +3,7 @@ import TrayTemplateIcon from "../assets/icons/tray-template.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
 
 const props = defineProps<{
-  loginUsername: string;
+  username: string;
   loginPassword: string;
   loginStatus: string;
   loginSubmitting: boolean;
@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "open-config"): void;
-  (e: "update:loginUsername", value: string): void;
+  (e: "update:username", value: string): void;
   (e: "update:loginPassword", value: string): void;
   (e: "submit", event: Event): void;
 }>();
@@ -44,13 +44,13 @@ const emit = defineEmits<{
               <TrayTemplateIcon class="app-login-brand-icon" />
             </div>
             <h1 class="app-login-title">NanoPaste</h1>
-            <p class="app-login-subtitle">跨设备同步，即刻开始</p>
+            <p class="app-login-subtitle">你的轻量剪贴板工作台</p>
           </div>
 
           <form id="login-form" class="app-login-form" @submit="emit('submit', $event)">
             <div>
               <label class="app-login-label">用户名</label>
-              <input :value="props.loginUsername" type="text" id="login-username" placeholder="输入用户名" required autocomplete="username" class="ui-input ui-input-lg" @input="emit('update:loginUsername', ($event.target as HTMLInputElement).value)">
+              <input :value="props.username" type="text" id="login-username" placeholder="输入用户名" required autocomplete="username" class="ui-input ui-input-lg" @input="emit('update:username', ($event.target as HTMLInputElement).value)">
             </div>
             <div>
               <label class="app-login-label">密码</label>

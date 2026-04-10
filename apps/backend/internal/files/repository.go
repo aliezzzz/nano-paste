@@ -27,7 +27,6 @@ func newRepository(db *sql.DB) *repository {
 type directUploadInput struct {
 	FileID   string
 	UserID   string
-	DeviceID string
 	FileName string
 	FileSize int64
 	MimeType string
@@ -71,13 +70,12 @@ func (r *repository) directUpload(ctx context.Context, in directUploadInput) (co
 
 	itemID := uuid.NewString()
 	if _, err = tx.ExecContext(ctx, `
-		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, created_by_device_id, created_at)
-		VALUES(?, ?, 'file', ?, NULL, ?, ?, ?)`,
+		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, created_at)
+		VALUES(?, ?, 'file', ?, NULL, ?, ?)`,
 		itemID,
 		in.UserID,
 		nullIfEmpty(in.FileName),
 		in.FileID,
-		nullIfEmpty(in.DeviceID),
 		createdAt,
 	); err != nil {
 		return completeUploadOutput{}, fmt.Errorf("insert file item direct upload: %w", err)

@@ -4,11 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestUpsertDevice_ReusesWebDeviceByScope(t *testing.T) {
+func TestCreateSession_StoresActiveSession(t *testing.T) {
 	db := openTestDB(t)
 	repo := newRepository(db)
 	ctx := context.Background()
@@ -18,18 +19,27 @@ func TestUpsertDevice_ReusesWebDeviceByScope(t *testing.T) {
 		t.Fatalf("insert user: %v", err)
 	}
 
-	firstID, err := repo.upsertDevice(ctx, userID, "", "web", "windows", "0.1.0")
+	accessExp := time.Now().UTC().Add(1 * time.Hour)
+	refreshExp := time.Now().UTC().Add(24 * time.Hour)
+	refreshToken := "refresh-token-1"
+
+	sessionID, err := repo.createSession(ctx, userID, refreshToken, accessExp, refreshExp)
 	if err != nil {
-		t.Fatalf("first upsertDevice: %v", err)
+		t.Fatalf("createSession: %v", err)
 	}
 
-	secondID, err := repo.upsertDevice(ctx, userID, "", "web", "windows", "0.1.0")
+	session, err := repo.findActiveSessionByRefreshToken(ctx, refreshToken)
 	if err != nil {
-		t.Fatalf("second upsertDevice: %v", err)
+		t.Fatalf("findActiveSessionByRefreshToken: %v", err)
 	}
-
-	if secondID != firstID {
-		t.Fatalf("expected same device id to be reused, got first=%s second=%s", firstID, secondID)
+	if session == nil {
+		t.Fatal("expected active session, got nil")
+	}
+	if session.ID != sessionID {
+		t.Fatalf("expected session id %s, got %s", sessionID, session.ID)
+	}
+	if session.UserID != userID {
+		t.Fatalf("expected user id %s, got %s", userID, session.UserID)
 	}
 }
 
@@ -50,13 +60,12 @@ func openTestDB(t *testing.T) *sql.DB {
 			created_at TEXT NOT NULL DEFAULT (datetime('now')),
 			updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 		);`,
-		`CREATE TABLE devices (
+		`CREATE TABLE sessions (
 			id TEXT PRIMARY KEY,
 			user_id TEXT NOT NULL,
-			device_name TEXT NOT NULL,
-			platform TEXT NOT NULL DEFAULT 'unknown',
-			client_version TEXT,
-			last_seen_at TEXT NOT NULL,
+			refresh_token TEXT NOT NULL UNIQUE,
+			access_expires_at TEXT,
+			refresh_expires_at TEXT,
 			created_at TEXT NOT NULL DEFAULT (datetime('now')),
 			revoked_at TEXT,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

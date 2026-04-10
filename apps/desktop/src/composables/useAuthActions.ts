@@ -8,26 +8,26 @@ export function useAuthActions() {
   const runtimeStore = useRuntimeStore();
 
   const isAuthenticated = computed(() => Boolean(authStore.accessToken));
-  const loginUsername = ref("");
+  const username = ref("");
   const loginPassword = ref("");
   const loginStatus = ref("未登录");
   const loginSubmitting = ref(false);
 
   async function handleLoginSubmit(e: Event): Promise<void> {
     e.preventDefault();
-    const username = loginUsername.value.trim();
+    const normalizedUsername = username.value.trim();
     const password = loginPassword.value;
-    if (!username || !password) return;
+    if (!normalizedUsername || !password) return;
 
     try {
       loginSubmitting.value = true;
       loginStatus.value = "登录中...";
       const session = await loginWithPassword({
         baseUrl: runtimeStore.apiBaseUrl,
-        username,
+        username: normalizedUsername,
         password,
       });
-      authStore.setSession(session.tokens, session.username, session.deviceId);
+      authStore.setSession(session.tokens, session.username);
       loginStatus.value = "登录成功";
     } catch (error) {
       loginStatus.value = `登录失败: ${error instanceof Error ? error.message : "未知错误"}`;
@@ -43,7 +43,7 @@ export function useAuthActions() {
 
   return {
     isAuthenticated,
-    loginUsername,
+    username,
     loginPassword,
     loginStatus,
     loginSubmitting,

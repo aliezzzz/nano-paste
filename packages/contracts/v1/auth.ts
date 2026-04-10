@@ -5,16 +5,13 @@
 import type { ApiResponse, AuthTokenPair } from './common';
 
 export interface LoginRequest {
-  account: string;
+  username: string;
   password: string;
-  deviceName?: string;
-  rememberedDeviceId?: string;
 }
 
 export interface LoginResponse {
   userId: string;
-  account: string;
-  deviceId: string;
+  username: string;
   tokens: AuthTokenPair;
 }
 
@@ -30,7 +27,6 @@ export interface RefreshRequest {
 }
 
 export interface RefreshResponse {
-  deviceId: string;
   tokens: AuthTokenPair;
 }
 
@@ -43,7 +39,7 @@ export type RefreshApi = {
 
 export interface LogoutRequest {
   refreshToken: string;
-  allDevices?: boolean;
+  allSessions?: boolean;
 }
 
 export interface LogoutResponse {

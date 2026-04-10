@@ -4,7 +4,6 @@ import { useUploadQueueStore } from "../stores/upload-queue";
 import { useAuthStore } from "../stores/auth";
 import { useRuntimeStore } from "../stores/runtime";
 import { configureRequest } from "../utils/request";
-import { listDevices, revokeDevice } from "../api/devices";
 import { showToast } from "../components/feedback/toast";
 import { listItemDetails } from "../api/items";
 import { cleanupFiles } from "../api/files";
@@ -13,7 +12,6 @@ import { copyTextToClipboard } from "../utils/clipboard";
 import { triggerFileDownload } from "../utils/download";
 import { handleGlobalPaste } from "../utils/clipboard";
 import { getItemIconSvg } from "../utils/item-icons";
-import type { DeviceInfo } from "../../../../packages/contracts/v1";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
 
 export type { ItemView, ItemActionPayload };
@@ -23,20 +21,17 @@ export function useBridge(onLoggedOut: () => void) {
   const authStore = useAuthStore();
   const runtimeStore = useRuntimeStore();
 
-  const { queueViewItems: queueItems, completedVersion } = storeToRefs(uploadQueueStore);
+	const { queueViewItems: queueItems, completedVersion } = storeToRefs(uploadQueueStore);
 
-  const items = ref<ItemView[]>([]);
-  const itemsLoading = ref(false);
-  const activeDevices = ref<{ deviceId: string; deviceName: string; platform: string; lastSeenAt: string; isCurrent: boolean }[]>([]);
-  const devicesLoading = ref(false);
-  const sendingText = ref(false);
+	const items = ref<ItemView[]>([]);
+	const itemsLoading = ref(false);
+	const sendingText = ref(false);
 
   // 内部状态
   let stopUploadQueueSubscription: (() => void) | null = null;
 
   // 计算属性
-  const isAuthenticated = computed(() => Boolean(authStore.accessToken));
-  const currentDeviceId = computed(() => authStore.deviceId);
+	const isAuthenticated = computed(() => Boolean(authStore.accessToken));
 
   // 加载条目
   async function loadItems(): Promise<void> {
@@ -61,29 +56,6 @@ export function useBridge(onLoggedOut: () => void) {
       console.error("加载条目失败:", err);
     } finally {
       itemsLoading.value = false;
-    }
-  }
-
-  // 加载设备
-  async function loadDevices(): Promise<void> {
-    if (!isAuthenticated.value) return;
-
-    try {
-      devicesLoading.value = true;
-      const devices = await listDevices();
-      const activeDevicesData = devices.filter((device) => !device.revokedAt);
-      activeDevices.value = activeDevicesData.map((device) => ({
-        deviceId: device.deviceId,
-        deviceName: device.deviceName || "未命名设备",
-        platform: device.platform,
-        lastSeenAt: device.lastSeenAt,
-        isCurrent: device.deviceId === currentDeviceId.value,
-      }));
-    } catch (err) {
-      console.error("加载设备列表失败:", err);
-      activeDevices.value = [];
-    } finally {
-      devicesLoading.value = false;
     }
   }
 
@@ -115,8 +87,7 @@ export function useBridge(onLoggedOut: () => void) {
     });
 
     void loadItems();
-    void loadDevices();
-  }
+	}
 
   // 初始化
   function initialize(): void {
@@ -242,19 +213,9 @@ export function useBridge(onLoggedOut: () => void) {
     });
   }
 
-  // 获取设备列表（用于设备管理）
-  async function fetchDevices(): Promise<DeviceInfo[]> {
-    return listDevices();
-  }
-
-  // 下线设备
-  async function revokeDeviceById(deviceId: string): Promise<void> {
-    await revokeDevice(deviceId);
-  }
-
-  async function applyRuntimeApiBaseUrlChange(): Promise<void> {
-    await Promise.all([loadItems(), loadDevices()]);
-  }
+	async function applyRuntimeApiBaseUrlChange(): Promise<void> {
+		await loadItems();
+	}
 
   onUnmounted(() => {
     stopUploadQueueSubscription?.();
@@ -263,26 +224,20 @@ export function useBridge(onLoggedOut: () => void) {
 
   return {
     // 状态
-    queueItems,
-    items,
-    itemsLoading,
-    activeDevices,
-    devicesLoading,
-    sendingText,
-    currentDeviceId,
-    // 方法
-    initialize,
-    logout,
-    loadItems,
-    loadDevices,
-    sendTextItem,
+		queueItems,
+		items,
+		itemsLoading,
+		sendingText,
+		// 方法
+		initialize,
+		logout,
+		loadItems,
+		sendTextItem,
     uploadFiles,
     retryUpload,
     clearFinishedUploads,
-    executeItemAction,
-    handleGlobalPasteEvent,
-    fetchDevices,
-    revokeDeviceById,
-    applyRuntimeApiBaseUrlChange,
-  };
+		executeItemAction,
+		handleGlobalPasteEvent,
+		applyRuntimeApiBaseUrlChange,
+	};
 }

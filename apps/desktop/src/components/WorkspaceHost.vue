@@ -5,7 +5,6 @@ import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
-import ChevronDownIcon from "../assets/icons/chevron-down.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
 import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
@@ -18,7 +17,6 @@ const props = withDefaults(
         queueItems?: UploadQueueViewItem[];
         items?: ItemView[];
         itemsLoading?: boolean;
-        activeDevices?: { deviceId: string; deviceName: string; platform: string; lastSeenAt: string; isCurrent: boolean }[];
         sendingText?: boolean;
         username?: string;
     }>(),
@@ -26,7 +24,6 @@ const props = withDefaults(
         queueItems: () => [],
         items: () => [],
         itemsLoading: false,
-        activeDevices: () => [],
         sendingText: false,
         username: "",
     },
@@ -39,7 +36,6 @@ const userInitial = computed(() => {
 
 const emit = defineEmits<{
     (e: "open-config"): void;
-    (e: "open-device-manager"): void;
     (e: "logout"): void;
     (e: "refresh-items"): void;
     (e: "retry-upload", id: string): void;
@@ -53,10 +49,6 @@ const activeMobileTab = ref<"send" | "items">("send");
 
 function openConfig(): void {
     emit("open-config");
-}
-
-function openDeviceManager(): void {
-    emit("open-device-manager");
 }
 
 function logout(): void {
@@ -104,66 +96,6 @@ function uploadFiles(files: File[]): void {
                 </div>
 
                 <div class="host-header-actions">
-                    <div class="host-device-dropdown-wrap group">
-                        <div class="host-device-chip">
-                            <span class="host-device-count">
-                                <span>{{ props.activeDevices.length }}</span>
-                                设备
-                                <ChevronDownIcon class="host-device-count-icon" />
-                            </span>
-                        </div>
-
-                        <div class="host-device-dropdown">
-                            <div class="host-device-dropdown-card glass">
-                                <div class="host-device-dropdown-title">
-                                    在线设备
-                                </div>
-                                <div class="host-device-list">
-                                    <template
-                                        v-if="props.activeDevices.length > 0"
-                                    >
-                                        <div
-                                            v-for="device in props.activeDevices"
-                                            :key="device.deviceId"
-                                            class="host-device-item"
-                                        >
-                                            <div>
-                                                <div
-                                                    class="host-device-item-name"
-                                                >
-                                                    {{ device.deviceName }}
-                                                </div>
-                                                <div
-                                                    class="host-device-item-platform"
-                                                >
-                                                    {{ device.platform }}
-                                                </div>
-                                            </div>
-                                            <span
-                                                v-if="device.isCurrent"
-                                                class="host-device-item-current"
-                                                >当前</span
-                                            >
-                                        </div>
-                                    </template>
-                                    <div v-else class="host-device-item-empty">
-                                        暂无在线设备
-                                    </div>
-                                </div>
-                                <div class="host-device-dropdown-footer">
-                                    <button
-                                        id="manage-devices-btn"
-                                        type="button"
-                                        class="host-device-manage-btn"
-                                        @click="openDeviceManager"
-                                    >
-                                        管理设备
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
                     <button
                         id="open-config-btn"
                         type="button"

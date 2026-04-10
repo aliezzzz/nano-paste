@@ -12,7 +12,6 @@ export interface ItemSummary {
   title?: string;
   isFavorite: boolean;
   createdAt: string;
-  createdByDeviceId: string;
 }
 
 export interface TextItemDetail extends ItemSummary {

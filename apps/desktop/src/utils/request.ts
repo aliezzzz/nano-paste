@@ -27,7 +27,6 @@ declare module "axios" {
   interface AxiosRequestConfig {
     authRequired?: boolean;
     retryOnUnauthorized?: boolean;
-    withDeviceId?: boolean;
     unwrapEnvelope?: boolean;
     skipBaseUrl?: boolean;
     _retried?: boolean;
@@ -36,7 +35,6 @@ declare module "axios" {
   interface InternalAxiosRequestConfig {
     authRequired?: boolean;
     retryOnUnauthorized?: boolean;
-    withDeviceId?: boolean;
     unwrapEnvelope?: boolean;
     skipBaseUrl?: boolean;
     _retried?: boolean;
@@ -77,16 +75,8 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     }
   }
 
-  const withDeviceId = next.withDeviceId ?? true;
-  if (withDeviceId) {
-    const deviceId = (authStore.deviceId || authStore.rememberedDeviceId).trim();
-    if (deviceId) {
-      headers["X-Device-Id"] = deviceId;
-    }
-  }
-
-  next.headers = headers;
-  return next;
+	next.headers = headers;
+	return next;
 });
 
 service.interceptors.response.use(
@@ -159,14 +149,13 @@ async function doRefreshAccessToken(): Promise<boolean> {
   const authStore = useAuthStore();
   const runtimeStore = useRuntimeStore();
 
-  if (!authStore.refreshToken || !authStore.deviceId) {
-    return false;
-  }
-  const refreshSessionVersion = authStore.sessionVersion;
-  const refreshTokenBefore = authStore.refreshToken;
-  const deviceIDBefore = authStore.deviceId;
+	if (!authStore.refreshToken) {
+		return false;
+	}
+	const refreshSessionVersion = authStore.sessionVersion;
+	const refreshTokenBefore = authStore.refreshToken;
 
-  try {
+	try {
     const response = await service.request<ApiResponse<RefreshApiData>>({
       method: "POST",
       url: "/v1/auth/refresh",
@@ -174,43 +163,32 @@ async function doRefreshAccessToken(): Promise<boolean> {
         refresh_token: authStore.refreshToken,
         refreshToken: authStore.refreshToken,
       },
-      baseURL: runtimeStore.apiBaseUrl,
-      authRequired: false,
-      retryOnUnauthorized: false,
-      withDeviceId: false,
-      headers: {
-        "X-Device-Id": authStore.deviceId,
-      },
-    });
+		baseURL: runtimeStore.apiBaseUrl,
+		authRequired: false,
+		retryOnUnauthorized: false,
+		});
 
     const payload = response.data;
     if (!isApiEnvelope(payload) || !payload.ok) {
       return false;
     }
 
-    const refreshedDeviceId = payload.data.deviceId?.trim() ?? "";
-    if (!refreshedDeviceId) {
-      return false;
-    }
+		const sessionChanged =
+			authStore.sessionVersion !== refreshSessionVersion
+			|| authStore.refreshToken !== refreshTokenBefore;
+		if (sessionChanged) {
+			return false;
+		}
 
-    const sessionChanged =
-      authStore.sessionVersion !== refreshSessionVersion
-      || authStore.refreshToken !== refreshTokenBefore
-      || authStore.deviceId !== deviceIDBefore;
-    if (sessionChanged) {
-      return false;
-    }
-
-    authStore.setSession(mapTokenPayload(payload.data.tokens), authStore.username, refreshedDeviceId);
-    return true;
+		authStore.setSession(mapTokenPayload(payload.data.tokens), authStore.username);
+		return true;
   } catch {
     return false;
   }
 }
 
 interface RefreshApiData {
-  deviceId: string;
-  tokens: TokenPayload;
+	tokens: TokenPayload;
 }
 
 interface TokenPayload {

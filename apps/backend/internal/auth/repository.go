@@ -12,14 +12,13 @@ import (
 
 type user struct {
 	ID           string
-	Account      string
+	Username     string
 	PasswordHash string
 }
 
 type session struct {
 	ID               string
 	UserID           string
-	DeviceID         sql.NullString
 	RefreshToken     string
 	RefreshExpiresAt sql.NullString
 	RevokedAt        sql.NullString
@@ -33,112 +32,43 @@ func newRepository(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
-func (r *repository) findUserByAccount(ctx context.Context, account string) (*user, error) {
+func (r *repository) findUserByUsername(ctx context.Context, username string) (*user, error) {
 	const q = `SELECT id, account, password_hash FROM users WHERE account = ? LIMIT 1`
-	row := r.db.QueryRowContext(ctx, q, account)
+	row := r.db.QueryRowContext(ctx, q, username)
 
 	var u user
-	if err := row.Scan(&u.ID, &u.Account, &u.PasswordHash); err != nil {
+	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("find user by account: %w", err)
+		return nil, fmt.Errorf("find user by username: %w", err)
 	}
 	return &u, nil
 }
 
-func (r *repository) createUser(ctx context.Context, account, passwordHash string) (*user, error) {
+func (r *repository) createUser(ctx context.Context, username, passwordHash string) (*user, error) {
 	u := &user{
 		ID:           uuid.NewString(),
-		Account:      account,
+		Username:     username,
 		PasswordHash: passwordHash,
 	}
 
 	const q = `INSERT INTO users(id, account, password_hash, updated_at) VALUES(?, ?, ?, datetime('now'))`
-	if _, err := r.db.ExecContext(ctx, q, u.ID, u.Account, u.PasswordHash); err != nil {
+	if _, err := r.db.ExecContext(ctx, q, u.ID, u.Username, u.PasswordHash); err != nil {
 		return nil, fmt.Errorf("create user: %w", err)
 	}
 
 	return u, nil
 }
 
-func (r *repository) upsertDevice(ctx context.Context, userID, rememberedDeviceID, deviceName, platform, clientVersion string) (string, error) {
-	if deviceName == "" {
-		deviceName = "unknown-device"
-	}
-	if platform == "" {
-		platform = "unknown"
-	}
-
-	if rememberedDeviceID != "" {
-		const findByIDQ = `
-			SELECT id
-			FROM devices
-			WHERE id = ? AND user_id = ? AND revoked_at IS NULL
-			LIMIT 1`
-
-		var existingID string
-		err := r.db.QueryRowContext(ctx, findByIDQ, rememberedDeviceID, userID).Scan(&existingID)
-		if err != nil && err != sql.ErrNoRows {
-			return "", fmt.Errorf("find device by remembered id: %w", err)
-		}
-
-		if err == nil {
-			const updateByIDQ = `
-				UPDATE devices
-				SET device_name = ?, platform = ?, client_version = ?, last_seen_at = datetime('now')
-				WHERE id = ? AND user_id = ? AND revoked_at IS NULL`
-			if _, err = r.db.ExecContext(ctx, updateByIDQ, deviceName, platform, nullIfEmpty(clientVersion), existingID, userID); err != nil {
-				return "", fmt.Errorf("update device by remembered id: %w", err)
-			}
-			return existingID, nil
-		}
-	}
-
-	const findQ = `
-		SELECT id
-		FROM devices
-		WHERE user_id = ? AND device_name = ? AND platform = ? AND revoked_at IS NULL
-		ORDER BY created_at DESC
-		LIMIT 1`
-
-	var deviceID string
-	err := r.db.QueryRowContext(ctx, findQ, userID, deviceName, platform).Scan(&deviceID)
-	if err != nil && err != sql.ErrNoRows {
-		return "", fmt.Errorf("find device: %w", err)
-	}
-
-	if err == sql.ErrNoRows {
-		deviceID = uuid.NewString()
-		const insertQ = `
-			INSERT INTO devices(id, user_id, device_name, platform, client_version, last_seen_at)
-			VALUES(?, ?, ?, ?, ?, datetime('now'))`
-		if _, err = r.db.ExecContext(ctx, insertQ, deviceID, userID, deviceName, platform, nullIfEmpty(clientVersion)); err != nil {
-			return "", fmt.Errorf("insert device: %w", err)
-		}
-		return deviceID, nil
-	}
-
-	const updateQ = `
-		UPDATE devices
-		SET client_version = ?, last_seen_at = datetime('now')
-		WHERE id = ?`
-	if _, err = r.db.ExecContext(ctx, updateQ, nullIfEmpty(clientVersion), deviceID); err != nil {
-		return "", fmt.Errorf("update device: %w", err)
-	}
-
-	return deviceID, nil
-}
-
-func (r *repository) createSession(ctx context.Context, userID, deviceID, refreshToken string, accessExp, refreshExp time.Time) (string, error) {
+func (r *repository) createSession(ctx context.Context, userID, refreshToken string, accessExp, refreshExp time.Time) (string, error) {
 	sessionID := uuid.NewString()
 	const q = `
-		INSERT INTO sessions(id, user_id, device_id, refresh_token, access_expires_at, refresh_expires_at)
-		VALUES(?, ?, ?, ?, ?, ?)`
+		INSERT INTO sessions(id, user_id, refresh_token, access_expires_at, refresh_expires_at)
+		VALUES(?, ?, ?, ?, ?)`
 	if _, err := r.db.ExecContext(ctx, q,
 		sessionID,
 		userID,
-		nullIfEmpty(deviceID),
 		refreshToken,
 		accessExp.UTC().Format(time.RFC3339),
 		refreshExp.UTC().Format(time.RFC3339),
@@ -151,14 +81,14 @@ func (r *repository) createSession(ctx context.Context, userID, deviceID, refres
 
 func (r *repository) findActiveSessionByRefreshToken(ctx context.Context, refreshToken string) (*session, error) {
 	const q = `
-		SELECT id, user_id, device_id, refresh_token, refresh_expires_at, revoked_at
+		SELECT id, user_id, refresh_token, refresh_expires_at, revoked_at
 		FROM sessions
 		WHERE refresh_token = ?
 		LIMIT 1`
 
 	var s session
 	if err := r.db.QueryRowContext(ctx, q, refreshToken).
-		Scan(&s.ID, &s.UserID, &s.DeviceID, &s.RefreshToken, &s.RefreshExpiresAt, &s.RevokedAt); err != nil {
+		Scan(&s.ID, &s.UserID, &s.RefreshToken, &s.RefreshExpiresAt, &s.RevokedAt); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -227,11 +157,4 @@ func (r *repository) revokeByUserID(ctx context.Context, userID string) error {
 		return fmt.Errorf("revoke by user id: %w", err)
 	}
 	return nil
-}
-
-func nullIfEmpty(s string) any {
-	if strings.TrimSpace(s) == "" {
-		return nil
-	}
-	return s
 }

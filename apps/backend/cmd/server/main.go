@@ -8,7 +8,6 @@ import (
 
 	"github.com/ronronner/my-todolist/apps/backend/internal/auth"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
-	"github.com/ronronner/my-todolist/apps/backend/internal/devices"
 	"github.com/ronronner/my-todolist/apps/backend/internal/files"
 	"github.com/ronronner/my-todolist/apps/backend/internal/items"
 	"github.com/ronronner/my-todolist/apps/backend/internal/middleware"
@@ -55,13 +54,6 @@ func main() {
 	}
 	log.Printf("service=nanopaste-backend stage=init component=files_handler status=ready")
 
-	log.Printf("service=nanopaste-backend stage=init component=devices_handler status=starting")
-	devicesHandler, err := devices.NewHandler()
-	if err != nil {
-		log.Fatalf("service=nanopaste-backend stage=init component=devices_handler status=failed err=%v", err)
-	}
-	log.Printf("service=nanopaste-backend stage=init component=devices_handler status=ready")
-
 	log.Printf("service=nanopaste-backend stage=init component=web_handler status=starting")
 	webHandler, err := web.NewHandler(webDistDir)
 	if err != nil {
@@ -76,11 +68,6 @@ func main() {
 	mux.Handle("/v1/files/upload", filesHandler)
 	mux.Handle("/v1/files/cleanup", filesHandler)
 	mux.Handle("/v1/files/", filesHandler)
-	mux.Handle("/v1/devices/register", devicesHandler)
-	mux.Handle("/v1/devices/heartbeat", devicesHandler)
-	mux.Handle("/v1/devices", devicesHandler)
-	mux.Handle("/v1/devices/revoke", devicesHandler)
-
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		requestID := common.RequestIDFromContext(r.Context())
 		common.WriteSuccess(w, http.StatusOK, healthData{Service: "nanopaste-backend"}, requestID)
