@@ -46,7 +46,6 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       :items-loading="bridge.itemsLoading.value"
       :active-devices="bridge.activeDevices.value"
       :sending-text="bridge.sendingText.value"
-      :connection-status="bridge.connectionStatus.value"
       :username="currentUsername"
       @open-config="emit('open-config')"
       @open-device-manager="deviceManager.openDeviceManager"

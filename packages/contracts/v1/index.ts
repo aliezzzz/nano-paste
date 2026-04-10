@@ -9,5 +9,4 @@ export * from './auth';
 export * from './items';
 export * from './files';
 export * from './devices';
-export * from './events';
 

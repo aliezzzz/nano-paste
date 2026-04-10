@@ -9,7 +9,7 @@ import ChevronDownIcon from "../assets/icons/chevron-down.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
 import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
-import type { ItemView, ActiveDeviceView, ItemActionPayload, RealtimeStatus } from "../types/workspace";
+import type { ItemView, ItemActionPayload } from "../types/workspace";
 
 type SendPayload = { title?: string; content: string };
 
@@ -18,9 +18,8 @@ const props = withDefaults(
         queueItems?: UploadQueueViewItem[];
         items?: ItemView[];
         itemsLoading?: boolean;
-        activeDevices?: ActiveDeviceView[];
+        activeDevices?: { deviceId: string; deviceName: string; platform: string; lastSeenAt: string; isCurrent: boolean }[];
         sendingText?: boolean;
-        connectionStatus?: RealtimeStatus;
         username?: string;
     }>(),
     {
@@ -29,7 +28,6 @@ const props = withDefaults(
         itemsLoading: false,
         activeDevices: () => [],
         sendingText: false,
-        connectionStatus: "idle",
         username: "",
     },
 );
@@ -38,18 +36,6 @@ const userInitial = computed(() => {
     const name = props.username?.trim() || "";
     return name.charAt(0).toUpperCase() || "?";
 });
-
-const connectionStatusMap: Record<
-    RealtimeStatus,
-    { color: string; text: string }
-> = {
-    idle: { color: "bg-slate-500", text: "未连接" },
-    connecting: { color: "bg-yellow-500", text: "连接中..." },
-    open: { color: "bg-emerald-500", text: "已连接" },
-    reconnecting: { color: "bg-orange-500", text: "重连中..." },
-    closed: { color: "bg-red-500", text: "已断开" },
-    error: { color: "bg-red-500", text: "连接错误" },
-};
 
 const emit = defineEmits<{
     (e: "open-config"): void;
@@ -120,22 +106,6 @@ function uploadFiles(files: File[]): void {
                 <div class="host-header-actions">
                     <div class="host-device-dropdown-wrap group">
                         <div class="host-device-chip">
-                            <span
-                                id="connection-indicator"
-                                class="host-connection-dot status-dot"
-                                :class="
-                                    connectionStatusMap[props.connectionStatus]
-                                        .color
-                                "
-                            ></span>
-                            <span
-                                id="connection-status-text"
-                                class="host-connection-text"
-                                >{{
-                                    connectionStatusMap[props.connectionStatus]
-                                        .text
-                                }}</span
-                            >
                             <span class="host-device-count">
                                 <span>{{ props.activeDevices.length }}</span>
                                 设备

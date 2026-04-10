@@ -6,7 +6,6 @@ import { useRuntimeStore } from "../stores/runtime";
 import { configureRequest } from "../utils/request";
 import { listDevices, revokeDevice } from "../api/devices";
 import { showToast } from "../components/feedback/toast";
-import { createRealtimeConnection, type RealtimeStatus } from "../utils/ws";
 import { listItemDetails } from "../api/items";
 import { cleanupFiles } from "../api/files";
 import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../api/items";
@@ -15,9 +14,9 @@ import { triggerFileDownload } from "../utils/download";
 import { handleGlobalPaste } from "../utils/clipboard";
 import { getItemIconSvg } from "../utils/item-icons";
 import type { DeviceInfo } from "../../../../packages/contracts/v1";
-import type { ItemView, ActiveDeviceView, ItemActionPayload } from "../types/workspace";
+import type { ItemView, ItemActionPayload } from "../types/workspace";
 
-export type { ItemView, ActiveDeviceView, ItemActionPayload };
+export type { ItemView, ItemActionPayload };
 
 export function useBridge(onLoggedOut: () => void) {
   const uploadQueueStore = useUploadQueueStore();
@@ -26,16 +25,13 @@ export function useBridge(onLoggedOut: () => void) {
 
   const { queueViewItems: queueItems, completedVersion } = storeToRefs(uploadQueueStore);
 
-  // 状态
   const items = ref<ItemView[]>([]);
   const itemsLoading = ref(false);
-  const activeDevices = ref<ActiveDeviceView[]>([]);
+  const activeDevices = ref<{ deviceId: string; deviceName: string; platform: string; lastSeenAt: string; isCurrent: boolean }[]>([]);
   const devicesLoading = ref(false);
   const sendingText = ref(false);
-  const connectionStatus = ref<RealtimeStatus>("idle");
 
   // 内部状态
-  let realtime: ReturnType<typeof createRealtimeConnection> | null = null;
   let stopUploadQueueSubscription: (() => void) | null = null;
 
   // 计算属性
@@ -96,8 +92,6 @@ export function useBridge(onLoggedOut: () => void) {
     uploadQueueStore.reset();
     stopUploadQueueSubscription?.();
     stopUploadQueueSubscription = null;
-    realtime?.disconnect();
-    realtime = null;
     onLoggedOut();
   }
 
@@ -106,7 +100,6 @@ export function useBridge(onLoggedOut: () => void) {
     configureRequest({
       onUnauthorized: () => {
         authStore.clearSession();
-        realtime?.disconnect();
         showLogin();
       },
     });
@@ -121,21 +114,8 @@ export function useBridge(onLoggedOut: () => void) {
       }
     });
 
-    // 创建实时连接
-    realtime = createRealtimeConnection({
-      apiBaseUrl: runtimeStore.apiBaseUrl,
-      getAccessToken: () => authStore.accessToken,
-      onEvent: () => {
-        void loadItems();
-      },
-      onStatusChange: (status) => {
-        connectionStatus.value = status;
-      },
-    });
-
     void loadItems();
     void loadDevices();
-    realtime.connect();
   }
 
   // 初始化
@@ -153,8 +133,6 @@ export function useBridge(onLoggedOut: () => void) {
     uploadQueueStore.reset();
     stopUploadQueueSubscription?.();
     stopUploadQueueSubscription = null;
-    realtime?.disconnect();
-    realtime = null;
     showLogin();
   }
 
@@ -274,34 +252,13 @@ export function useBridge(onLoggedOut: () => void) {
     await revokeDevice(deviceId);
   }
 
-  // 应用运行时 API 地址变更
   async function applyRuntimeApiBaseUrlChange(): Promise<void> {
-    realtime?.disconnect();
-    realtime = null;
-
-    if (isAuthenticated.value) {
-      realtime = createRealtimeConnection({
-        apiBaseUrl: runtimeStore.apiBaseUrl,
-        getAccessToken: () => authStore.accessToken,
-        onEvent: () => {
-          void loadItems();
-        },
-        onStatusChange: (status) => {
-          connectionStatus.value = status;
-        },
-      });
-      realtime.connect();
-    }
-
     await Promise.all([loadItems(), loadDevices()]);
   }
 
-  // 清理
   onUnmounted(() => {
     stopUploadQueueSubscription?.();
     stopUploadQueueSubscription = null;
-    realtime?.disconnect();
-    realtime = null;
   });
 
   return {
@@ -312,7 +269,6 @@ export function useBridge(onLoggedOut: () => void) {
     activeDevices,
     devicesLoading,
     sendingText,
-    connectionStatus,
     currentDeviceId,
     // 方法
     initialize,

@@ -47,17 +47,12 @@ type tokenClaims struct {
 }
 
 func claimsFromRequest(r *http.Request) (tokenClaims, error) {
-	// 1. 尝试从 Header 读取（HTTP API 标准方式）
+	// 从 Header 读取 Bearer token
 	authorization := strings.TrimSpace(r.Header.Get("Authorization"))
 	tokenString := ""
 
 	if strings.HasPrefix(authorization, "Bearer ") {
 		tokenString = strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
-	}
-
-	// 2. 如果 Header 没有，尝试从 Query 参数读取（WebSocket 浏览器兼容性）
-	if tokenString == "" {
-		tokenString = strings.TrimSpace(r.URL.Query().Get("access_token"))
 	}
 
 	if tokenString == "" {

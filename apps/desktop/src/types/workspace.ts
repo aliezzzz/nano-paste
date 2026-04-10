@@ -1,5 +1,3 @@
-import type { RealtimeStatus } from "../utils/ws";
-
 export interface ItemView {
   id: string;
   type: "text" | "file";
@@ -11,14 +9,6 @@ export interface ItemView {
   isFavorite: boolean;
   createdAt: string;
   iconSvg: string;
-}
-
-export interface ActiveDeviceView {
-  deviceId: string;
-  deviceName: string;
-  platform: string;
-  lastSeenAt: string;
-  isCurrent: boolean;
 }
 
 export type ItemActionType = "copy" | "download" | "delete" | "favorite";
@@ -33,4 +23,3 @@ export interface ItemActionPayload {
   isFavorite: boolean;
 }
 
-export type { RealtimeStatus };

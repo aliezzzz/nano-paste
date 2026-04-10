@@ -18,21 +18,19 @@ import (
 	"github.com/ronronner/my-todolist/apps/backend/internal/authx"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
 	"github.com/ronronner/my-todolist/apps/backend/internal/db"
-	"github.com/ronronner/my-todolist/apps/backend/internal/events"
 )
 
 type handler struct {
 	repo *repository
-	hub  *events.Hub
 }
 
-func NewHandler(hub *events.Hub) (http.Handler, error) {
+func NewHandler() (http.Handler, error) {
 	sqlite, err := db.SQLite()
 	if err != nil {
 		return nil, err
 	}
 
-	h := &handler{repo: newRepository(sqlite), hub: hub}
+	h := &handler{repo: newRepository(sqlite)}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/files/upload", h.uploadDirect)
 	mux.HandleFunc("/v1/files/download/", h.downloadByID)
@@ -140,7 +138,7 @@ func (h *handler) uploadDirect(w http.ResponseWriter, r *http.Request) {
 	shaHex := hex.EncodeToString(hasher.Sum(nil))
 	etag := fmt.Sprintf("\"sha256-%s\"", shaHex)
 
-	out, ev, err := h.repo.directUpload(r.Context(), directUploadInput{
+	out, err := h.repo.directUpload(r.Context(), directUploadInput{
 		FileID:   fileID,
 		UserID:   userID,
 		DeviceID: deviceID,
@@ -156,8 +154,6 @@ func (h *handler) uploadDirect(w http.ResponseWriter, r *http.Request) {
 		common.WriteError(w, common.INTERNAL, "failed to persist upload metadata", nil, requestID)
 		return
 	}
-
-	h.broadcast(ev)
 
 	w.Header().Set("ETag", etag)
 	common.WriteSuccess(w, http.StatusOK, completeUploadResponse{
@@ -299,7 +295,7 @@ func (h *handler) cleanup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	out, ev, err := h.repo.cleanupFiles(r.Context(), cleanupInput{
+	out, err := h.repo.cleanupFiles(r.Context(), cleanupInput{
 		UserID:     userID,
 		Reason:     reason,
 		ItemIDs:    itemIDs,
@@ -309,10 +305,6 @@ func (h *handler) cleanup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to cleanup files", nil, requestID)
 		return
-	}
-
-	for _, e := range ev {
-		h.broadcast(e)
 	}
 
 	for _, fileID := range out.RemovedFileIDs {
@@ -326,25 +318,6 @@ func (h *handler) cleanup(w http.ResponseWriter, r *http.Request) {
 		RemovedFileIDs: out.RemovedFileIDs,
 		CleanedAt:      out.CleanedAt,
 	}, requestID)
-}
-
-func (h *handler) broadcast(ev eventRow) {
-	if ev.ID == 0 || strings.TrimSpace(ev.UserID) == "" {
-		return
-	}
-	payload := json.RawMessage(ev.Payload)
-	if len(payload) == 0 {
-		payload = json.RawMessage("{}")
-	}
-	h.hub.BroadcastEvent(events.StoredEvent{
-		ID:        ev.ID,
-		UserID:    ev.UserID,
-		EventType: ev.EventType,
-		ItemID:    ev.ItemID,
-		FileID:    ev.FileID,
-		Payload:   payload,
-		CreatedAt: ev.CreatedAt,
-	})
 }
 
 func signedDownloadURL(r *http.Request, fileID, accessToken string) string {
@@ -361,7 +334,7 @@ func accessTokenFromRequest(r *http.Request) string {
 	if strings.HasPrefix(authorization, "Bearer ") {
 		return strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
 	}
-	return strings.TrimSpace(r.URL.Query().Get("access_token"))
+	return ""
 }
 
 func storageRootDir() string {

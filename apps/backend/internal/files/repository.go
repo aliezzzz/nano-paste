@@ -3,7 +3,6 @@ package files
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -37,14 +36,14 @@ type directUploadInput struct {
 	Category string
 }
 
-func (r *repository) directUpload(ctx context.Context, in directUploadInput) (completeUploadOutput, eventRow, error) {
+func (r *repository) directUpload(ctx context.Context, in directUploadInput) (completeUploadOutput, error) {
 	now := time.Now().UTC()
 	createdAt := now.Format(time.RFC3339Nano)
 	retentionUntil := now.Add(90 * 24 * time.Hour).Format(time.RFC3339Nano)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return completeUploadOutput{}, eventRow{}, fmt.Errorf("begin tx direct upload: %w", err)
+		return completeUploadOutput{}, fmt.Errorf("begin tx direct upload: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -67,7 +66,7 @@ func (r *repository) directUpload(ctx context.Context, in directUploadInput) (co
 		createdAt,
 		createdAt,
 	); err != nil {
-		return completeUploadOutput{}, eventRow{}, fmt.Errorf("insert file object direct upload: %w", err)
+		return completeUploadOutput{}, fmt.Errorf("insert file object direct upload: %w", err)
 	}
 
 	itemID := uuid.NewString()
@@ -81,29 +80,11 @@ func (r *repository) directUpload(ctx context.Context, in directUploadInput) (co
 		nullIfEmpty(in.DeviceID),
 		createdAt,
 	); err != nil {
-		return completeUploadOutput{}, eventRow{}, fmt.Errorf("insert file item direct upload: %w", err)
-	}
-
-	payloadBytes, err := json.Marshal(map[string]any{
-		"itemId":   itemID,
-		"fileId":   in.FileID,
-		"fileName": in.FileName,
-		"fileSize": in.FileSize,
-		"mimeType": emptyAsNil(in.MimeType),
-		"category": normalizeCategory(in.Category),
-		"readyAt":  createdAt,
-	})
-	if err != nil {
-		return completeUploadOutput{}, eventRow{}, fmt.Errorf("marshal file_ready payload direct upload: %w", err)
-	}
-
-	event, err := insertEvent(ctx, tx, in.UserID, "file_ready", &itemID, &in.FileID, string(payloadBytes), createdAt)
-	if err != nil {
-		return completeUploadOutput{}, eventRow{}, err
+		return completeUploadOutput{}, fmt.Errorf("insert file item direct upload: %w", err)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return completeUploadOutput{}, eventRow{}, fmt.Errorf("commit direct upload tx: %w", err)
+		return completeUploadOutput{}, fmt.Errorf("commit direct upload tx: %w", err)
 	}
 
 	return completeUploadOutput{
@@ -111,7 +92,7 @@ func (r *repository) directUpload(ctx context.Context, in directUploadInput) (co
 		FileID:    in.FileID,
 		Category:  normalizeCategory(in.Category),
 		CreatedAt: createdAt,
-	}, event, nil
+	}, nil
 }
 
 type completeUploadOutput struct {
@@ -128,16 +109,6 @@ type fileObjectRow struct {
 	MimeType string
 	Category string
 	Status   string
-}
-
-type eventRow struct {
-	ID        int64
-	UserID    string
-	EventType string
-	ItemID    *string
-	FileID    *string
-	Payload   string
-	CreatedAt string
 }
 
 type prepareDownloadOutput struct {
@@ -198,60 +169,45 @@ type cleanupOutput struct {
 	CleanedAt      string
 }
 
-func (r *repository) cleanupFiles(ctx context.Context, in cleanupInput) (cleanupOutput, []eventRow, error) {
+func (r *repository) cleanupFiles(ctx context.Context, in cleanupInput) (cleanupOutput, error) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return cleanupOutput{}, nil, fmt.Errorf("begin tx cleanup files: %w", err)
+		return cleanupOutput{}, fmt.Errorf("begin tx cleanup files: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
 	fileIDs, err := queryCleanupTargets(ctx, tx, in)
 	if err != nil {
-		return cleanupOutput{}, nil, err
+		return cleanupOutput{}, err
 	}
 
-	events := make([]eventRow, 0, len(fileIDs))
 	for _, fileID := range fileIDs {
 		if _, err = tx.ExecContext(ctx, `
 			UPDATE file_objects
 			SET cleaned_at = ?
 			WHERE user_id = ? AND id = ? AND cleaned_at IS NULL`, now, in.UserID, fileID); err != nil {
-			return cleanupOutput{}, nil, fmt.Errorf("set file cleaned_at: %w", err)
+			return cleanupOutput{}, fmt.Errorf("set file cleaned_at: %w", err)
 		}
 
 		if _, err = tx.ExecContext(ctx, `
 			UPDATE clipboard_items
 			SET deleted_at = ?
 			WHERE user_id = ? AND file_id = ? AND deleted_at IS NULL`, now, in.UserID, fileID); err != nil {
-			return cleanupOutput{}, nil, fmt.Errorf("set item deleted_at by file_id: %w", err)
+			return cleanupOutput{}, fmt.Errorf("set item deleted_at by file_id: %w", err)
 		}
-
-		payloadBytes, mErr := json.Marshal(map[string]any{
-			"fileId":    fileID,
-			"reason":    in.Reason,
-			"deletedAt": now,
-		})
-		if mErr != nil {
-			return cleanupOutput{}, nil, fmt.Errorf("marshal file_cleaned payload: %w", mErr)
-		}
-		ev, insErr := insertEvent(ctx, tx, in.UserID, "file_cleaned", nil, &fileID, string(payloadBytes), now)
-		if insErr != nil {
-			return cleanupOutput{}, nil, insErr
-		}
-		events = append(events, ev)
 	}
 
 	if err = tx.Commit(); err != nil {
-		return cleanupOutput{}, nil, fmt.Errorf("commit cleanup files tx: %w", err)
+		return cleanupOutput{}, fmt.Errorf("commit cleanup files tx: %w", err)
 	}
 
 	return cleanupOutput{
 		Removed:        len(fileIDs),
 		RemovedFileIDs: fileIDs,
 		CleanedAt:      now,
-	}, events, nil
+	}, nil
 }
 
 func queryCleanupTargets(ctx context.Context, tx *sql.Tx, in cleanupInput) ([]string, error) {
@@ -314,36 +270,6 @@ func queryCleanupTargets(ctx context.Context, tx *sql.Tx, in cleanupInput) ([]st
 	}
 	defer rows.Close()
 	return collectIDs(rows)
-}
-
-func insertEvent(ctx context.Context, tx *sql.Tx, userID, eventType string, itemID *string, fileID *string, payloadJSON, createdAt string) (eventRow, error) {
-	res, err := tx.ExecContext(ctx, `
-		INSERT INTO events(user_id, event_type, item_id, file_id, payload_json, created_at)
-		VALUES(?, ?, ?, ?, ?, ?)`,
-		userID,
-		eventType,
-		nullIfNilString(itemID),
-		nullIfNilString(fileID),
-		payloadJSON,
-		createdAt,
-	)
-	if err != nil {
-		return eventRow{}, fmt.Errorf("insert event: %w", err)
-	}
-	eventID, err := res.LastInsertId()
-	if err != nil {
-		return eventRow{}, fmt.Errorf("event last insert id: %w", err)
-	}
-
-	return eventRow{
-		ID:        eventID,
-		UserID:    userID,
-		EventType: eventType,
-		ItemID:    itemID,
-		FileID:    fileID,
-		Payload:   payloadJSON,
-		CreatedAt: createdAt,
-	}, nil
 }
 
 func normalizeCategory(raw string) string {

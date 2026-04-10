@@ -9,21 +9,19 @@ import (
 	"github.com/ronronner/my-todolist/apps/backend/internal/authx"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
 	"github.com/ronronner/my-todolist/apps/backend/internal/db"
-	"github.com/ronronner/my-todolist/apps/backend/internal/events"
 )
 
 type handler struct {
 	repo *repository
-	hub  *events.Hub
 }
 
-func NewHandler(hub *events.Hub) (http.Handler, error) {
+func NewHandler() (http.Handler, error) {
 	sqlite, err := db.SQLite()
 	if err != nil {
 		return nil, err
 	}
 
-	h := &handler{repo: newRepository(sqlite), hub: hub}
+	h := &handler{repo: newRepository(sqlite)}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/items", h.items)
 	mux.HandleFunc("/v1/items/", h.itemByID)
@@ -111,13 +109,11 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, ev, err := h.repo.createTextItem(r.Context(), userID, deviceID, req.Title, req.Content, req.clientEventID())
+	item, err := h.repo.createTextItem(r.Context(), userID, deviceID, req.Title, req.Content, req.clientEventID())
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to create item", nil, requestID)
 		return
 	}
-
-	h.broadcast(ev)
 
 	common.WriteSuccess(w, http.StatusCreated, createItemResponse{
 		Item: toItemDetail(item),
@@ -201,7 +197,7 @@ func (h *handler) delete(w http.ResponseWriter, r *http.Request, itemID string) 
 		return
 	}
 
-	deletedAt, ev, err := h.repo.deleteItem(r.Context(), userID, itemID)
+	deletedAt, err := h.repo.deleteItem(r.Context(), userID, itemID)
 	if err != nil {
 		if err == errItemNotFound {
 			common.WriteError(w, common.NOT_FOUND, "item not found", nil, requestID)
@@ -210,8 +206,6 @@ func (h *handler) delete(w http.ResponseWriter, r *http.Request, itemID string) 
 		common.WriteError(w, common.INTERNAL, "failed to delete item", nil, requestID)
 		return
 	}
-
-	h.broadcast(ev)
 
 	common.WriteSuccess(w, http.StatusOK, deleteItemResponse{
 		Success:   true,
@@ -249,21 +243,6 @@ func (h *handler) favorite(w http.ResponseWriter, r *http.Request, itemID string
 		Favorite:  item.IsFavorite,
 		UpdatedAt: updatedAt,
 	}, requestID)
-}
-
-func (h *handler) broadcast(ev eventRow) {
-	if ev.ID == 0 || strings.TrimSpace(ev.UserID) == "" {
-		return
-	}
-	h.hub.BroadcastEvent(events.StoredEvent{
-		ID:        ev.ID,
-		UserID:    ev.UserID,
-		EventType: ev.EventType,
-		ItemID:    ev.ItemID,
-		FileID:    ev.FileID,
-		Payload:   json.RawMessage(ev.Payload),
-		CreatedAt: ev.CreatedAt,
-	})
 }
 
 type createItemRequest struct {
@@ -342,12 +321,4 @@ func fallbackDeviceID(raw string) string {
 		return "device_unknown"
 	}
 	return raw
-}
-
-func emptyAsNil(s string) *string {
-	if strings.TrimSpace(s) == "" {
-		return nil
-	}
-	v := s
-	return &v
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/ronronner/my-todolist/apps/backend/internal/auth"
 	"github.com/ronronner/my-todolist/apps/backend/internal/common"
 	"github.com/ronronner/my-todolist/apps/backend/internal/devices"
-	"github.com/ronronner/my-todolist/apps/backend/internal/events"
 	"github.com/ronronner/my-todolist/apps/backend/internal/files"
 	"github.com/ronronner/my-todolist/apps/backend/internal/items"
 	"github.com/ronronner/my-todolist/apps/backend/internal/middleware"
@@ -42,22 +41,15 @@ func main() {
 	}
 	log.Printf("service=nanopaste-backend stage=init component=auth_handler status=ready")
 
-	log.Printf("service=nanopaste-backend stage=init component=events status=starting")
-	hub, eventsHandler, err := events.NewHubAndHandler()
-	if err != nil {
-		log.Fatalf("service=nanopaste-backend stage=init component=events status=failed err=%v", err)
-	}
-	log.Printf("service=nanopaste-backend stage=init component=events status=ready")
-
 	log.Printf("service=nanopaste-backend stage=init component=items_handler status=starting")
-	itemsHandler, err := items.NewHandler(hub)
+	itemsHandler, err := items.NewHandler()
 	if err != nil {
 		log.Fatalf("service=nanopaste-backend stage=init component=items_handler status=failed err=%v", err)
 	}
 	log.Printf("service=nanopaste-backend stage=init component=items_handler status=ready")
 
 	log.Printf("service=nanopaste-backend stage=init component=files_handler status=starting")
-	filesHandler, err := files.NewHandler(hub)
+	filesHandler, err := files.NewHandler()
 	if err != nil {
 		log.Fatalf("service=nanopaste-backend stage=init component=files_handler status=failed err=%v", err)
 	}
@@ -84,8 +76,6 @@ func main() {
 	mux.Handle("/v1/files/upload", filesHandler)
 	mux.Handle("/v1/files/cleanup", filesHandler)
 	mux.Handle("/v1/files/", filesHandler)
-	mux.Handle("/v1/events", eventsHandler)
-	mux.Handle("/v1/events/ws", eventsHandler)
 	mux.Handle("/v1/devices/register", devicesHandler)
 	mux.Handle("/v1/devices/heartbeat", devicesHandler)
 	mux.Handle("/v1/devices", devicesHandler)

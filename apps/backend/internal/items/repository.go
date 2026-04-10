@@ -3,7 +3,6 @@ package items
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -38,9 +37,9 @@ func newRepository(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
-func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title, content, clientEventID string) (itemRecord, eventRow, error) {
+func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title, content, clientEventID string) (itemRecord, error) {
 	if strings.TrimSpace(content) == "" {
-		return itemRecord{}, eventRow{}, fmt.Errorf("content required")
+		return itemRecord{}, fmt.Errorf("content required")
 	}
 
 	itemID := uuid.NewString()
@@ -52,7 +51,7 @@ func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return itemRecord{}, eventRow{}, fmt.Errorf("begin tx create item: %w", err)
+		return itemRecord{}, fmt.Errorf("begin tx create item: %w", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -63,44 +62,26 @@ func (r *repository) createTextItem(ctx context.Context, userID, deviceID, title
 		if strings.Contains(strings.ToLower(err.Error()), "unique") && strings.TrimSpace(clientEventID) != "" {
 			existing, existingErr := queryItemByID(ctx, tx, userID, itemID)
 			if existingErr != nil {
-				return itemRecord{}, eventRow{}, existingErr
-			}
-			ev, evErr := queryFirstCreateEventByItemID(ctx, tx, userID, itemID)
-			if evErr != nil {
-				return itemRecord{}, eventRow{}, evErr
+				return itemRecord{}, existingErr
 			}
 			if err = tx.Commit(); err != nil {
-				return itemRecord{}, eventRow{}, fmt.Errorf("commit duplicate create item tx: %w", err)
+				return itemRecord{}, fmt.Errorf("commit duplicate create item tx: %w", err)
 			}
-			return existing, ev, nil
+			return existing, nil
 		}
-		return itemRecord{}, eventRow{}, fmt.Errorf("insert item: %w", err)
-	}
-
-	payloadBytes, err := json.Marshal(map[string]any{
-		"itemId":    itemID,
-		"type":      "text",
-		"createdAt": now,
-	})
-	if err != nil {
-		return itemRecord{}, eventRow{}, fmt.Errorf("marshal create event payload: %w", err)
-	}
-
-	ev, err := insertEvent(ctx, tx, userID, "item_created", &itemID, nil, string(payloadBytes), now)
-	if err != nil {
-		return itemRecord{}, eventRow{}, err
+		return itemRecord{}, fmt.Errorf("insert item: %w", err)
 	}
 
 	created, err := queryItemByID(ctx, tx, userID, itemID)
 	if err != nil {
-		return itemRecord{}, eventRow{}, err
+		return itemRecord{}, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		return itemRecord{}, eventRow{}, fmt.Errorf("commit create item tx: %w", err)
+		return itemRecord{}, fmt.Errorf("commit create item tx: %w", err)
 	}
 
-	return created, ev, nil
+	return created, nil
 }
 
 func (r *repository) listItems(ctx context.Context, userID, itemType, sort string, limit, offset int) ([]itemRecord, bool, error) {
@@ -208,90 +189,26 @@ func (r *repository) setItemFavorite(ctx context.Context, userID, itemID string,
 	return item, now, nil
 }
 
-func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (string, eventRow, error) {
+func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (string, error) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", eventRow{}, fmt.Errorf("begin tx delete item: %w", err)
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	res, err := tx.ExecContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE clipboard_items
 		SET deleted_at = ?
 		WHERE user_id = ? AND id = ? AND deleted_at IS NULL`, now, userID, itemID)
 	if err != nil {
-		return "", eventRow{}, fmt.Errorf("delete item: %w", err)
+		return "", fmt.Errorf("delete item: %w", err)
 	}
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return "", eventRow{}, fmt.Errorf("delete item rows affected: %w", err)
+		return "", fmt.Errorf("delete item rows affected: %w", err)
 	}
 	if affected == 0 {
-		return "", eventRow{}, errItemNotFound
+		return "", errItemNotFound
 	}
 
-	payloadBytes, err := json.Marshal(map[string]any{
-		"itemId":    itemID,
-		"deletedAt": now,
-	})
-	if err != nil {
-		return "", eventRow{}, fmt.Errorf("marshal delete event payload: %w", err)
-	}
-
-	ev, err := insertEvent(ctx, tx, userID, "item_deleted", &itemID, nil, string(payloadBytes), now)
-	if err != nil {
-		return "", eventRow{}, err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return "", eventRow{}, fmt.Errorf("commit delete item tx: %w", err)
-	}
-
-	return now, ev, nil
-}
-
-type eventRow struct {
-	ID        int64
-	UserID    string
-	EventType string
-	ItemID    *string
-	FileID    *string
-	Payload   string
-	CreatedAt string
-}
-
-func insertEvent(ctx context.Context, tx *sql.Tx, userID, eventType string, itemID *string, fileID *string, payloadJSON string, createdAt string) (eventRow, error) {
-	res, err := tx.ExecContext(ctx, `
-		INSERT INTO events(user_id, event_type, item_id, file_id, payload_json, created_at)
-		VALUES(?, ?, ?, ?, ?, ?)`,
-		userID,
-		eventType,
-		nullIfNilString(itemID),
-		nullIfNilString(fileID),
-		payloadJSON,
-		createdAt,
-	)
-	if err != nil {
-		return eventRow{}, fmt.Errorf("insert event: %w", err)
-	}
-
-	eventID, err := res.LastInsertId()
-	if err != nil {
-		return eventRow{}, fmt.Errorf("event last insert id: %w", err)
-	}
-
-	return eventRow{
-		ID:        eventID,
-		UserID:    userID,
-		EventType: eventType,
-		ItemID:    itemID,
-		FileID:    fileID,
-		Payload:   payloadJSON,
-		CreatedAt: createdAt,
-	}, nil
+	return now, nil
 }
 
 func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (itemRecord, error) {
@@ -314,34 +231,6 @@ func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (ite
 		return itemRecord{}, fmt.Errorf("query item by id: %w", err)
 	}
 	return it, nil
-}
-
-func queryFirstCreateEventByItemID(ctx context.Context, tx *sql.Tx, userID, itemID string) (eventRow, error) {
-	row := tx.QueryRowContext(ctx, `
-		SELECT id, user_id, event_type, item_id, file_id, COALESCE(payload_json, '{}'), created_at
-		FROM events
-		WHERE user_id = ? AND event_type = 'item_created' AND item_id = ?
-		ORDER BY id ASC
-		LIMIT 1`, userID, itemID)
-
-	var ev eventRow
-	var item sql.NullString
-	var file sql.NullString
-	if err := row.Scan(&ev.ID, &ev.UserID, &ev.EventType, &item, &file, &ev.Payload, &ev.CreatedAt); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return eventRow{}, nil
-		}
-		return eventRow{}, fmt.Errorf("query first create event by item id: %w", err)
-	}
-	if item.Valid {
-		v := item.String
-		ev.ItemID = &v
-	}
-	if file.Valid {
-		v := file.String
-		ev.FileID = &v
-	}
-	return ev, nil
 }
 
 type scanner interface {
@@ -388,13 +277,6 @@ func nullIfEmpty(s string) any {
 		return nil
 	}
 	return strings.TrimSpace(s)
-}
-
-func nullIfNilString(s *string) any {
-	if s == nil || strings.TrimSpace(*s) == "" {
-		return nil
-	}
-	return strings.TrimSpace(*s)
 }
 
 func boolToInt(v bool) int {
