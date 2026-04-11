@@ -1,8 +1,8 @@
-import { defineConfig, presetUno } from "unocss";
+import { defineConfig } from "unocss";
 import presetWind from "@unocss/preset-wind";
 
 export default defineConfig({
-  presets: [presetUno(), presetWind()],
+  presets: [presetWind()],
   shortcuts: {
     // App.vue
     "app-root": "h-full w-full bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-400",
@@ -150,11 +150,11 @@ export default defineConfig({
     "host-mobile-top": "relative z-50",
     "host-mobile-header": "!h-auto min-h-18",
     "host-mobile-actions": "flex items-center gap-2",
-    "host-mobile-main": "flex-1 overflow-y-auto relative pb-16 px-4",
+    "host-mobile-main": "flex-1 overflow-y-auto relative pb-16 px-1.5",
     "host-mobile-send": "h-full overflow-y-auto py-4 space-y-4",
     "host-mobile-items": "h-full overflow-y-auto py-2",
     "host-mobile-card":
-      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-4 shadow-[var(--shadow-sm)]",
+      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-2.5 shadow-[var(--shadow-sm)]",
 
     // SendPanel.vue
     "send-panel": "p-4 md:p-6 md:border-b md:border-[var(--border-soft)]",
@@ -173,7 +173,7 @@ export default defineConfig({
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
     "upload-panel-title-icon": "w-4 h-4 text-cyan-500",
     "upload-dropzone":
-      "border-2 border-dashed border-[var(--border-soft)] rounded-2xl p-6 md:p-8 text-center cursor-pointer transition-all hover:border-[var(--text-accent)] hover:bg-[var(--text-accent)] hover:bg-opacity-5 mb-4",
+      "border-2 border-dashed border-[var(--border-soft)] rounded-2xl p-6 md:p-8 text-center cursor-pointer transition-all hover:border-[var(--text-accent)] hover:bg-[rgba(var(--accent-rgb),0.05)] mb-4",
     "upload-dropzone-icon-wrap":
       "w-12 h-12 mx-auto mb-3 rounded-2xl bg-[var(--border-soft)] flex items-center justify-center",
     "upload-dropzone-icon": "w-6 h-6 text-[var(--text-muted)]",
@@ -209,73 +209,73 @@ export default defineConfig({
     "mobile-tab-label": "text-[10px] font-bold uppercase tracking-tighter",
 
     // ItemsPanel.vue
-    "items-panel": "flex-1 flex flex-col min-h-0 p-4 md:p-6 lg:p-8",
-    "panel-header": "flex items-center justify-between mb-6",
+    "items-panel": "flex-1 flex flex-col min-h-0 p-2.5 md:p-6 lg:p-8",
+    "panel-header": "flex items-center justify-between mb-4 md:mb-6",
     "panel-title":
-      "text-lg font-bold tracking-tight text-[var(--text-main)] flex items-center gap-2",
-    "panel-title-icon": "w-5 h-5 text-[var(--text-accent)]",
-    "panel-actions": "flex items-center gap-3",
+      "text-base md:text-lg font-bold tracking-tight text-[var(--text-main)] flex items-center gap-2",
+    "panel-title-icon": "w-4 h-4 md:w-5 md:h-5 text-[var(--text-accent)]",
+    "panel-actions": "flex items-center gap-2 md:gap-3",
     "refresh-btn":
-      "w-10 h-10 rounded-xl border flex items-center justify-center transition-all shadow-[var(--shadow-sm)]",
+      "w-9 h-9 md:w-10 md:h-10 rounded-xl border flex items-center justify-center transition-all shadow-[var(--shadow-sm)]",
     "refresh-btn--loading":
       "text-[var(--text-muted)] bg-[var(--border-soft)] border-[var(--border-soft)] cursor-not-allowed",
     "refresh-btn--idle":
       "text-[var(--text-accent)] bg-[var(--bg-card)] border-[var(--border-soft)] hover:border-[var(--text-accent)] hover:shadow-[var(--accent-glow)]",
-    "refresh-icon": "w-4 h-4",
+    "refresh-icon": "w-3.5 h-3.5 md:w-4 md:h-4",
     "filter-tabs":
-      "inline-flex rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-1 shadow-[var(--shadow-sm)]",
-    "filter-tab": "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+      "inline-flex rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-0.5 md:p-1 shadow-[var(--shadow-sm)]",
+    "filter-tab": "px-2.5 py-1 md:px-4 md:py-1.5 text-[11px] md:text-xs font-bold rounded-lg transition-all",
     "filter-tab--active": "text-white bg-[var(--text-accent)] shadow-[var(--accent-glow)]",
     "filter-tab--inactive": "text-[var(--text-muted)] hover:text-[var(--text-main)]",
     "filter-tab--favorite-active": "text-white bg-amber-500 shadow-amber-500/20",
     "filter-tab--favorite-inactive": "text-[var(--text-muted)] hover:text-amber-500",
     "list-container": "relative flex-1 min-h-0",
     "loading-text": "text-sm font-medium text-[var(--text-muted)] animate-pulse",
-    "items-list": "h-full overflow-y-auto space-y-4 pr-2 custom-scrollbar",
+    "items-list": "h-full overflow-y-auto space-y-3 md:space-y-4 pr-1 md:pr-2 custom-scrollbar",
     "item-card":
-      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-4 md:p-5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-md)] transition-all group",
-    "item-layout": "flex gap-4",
+      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-2.5 md:p-5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-md)] transition-all",
+    "item-layout": "flex gap-3 md:gap-4",
     "item-icon":
-      "w-12 h-12 rounded-2xl bg-[var(--border-soft)] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[var(--text-accent)] group-hover:bg-opacity-10 transition-colors",
+      "w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-[var(--border-soft)] flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[rgba(var(--accent-rgb),0.1)] transition-colors",
     "item-content": "flex-1 min-w-0",
     "item-header":
-      "flex items-center justify-between gap-4 mb-2.5",
-    "item-title": "font-bold text-[var(--text-main)] truncate text-base md:text-lg tracking-tight",
-    "item-title--file": "whitespace-normal break-all leading-tight pr-2",
-    "item-meta": "flex items-center gap-2 shrink-0",
+      "flex items-center justify-between gap-3 md:gap-4 mb-2 md:mb-2.5",
+    "item-title": "font-bold text-[var(--text-main)] truncate text-sm md:text-lg tracking-tight",
+    "item-title--file": "whitespace-normal break-all leading-tight pr-1",
+    "item-meta": "flex items-center gap-1.5 md:gap-2 shrink-0",
     "favorite-btn":
-      "w-8 h-8 rounded-xl transition-all flex items-center justify-center",
+      "w-7 h-7 md:w-8 md:h-8 rounded-xl transition-all flex items-center justify-center",
     "favorite-btn--active":
       "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20",
     "favorite-btn--inactive":
       "text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-500/5",
-    "item-body": "mb-4",
+    "item-body": "mb-3 md:mb-4",
     "item-text-content":
-      "text-sm md:text-base text-[var(--text-main)] opacity-85 whitespace-pre-wrap leading-relaxed font-normal",
+      "text-xs md:text-base text-[var(--text-main)] opacity-85 whitespace-pre-wrap leading-relaxed font-normal",
     "item-footer":
-      "flex items-center justify-between pt-4 border-t border-[var(--border-soft)] gap-2",
-    "item-actions-left": "flex items-center gap-3",
+      "flex items-center justify-between pt-3 md:pt-4 border-t border-[var(--border-soft)] gap-1 md:gap-2",
+    "item-actions-left": "flex items-center gap-1.5 md:gap-3",
     "action-btn":
-      "flex items-center gap-2 px-4 py-2 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap shrink-0 border border-transparent",
+      "flex items-center gap-1.5 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold transition-all whitespace-nowrap shrink-0 border border-transparent",
     "action-btn--text":
-      "text-[var(--text-accent)] bg-[var(--text-accent)] bg-opacity-10 hover:bg-opacity-20",
+      "text-[var(--text-accent)] bg-[rgba(var(--accent-rgb),0.1)] hover:bg-[rgba(var(--accent-rgb),0.15)]",
     "action-btn--file": "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20",
-    "action-btn-icon": "w-4 h-4",
-    "footer-meta": "flex items-center gap-4 shrink-0",
-    "file-size-inline":
-      "text-[10px] md:text-xs font-bold text-[var(--text-muted)] opacity-60 whitespace-nowrap uppercase tracking-wider",
+    "action-btn-icon": "w-3.5 h-3.5 md:w-4 md:h-4",
+    "footer-meta": "flex items-center gap-1.5 md:gap-4 shrink-0",
+    "file-sz": "text-xs font-medium opacity-50 whitespace-nowrap uppercase tracking-wider",
+
     timestamp:
-      "text-[10px] md:text-xs font-medium text-[var(--text-muted)] opacity-50 whitespace-nowrap",
+      "text-xs text-[var(--text-muted)] opacity-50 whitespace-nowrap",
     "delete-btn":
-      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] md:text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all whitespace-nowrap shrink-0",
-    "delete-btn-icon": "w-3.5 h-3.5",
+      "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all whitespace-nowrap shrink-0",
+    "delete-btn-icon": "w-3 h-3 md:w-3.5 md:h-3.5",
     "items-empty-state":
       "pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] opacity-40",
-    "items-empty-icon": "w-16 h-16 mb-4",
+    "items-empty-icon": "w-14 h-14 md:w-16 md:h-16 mb-4",
   },
   content: {
     pipeline: {
-      include: [/\.(vue|html|ts)$/],
+      include: [/\.(vue|html|ts)($|\?)/],
     },
   },
 });

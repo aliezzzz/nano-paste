@@ -118,7 +118,7 @@ onBeforeUnmount(() => {
     
     <div class="list-container">
       <div id="items-list" class="items-list custom-scrollbar">
-        <div v-for="item in visibleItems" :key="item.id" class="item-card">
+        <div v-for="item in visibleItems" :key="item.id" class="item-card group">
           <div class="item-layout">
             <!-- 左侧图标 -->
             <div class="item-icon" v-html="item.iconSvg"></div>
@@ -164,7 +164,7 @@ onBeforeUnmount(() => {
                     <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
                     {{ item.type === 'text' ? '复制' : '下载' }}
                   </button>
-                  <span v-if="item.type === 'file' && item.fileSize" class="file-size-inline">{{ formatBytes(item.fileSize) }}</span>
+                  <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
                 </div>
 
                 <!-- 右侧：时间 + 删除 -->
@@ -200,13 +200,8 @@ onBeforeUnmount(() => {
 }
 
 @keyframes refresh-spin-once {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .item-text-content {
@@ -214,5 +209,15 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.file-sz {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.5;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 </style>
