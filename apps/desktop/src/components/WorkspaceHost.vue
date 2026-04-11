@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import ThemeToggle from "./ThemeToggle.vue";
 import SendPanel from "./workspace/SendPanel.vue";
 import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
@@ -96,6 +97,7 @@ function uploadFiles(files: File[]): void {
                 </div>
 
                 <div class="host-header-actions">
+                    <ThemeToggle class="mr-2" />
                     <button
                         id="open-config-btn"
                         type="button"
@@ -185,6 +187,7 @@ function uploadFiles(files: File[]): void {
                         <span class="host-brand-text-mobile">NanoPaste</span>
                     </div>
                     <div class="host-mobile-actions">
+                        <ThemeToggle class="mr-2 scale-90" />
                         <button
                             id="open-config-btn"
                             type="button"

@@ -7,9 +7,11 @@ import ConfigModal from "./components/modals/ConfigModal.vue";
 import { useAuthActions } from "./composables/useAuthActions";
 import { useRuntimeConfigModal } from "./composables/useRuntimeConfigModal";
 import { useAuthStore } from "./stores/auth";
+import { useThemeStore } from "./stores/theme";
 
 const auth = useAuthActions();
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
 const config = useRuntimeConfigModal(computed(() => Boolean(authStore.accessToken)));
 
 const isAuthenticated = computed(() => Boolean(authStore.accessToken));
