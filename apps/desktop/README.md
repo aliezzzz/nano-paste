@@ -35,6 +35,20 @@
 - 未实现真实拖拽上传与本地文件读写。
 - 未实现真实文件传输（仅展示 mock 返回的下载地址）。
 
+## Chrome 扩展（MV3）
+
+构建命令：
+
+```bash
+cd apps/desktop
+npm install
+npm run build:ext
+```
+
+构建产物目录：`apps/desktop/dist-extension`
+
+加载方式：打开 `chrome://extensions` -> 开启开发者模式 -> 选择“加载已解压的扩展程序” -> 选择 `dist-extension`。
+
 ## Android 打包配置（Tauri 2）
 
 已补充 Android 相关脚本、签名流程与移动端兼容配置。

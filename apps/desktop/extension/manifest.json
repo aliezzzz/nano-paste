@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "NanoPaste",
+  "description": "在浏览器中快速发送文本或图片到 NanoPaste",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "NanoPaste",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}

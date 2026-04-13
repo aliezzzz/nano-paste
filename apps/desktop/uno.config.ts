@@ -28,7 +28,7 @@ export default defineConfig({
       "text-[clamp(2.25rem,5vw,4.25rem)] leading-none font-bold bg-gradient-to-r from-[var(--text-main)] to-[var(--text-muted)] bg-clip-text text-transparent",
     "app-login-subtitle":
       "mt-1.5 sm:mt-3 text-[var(--text-muted)] text-sm sm:text-xl font-medium tracking-wide",
-    "app-login-form": "space-y-4 sm:space-y-6 lg:space-y-7",
+    "app-login-form": "space-y-3 sm:space-y-6 lg:space-y-7",
     "app-login-label":
       "block text-sm sm:text-[1.2rem] font-semibold text-[var(--text-main)] mb-1.5 sm:mb-3 opacity-90",
     "app-login-submit-btn":
@@ -68,7 +68,7 @@ export default defineConfig({
     "app-device-revoke-btn":
       "text-xs text-red-500 hover:bg-red-500/10 px-2 py-1 rounded-md transition-colors",
     "app-btn-disabled": "opacity-50 pointer-events-none",
-    "app-config-form": "px-5 py-4 space-y-4",
+    "app-config-form": "px-5 py-4 space-y-3",
     "app-config-label": "block text-sm text-[var(--text-main)] mb-1.5 opacity-80",
     "app-config-error": "mt-1.5 text-xs text-red-500",
     "app-config-current": "mt-2 text-xs text-[var(--text-muted)]",
@@ -151,29 +151,29 @@ export default defineConfig({
     "host-mobile-header": "!h-auto min-h-18",
     "host-mobile-actions": "flex items-center gap-2",
     "host-mobile-main": "flex-1 overflow-y-auto relative pb-16 px-1.5",
-    "host-mobile-send": "h-full overflow-y-auto py-4 space-y-4",
+    "host-mobile-send": "h-full overflow-y-auto py-2 space-y-3",
     "host-mobile-items": "h-full overflow-y-auto py-2",
     "host-mobile-card":
-      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-2.5 shadow-[var(--shadow-sm)]",
+      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl py-0 px-2 pb-2 shadow-[var(--shadow-sm)]",
 
     // SendPanel.vue
-    "send-panel": "p-4 md:p-6 md:border-b md:border-[var(--border-soft)]",
+    "send-panel": "p-2 md:p-4 md:border-b md:border-[var(--border-soft)]",
     "send-panel-title":
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
     "send-panel-title-icon": "w-4 h-4 text-[var(--text-accent)]",
-    "send-panel-form": "space-y-4",
+    "send-panel-form": "space-y-3",
     "send-panel-submit":
       "w-full py-3 px-4 bg-[var(--text-accent)] hover:opacity-90 text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-[var(--accent-glow)] disabled:opacity-50",
     "send-panel-submit-icon": "w-4 h-4",
 
     // UploadPanel.vue
-    "upload-panel": "p-4 md:p-6 flex flex-col min-h-0",
+    "upload-panel": "p-2 md:p-6 flex flex-col min-h-0",
     "upload-panel--full": "flex-1",
     "upload-panel-title":
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
     "upload-panel-title-icon": "w-4 h-4 text-cyan-500",
     "upload-dropzone":
-      "border-2 border-dashed border-[var(--border-soft)] rounded-2xl p-6 md:p-8 text-center cursor-pointer transition-all hover:border-[var(--text-accent)] hover:bg-[rgba(var(--accent-rgb),0.05)] mb-4",
+      "border-2 border-dashed border-[var(--border-soft)] rounded-2xl p-4 md:p-8 text-center cursor-pointer transition-all hover:border-[var(--text-accent)] hover:bg-[rgba(var(--accent-rgb),0.05)] mb-4",
     "upload-dropzone-icon-wrap":
       "w-12 h-12 mx-auto mb-3 rounded-2xl bg-[var(--border-soft)] flex items-center justify-center",
     "upload-dropzone-icon": "w-6 h-6 text-[var(--text-muted)]",
@@ -231,7 +231,7 @@ export default defineConfig({
     "filter-tab--favorite-inactive": "text-[var(--text-muted)] hover:text-amber-500",
     "list-container": "relative flex-1 min-h-0",
     "loading-text": "text-sm font-medium text-[var(--text-muted)] animate-pulse",
-    "items-list": "h-full overflow-y-auto space-y-3 md:space-y-4 pr-1 md:pr-2 custom-scrollbar",
+    "items-list": "h-full overflow-y-auto space-y-3 md:space-y-3 pr-1 md:pr-2 custom-scrollbar",
     "item-card":
       "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-2.5 md:p-5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-md)] transition-all",
     "item-layout": "flex gap-3 md:gap-4",

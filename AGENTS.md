@@ -42,6 +42,7 @@
 - 安装依赖：`npm install`
 - Web 开发：`npm run dev:web`
 - Web 构建：`npm run build:web`
+- Chrome 扩展构建：`npm run build:ext`
 - Tauri 前端开发预构建：`npm run dev:web:tauri`
 - Tauri 前端打包预构建：`npm run build:web:tauri`
 - Tauri 开发：`npm run dev`

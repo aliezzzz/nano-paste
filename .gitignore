@@ -5,6 +5,7 @@ gen
 /gen/schemas
 node_modules
 dist
+dist-extension
 target
 apps/backend/data
 apps/backend/data/nanopaste.db
