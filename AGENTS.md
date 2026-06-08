@@ -39,24 +39,24 @@
 
 在 `apps/desktop` 执行：
 
-- 安装依赖：`npm install`
-- Web 开发：`npm run dev:web`
-- Web 构建：`npm run build:web`
-- Chrome 扩展构建：`npm run build:ext`
-- Tauri 前端开发预构建：`npm run dev:web:tauri`
-- Tauri 前端打包预构建：`npm run build:web:tauri`
-- Tauri 开发：`npm run dev`
-- Tauri 打包：`npm run build`
-- 仅构建可执行文件（跳过安装包）：`npm run build:exe`
-- Android 初始化：`npm run android:init`
-- Android 开发：`npm run android:dev`
-- Android 打包：`npm run android:build`
+- 安装依赖：`pnpm install`
+- Web 开发：`pnpm run dev:web`
+- Web 构建：`pnpm run build:web`
+- Chrome 扩展构建：`pnpm run build:ext`
+- Tauri 前端开发预构建：`pnpm run dev:web:tauri`
+- Tauri 前端打包预构建：`pnpm run build:web:tauri`
+- Tauri 开发：`pnpm run dev`
+- Tauri 打包：`pnpm run build`
+- 仅构建可执行文件（跳过安装包）：`pnpm run build:exe`
+- Android 初始化：`pnpm run android:init`
+- Android 开发：`pnpm run android:dev`
+- Android 打包：`pnpm run android:build`
 
 补充：以上 Android 命令会先执行 `scripts/android-enable-cleartext.mjs` 与 `scripts/android-sync-system-bars.mjs`：
 - 自动将 `src-tauri/gen/android/app/build.gradle.kts` 中 `usesCleartextTraffic` 设为 `true`（若该文件存在），用于 HTTP 明文后端联调与打包可用性。
 - 自动将 Android 主题中的状态栏/导航栏颜色同步为应用头部深色（若主题文件存在），减少顶部黑条割裂感。
 - 自动通过 `scripts/run-with-build-target.mjs` 注入 `NANOPASTE_BUILD_TARGET=android`，用于前端编译期平台标识。
-- 类型检查（lint 替代）：`npm run typecheck`
+- 类型检查（lint 替代）：`pnpm run typecheck`
 
 补充：`dev:web` / `build:web` 会注入 `web` 平台；`dev:web:tauri` / `build:web:tauri` 默认按构建机映射 `macos/windows/linux`；Android 命令注入 `android`。前端可通过 `import.meta.env.VITE_BUILD_PLATFORM` 与 `import.meta.env.VITE_DEVICE_NAME` 读取。
 
@@ -156,7 +156,7 @@
 
 - 确认只改任务相关文件，无临时代码/调试输出。
 - Backend 改动至少执行：`go build ./...`、`go test ./...`。
-- Desktop 改动至少执行：`npm run build:web`、`npx tsc --noEmit`。
+- Desktop 改动至少执行：`pnpm run build:web`、`pnpm run typecheck`。
 
 ## 9. 文档维护要求
 

@@ -1,18 +1,37 @@
-# NanoPaste Backend API 文档（Go + SQLite）
+# NanoPaste Backend API
 
-本文档对应当前后端实现，目标是让桌面端可以直接对接真实后端。
+本文档对应当前 Go + SQLite 后端实现。
 
-## 1. 基础信息
+## 基础信息
 
-- Base URL: `http://localhost:8080`
-- 统一前缀: `/v1`
-- 认证方式: `Authorization: Bearer <access_token>`
-- 设备标识（建议）: `X-Device-Id: <device_id>`
-- 响应包装:
-  - 成功: `{ "ok": true, "data": ... }`
-  - 失败: `{ "ok": false, "error": { "code": "...", "message": "...", "requestId": "..." } }`
+- Base URL：`http://localhost:8080`
+- API 前缀：`/v1`
+- 认证方式：`Authorization: Bearer <access_token>`
+- 请求 ID：服务端会透传或生成 `X-Request-Id`
 
-## 2. 错误码
+成功响应：
+
+```json
+{
+  "ok": true,
+  "data": {}
+}
+```
+
+失败响应：
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "invalid json body",
+    "requestId": "..."
+  }
+}
+```
+
+错误码：
 
 - `UNAUTHORIZED` -> 401
 - `FORBIDDEN` -> 403
@@ -22,22 +41,22 @@
 - `VALIDATION_ERROR` -> 400
 - `INTERNAL` -> 500
 
-## 3. 健康检查
+## Health
 
 ### GET `/health`
 
-响应示例：
+响应：
 
 ```json
 {
   "ok": true,
-  "service": "nanopaste-backend"
+  "data": {
+    "service": "nanopaste-backend"
+  }
 }
 ```
 
----
-
-## 4. Auth
+## Auth
 
 ### POST `/v1/auth/login`
 
@@ -45,23 +64,19 @@
 
 ```json
 {
-  "username": "desktop-demo",
-  "password": "mock-password",
-  "device_name": "Desktop Local",
-  "platform": "macos",
-  "client_version": "0.1.0"
+  "username": "demo",
+  "password": "password"
 }
 ```
 
-响应（字段名以当前实现为准）：
+响应：
 
 ```json
 {
   "ok": true,
   "data": {
-    "user_id": "u_xxx",
-    "username": "desktop-demo",
-    "account": "desktop-demo",
+    "user_id": "...",
+    "username": "demo",
     "tokens": {
       "access_token": "...",
       "refresh_token": "...",
@@ -71,9 +86,11 @@
 }
 ```
 
+当前实现会在用户不存在时自动创建用户；用户已存在时校验密码。
+
 ### POST `/v1/auth/refresh`
 
-请求：
+请求兼容 `refresh_token` 与 `refreshToken`：
 
 ```json
 {
@@ -98,12 +115,12 @@
 
 ### POST `/v1/auth/logout`
 
-请求：
+请求兼容 `refresh_token` / `refreshToken` 和 `all_sessions` / `allSessions`：
 
 ```json
 {
   "refresh_token": "...",
-  "all_devices": false
+  "all_sessions": false
 }
 ```
 
@@ -118,21 +135,24 @@
 }
 ```
 
----
+## Items
 
-## 5. Items
+Items 接口需要 `Authorization: Bearer <access_token>`。
 
 ### POST `/v1/items`
 
-请求（文本条目）：
+请求：
 
 ```json
 {
   "type": "text",
+  "title": "可选标题",
   "content": "hello nanopaste",
   "client_event_id": "evt_001"
 }
 ```
+
+`client_event_id` 也兼容 `clientEventId`，用于生成幂等条目 ID。
 
 响应：
 
@@ -140,14 +160,26 @@
 {
   "ok": true,
   "data": {
-    "item_id": "itm_xxx",
-    "event_id": 1001,
-    "created_at": "2026-03-27T16:00:00Z"
+    "item": {
+      "id": "...",
+      "type": "text",
+      "title": "可选标题",
+      "content": "hello nanopaste",
+      "isFavorite": false,
+      "createdAt": "2026-06-08T10:00:00Z"
+    }
   }
 }
 ```
 
-### GET `/v1/items?since_event_id=0&limit=20&type=text`
+### GET `/v1/items`
+
+查询参数：
+
+- `limit`：默认 `20`，最大 `100`
+- `cursor`：偏移游标，默认 `0`
+- `type`：可选，`text` 或 `file`
+- `sort`：可选，目前仅支持 `favorite`
 
 响应：
 
@@ -157,35 +189,21 @@
   "data": {
     "items": [
       {
-        "id": "itm_xxx",
-        "type": "text",
-        "preview": "hello...",
-        "created_at": "2026-03-27T16:00:00Z",
-        "created_by_device_id": "dev_xxx"
+        "id": "...",
+        "type": "file",
+        "title": "可选标题",
+        "fileId": "...",
+        "fileName": "demo.txt",
+        "fileSize": 1024,
+        "mimeType": "text/plain",
+        "isFavorite": true,
+        "createdAt": "2026-06-08T10:00:00Z"
       }
     ],
-    "next_since_event_id": 1001
-  }
-}
-```
-
-### GET `/v1/items/:itemId`
-
-文件条目响应示例：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "id": "itm_file_xxx",
-    "type": "file",
-    "file_id": "file_xxx",
-    "file_name": "demo.txt",
-    "size": 1024,
-    "mime_type": "text/plain",
-    "sha256": "...",
-    "category": "other",
-    "created_at": "2026-03-27T16:00:00Z"
+    "page": {
+      "nextCursor": "20",
+      "hasMore": true
+    }
   }
 }
 ```
@@ -199,71 +217,18 @@
   "ok": true,
   "data": {
     "success": true,
-    "event_id": 1002
+    "deletedAt": "2026-06-08T10:10:00Z"
   }
 }
 ```
 
----
-
-## 6. Events
-
-### GET `/v1/events?since_event_id=0&limit=50`
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "events": [
-      {
-        "event_id": 1001,
-        "event_type": "item_created",
-        "item_id": "itm_xxx",
-        "created_at": "2026-03-27T16:00:00Z",
-        "payload": {}
-      }
-    ],
-    "next_since_event_id": 1001
-  }
-}
-```
-
-### WS `/v1/events/ws`
-
-- 使用相同 `Authorization` 令牌建立连接。
-- 服务端推送事件类型：`item_created`、`item_deleted`、`file_ready`。
-
-推送消息示例：
-
-```json
-{
-  "event": "item_created",
-  "accountId": "u_xxx",
-  "timestamp": "2026-03-27T16:00:00Z",
-  "eventId": 1001,
-  "payload": {
-    "itemId": "itm_xxx"
-  }
-}
-```
-
----
-
-## 7. Files
-
-### POST `/v1/files/prepare-upload`
+### POST `/v1/items/:itemId/favorite`
 
 请求：
 
 ```json
 {
-  "fileName": "demo.txt",
-  "fileSize": 1024,
-  "mimeType": "text/plain",
-  "sha256": "...",
-  "category": "other"
+  "favorite": true
 }
 ```
 
@@ -273,26 +238,26 @@
 {
   "ok": true,
   "data": {
-    "fileId": "file_xxx",
-    "uploadUrl": "https://upload.mock/...",
-    "uploadMethod": "PUT",
-    "expiresAt": "2026-03-27T16:05:00Z",
-    "category": "other"
+    "success": true,
+    "itemId": "...",
+    "favorite": true,
+    "updatedAt": "2026-06-08T10:10:00Z"
   }
 }
 ```
 
-### POST `/v1/files/complete`
+## Files
 
-请求：
+Files 接口需要 `Authorization: Bearer <access_token>`，下载直链可通过 `access_token` 查询参数鉴权。
 
-```json
-{
-  "fileId": "file_xxx",
-  "etag": "etag_xxx",
-  "sha256": "..."
-}
-```
+### POST `/v1/files/upload`
+
+请求类型：`multipart/form-data`
+
+字段：
+
+- `file`：必填，上传文件
+- `category`：可选，文件分类，默认 `other`
 
 响应：
 
@@ -300,10 +265,10 @@
 {
   "ok": true,
   "data": {
-    "itemId": "itm_file_xxx",
-    "fileId": "file_xxx",
+    "itemId": "...",
+    "fileId": "...",
     "ready": true,
-    "category": "other"
+    "category": "image"
   }
 }
 ```
@@ -316,24 +281,33 @@
 {
   "ok": true,
   "data": {
-    "fileId": "file_xxx",
+    "fileId": "...",
     "fileName": "demo.txt",
     "fileSize": 1024,
-    "downloadUrl": "/v1/files/download/file_xxx?access_token=...",
-    "expiresAt": "2026-03-27T16:10:00Z",
+    "downloadUrl": "/v1/files/download/...?access_token=...",
+    "expiresAt": "2026-06-08T11:00:00Z",
     "category": "other"
   }
 }
 ```
 
+### GET `/v1/files/download/:fileId?access_token=...`
+
+返回文件内容，响应头包含：
+
+- `Content-Type`
+- `Content-Disposition`
+- `Content-Length`
+
 ### POST `/v1/files/cleanup`
 
-请求：
+请求兼容 `itemIds` / `item_ids` 和 `beforeTime` / `before_time`：
 
 ```json
 {
-  "reason": "expired",
-  "before_time": "2026-06-01T00:00:00Z",
+  "reason": "manual",
+  "itemIds": ["..."],
+  "beforeTime": "2026-06-08T10:00:00Z",
   "category": "other"
 }
 ```
@@ -345,108 +319,20 @@
   "ok": true,
   "data": {
     "success": true,
-    "reason": "expired",
-    "removed": 3,
-    "removedFileIds": ["file_1", "file_2"],
-    "cleanedAt": "2026-06-01T00:00:10Z"
+    "reason": "manual",
+    "removed": 1,
+    "removedFileIds": ["..."],
+    "cleanedAt": "2026-06-08T10:10:00Z"
   }
 }
 ```
 
----
+## 当前未注册接口
 
-## 8. Devices
+以下早期设计接口当前没有在后端注册：
 
-### POST `/v1/devices/register`
-
-请求：
-
-```json
-{
-  "device_name": "Desktop Local",
-  "platform": "macos",
-  "client_version": "0.1.0"
-}
-```
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "device": {
-      "deviceId": "dev_xxx",
-      "deviceName": "Desktop Local",
-      "platform": "macos",
-      "isActive": true,
-      "lastSeenAt": "2026-03-27T16:00:00Z"
-    }
-  }
-}
-```
-
-### POST `/v1/devices/heartbeat`
-
-请求：
-
-```json
-{
-  "device_id": "dev_xxx"
-}
-```
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "deviceId": "dev_xxx",
-    "acknowledgedAt": "2026-03-27T16:01:00Z"
-  }
-}
-```
-
-### GET `/v1/devices`
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "devices": []
-  }
-}
-```
-
-### POST `/v1/devices/revoke`
-
-请求：
-
-```json
-{
-  "device_id": "dev_xxx"
-}
-```
-
-响应：
-
-```json
-{
-  "ok": true,
-  "data": {
-    "success": true,
-    "revokedAt": "2026-03-27T16:02:00Z"
-  }
-}
-```
-
----
-
-## 9. 前端对接约定
-
-- 桌面端应统一使用后端 `/v1/*` 路由，不再依赖 mock path。
-- 事件连接应改为 `/v1/events/ws`。
-- 文件 category 前端需透传；缺省时使用 `other`。
+- `/v1/events`
+- `/v1/events/ws`
+- `/v1/devices/*`
+- `/v1/files/prepare-upload`
+- `/v1/files/complete`

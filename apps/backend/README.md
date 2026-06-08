@@ -1,56 +1,43 @@
-# NanoPaste Backend（本地运行与联调）
+# NanoPaste Backend
 
-本文档说明后端在本地的依赖、启动、数据库与迁移方式，并给出当前已实现接口与常用 `curl` 示例。
+本目录是 NanoPaste 的真实后端实现，使用 Go 1.22、SQLite 和标准库 HTTP 路由。
 
 ## 依赖
 
-- Go 1.22（见 `go.mod`）
-- CGO 可用环境（`github.com/mattn/go-sqlite3` 需要）
-- （可选）`sqlite3` CLI，用于手动执行迁移 SQL
+- Go 1.22
+- 可用 CGO 环境，`github.com/mattn/go-sqlite3` 需要 CGO
+- 可选 `sqlite3` CLI，用于手动执行迁移 SQL
 
 ## 本地启动
-
-在仓库根目录执行：
 
 ```bash
 cd apps/backend
 go run ./cmd/server
 ```
 
-默认监听：`http://localhost:8080`
+默认监听 `http://localhost:8080`。
 
-可选环境变量（常用）：
+常用环境变量：
 
 - `PORT`：服务端口，默认 `8080`
 - `SQLITE_DSN`：SQLite 文件路径，默认 `./data/nanopaste.db`
-- `JWT_SECRET`：JWT 签名密钥，默认 `dev-secret-change-me`
+- `JWT_SECRET`：JWT 签名密钥，默认 `dev-secret-change-me`，生产环境必须改为强随机字符串
 - `JWT_ISSUER`：JWT issuer，默认 `nanopaste-backend`
-- `ACCESS_TOKEN_TTL_MINUTES`：Access Token 时长（分钟），默认 `60`
-- `REFRESH_TOKEN_TTL_HOURS`：Refresh Token 时长（小时），默认 `720`
+- `ACCESS_TOKEN_TTL_MINUTES`：Access Token 有效期，默认 `60`
+- `REFRESH_TOKEN_TTL_HOURS`：Refresh Token 有效期，默认 `720`
+- `FILE_STORAGE_ROOT`：文件存储目录，默认 `./data/storage`
 - `WEB_DIST_DIR`：前端构建产物目录，默认 `../desktop/dist`
 
-示例：
+## 数据库与迁移
 
-```bash
-cd apps/backend
-PORT=8080 SQLITE_DSN=./data/nanopaste.db JWT_SECRET=dev-secret-change-me go run ./cmd/server
-```
+服务启动时会自动创建核心表：
 
-## SQLite 文件位置
+- `users`
+- `sessions`
+- `file_objects`
+- `clipboard_items`
 
-- 默认数据库文件：`apps/backend/data/nanopaste.db`
-- 若设置 `SQLITE_DSN`，则以该路径为准
-
-说明：服务启动时会自动 `mkdir -p` 数据目录并确保核心表存在。
-
-## 迁移执行（当前为手动 SQL）
-
-当前仓库提供 SQL 迁移文件：
-
-- `migrations/0001_init.up.sql`
-- `migrations/0001_init.down.sql`
-
-手动执行步骤：
+仓库仍保留 SQL 迁移文件，适合本地重建或排查：
 
 ```bash
 cd apps/backend
@@ -58,14 +45,12 @@ mkdir -p data
 sqlite3 ./data/nanopaste.db < ./migrations/0001_init.up.sql
 ```
 
-回滚示例：
+回滚：
 
 ```bash
 cd apps/backend
 sqlite3 ./data/nanopaste.db < ./migrations/0001_init.down.sql
 ```
-
-> 备注：即使未手动执行迁移，当前服务启动时也会自动创建主要表结构；手动迁移更适合本地重建或排查场景。
 
 ## 健康检查
 
@@ -73,126 +58,221 @@ sqlite3 ./data/nanopaste.db < ./migrations/0001_init.down.sql
 curl http://localhost:8080/health
 ```
 
-## 访问 Web 版本（由后端托管静态文件）
+响应：
 
-1. 先构建前端静态资源：
+```json
+{
+  "ok": true,
+  "data": {
+    "service": "nanopaste-backend"
+  }
+}
+```
+
+## 托管 Web 前端
+
+先构建前端：
 
 ```bash
 cd apps/desktop
-npm install
-npm run build:web
+pnpm install
+pnpm run build:web
 ```
 
-2. 启动后端：
+再启动后端：
 
 ```bash
 cd apps/backend
 go run ./cmd/server
 ```
 
-3. 浏览器访问：`http://localhost:8080/`
+浏览器访问 `http://localhost:8080/`。后端会保留 `/v1/*` 和 `/health`，其他 GET/HEAD 路由交给静态文件处理，并在未命中时回退 `index.html`。
 
-说明：
+## 当前接口
 
-- 后端会优先保留 `/v1/*` 和 `/health` 路由。
-- 其余 GET/HEAD 路由会尝试返回静态文件；未命中时回退 `index.html`，支持 SPA 前端路由直达。
-- Web 端登录会固定上报设备名 `web`，并在浏览器本地记住 `deviceId` 用于后续登录复用同一设备记录。
+所有 API 成功响应均为：
 
-## 已实现接口清单
+```json
+{
+  "ok": true,
+  "data": {}
+}
+```
 
-### auth
+失败响应均为：
+
+```json
+{
+  "ok": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "invalid json body",
+    "requestId": "..."
+  }
+}
+```
+
+### Auth
 
 - `POST /v1/auth/login`
 - `POST /v1/auth/refresh`
 - `POST /v1/auth/logout`
 
-### items
+登录请求：
+
+```json
+{
+  "username": "demo",
+  "password": "password"
+}
+```
+
+说明：如果用户不存在，当前实现会按首次登录自动创建用户；如果用户存在，则校验密码。
+
+登录响应：
+
+```json
+{
+  "ok": true,
+  "data": {
+    "user_id": "...",
+    "username": "demo",
+    "tokens": {
+      "access_token": "...",
+      "refresh_token": "...",
+      "expires_in_seconds": 3600
+    }
+  }
+}
+```
+
+刷新请求兼容 `refresh_token` 和 `refreshToken`：
+
+```json
+{
+  "refresh_token": "..."
+}
+```
+
+登出请求兼容 `refresh_token` / `refreshToken` 和 `all_sessions` / `allSessions`：
+
+```json
+{
+  "refresh_token": "...",
+  "all_sessions": false
+}
+```
+
+### Items
 
 - `POST /v1/items`
-- `GET /v1/items`
-- `GET /v1/items/:itemId`
+- `GET /v1/items?limit=20&cursor=0&type=text&sort=favorite`
 - `DELETE /v1/items/:itemId`
+- `POST /v1/items/:itemId/favorite`
 
-### events
+除登录、刷新、登出和健康检查外，请求需要 `Authorization: Bearer <access_token>`。
 
-- `GET /v1/events`
-- `GET /v1/events/ws`（WebSocket 升级）
+创建文本条目：
 
-### files
+```json
+{
+  "type": "text",
+  "title": "可选标题",
+  "content": "hello nanopaste",
+  "client_event_id": "evt_001"
+}
+```
 
-- `POST /v1/files/prepare-upload`
-- `POST /v1/files/complete`
+列表响应：
+
+```json
+{
+  "ok": true,
+  "data": {
+    "items": [
+      {
+        "id": "...",
+        "type": "text",
+        "title": "可选标题",
+        "content": "hello nanopaste",
+        "isFavorite": false,
+        "createdAt": "2026-06-08T10:00:00Z"
+      }
+    ],
+    "page": {
+      "nextCursor": "20",
+      "hasMore": true
+    }
+  }
+}
+```
+
+收藏请求：
+
+```json
+{
+  "favorite": true
+}
+```
+
+### Files
+
+- `POST /v1/files/upload`
 - `POST /v1/files/:fileId/prepare-download`
+- `GET /v1/files/download/:fileId?access_token=...`
 - `POST /v1/files/cleanup`
 
-### devices
+上传使用 `multipart/form-data`：
 
-- `POST /v1/devices/register`
-- `POST /v1/devices/heartbeat`
-- `GET /v1/devices`
-- `POST /v1/devices/revoke`
+- `file`：必填，上传文件
+- `category`：可选，文件分类，默认 `other`
 
-## 常用 curl 示例
+上传响应：
 
-先登录获取 token（后续请求复用）：
-
-```bash
-curl -X POST http://localhost:8080/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "account": "desktop-demo",
-    "password": "mock-password",
-    "deviceName": "Desktop Local",
-    "platform": "macos",
-    "clientVersion": "0.1.0"
-  }'
+```json
+{
+  "ok": true,
+  "data": {
+    "itemId": "...",
+    "fileId": "...",
+    "ready": true,
+    "category": "other"
+  }
+}
 ```
 
-请将响应中的 `access_token` 填入下文 `YOUR_ACCESS_TOKEN`。
+准备下载响应：
 
-### auth（刷新）
-
-```bash
-curl -X POST http://localhost:8080/v1/auth/refresh \
-  -H 'Content-Type: application/json' \
-  -d '{"refreshToken":"YOUR_REFRESH_TOKEN"}'
-```
-
-### items（创建文本条目）
-
-```bash
-curl -X POST http://localhost:8080/v1/items \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'X-Device-Id: desktop_local' \
-  -d '{"type":"text","content":"hello nanopaste"}'
-```
-
-### events（拉取事件）
-
-```bash
-curl 'http://localhost:8080/v1/events?since_event_id=0&limit=50' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -H 'X-Device-Id: desktop_local'
-```
-
-### files（准备上传）
-
-```bash
-curl -X POST http://localhost:8080/v1/files/prepare-upload \
-  -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
-  -d '{
+```json
+{
+  "ok": true,
+  "data": {
+    "fileId": "...",
     "fileName": "demo.txt",
     "fileSize": 1024,
-    "mimeType": "text/plain",
+    "downloadUrl": "/v1/files/download/...?access_token=...",
+    "expiresAt": "2026-06-08T11:00:00Z",
     "category": "other"
-  }'
+  }
+}
 ```
 
-### devices（设备列表）
+清理请求：
 
-```bash
-curl http://localhost:8080/v1/devices \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN'
+```json
+{
+  "reason": "manual",
+  "itemIds": ["..."],
+  "category": "other"
+}
 ```
+
+## 已移除或未注册接口
+
+当前后端没有注册以下早期设计接口：
+
+- `/v1/events`
+- `/v1/events/ws`
+- `/v1/devices/*`
+- `/v1/files/prepare-upload`
+- `/v1/files/complete`

@@ -10,7 +10,7 @@ if (!existsSync(sourceDir)) {
 }
 
 if (!existsSync(targetDir)) {
-  console.warn("[android-icons] 跳过：未找到 src-tauri/gen/android/app/src/main/res，请先执行 npm run android:init");
+  console.warn("[android-icons] 跳过：未找到 src-tauri/gen/android/app/src/main/res，请先执行 pnpm run android:init");
   process.exit(0);
 }
 

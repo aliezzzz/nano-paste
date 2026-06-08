@@ -6,12 +6,12 @@
 FROM node:20-alpine AS web-builder
 WORKDIR /src/apps/desktop
 
-COPY apps/desktop/package*.json ./
-RUN npm install
+COPY apps/desktop/package.json apps/desktop/pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY packages/contracts /src/packages/contracts
 COPY apps/desktop ./
-RUN npm run build:web
+RUN pnpm run build:web
 
 ############################
 # 2) Build Go backend binary

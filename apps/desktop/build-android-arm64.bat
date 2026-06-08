@@ -31,7 +31,7 @@ echo [INFO] JAVA_HOME=%JAVA_HOME%
 echo [INFO] ANDROID_SDK_ROOT=%ANDROID_SDK_ROOT%
 
 cd /d "%PROJECT_DIR%"
-call npm run android:build
+call pnpm run android:build
 set "BUILD_EXIT=%ERRORLEVEL%"
 
 if not "%BUILD_EXIT%"=="0" (

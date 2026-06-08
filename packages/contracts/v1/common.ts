@@ -19,13 +19,13 @@ export interface ApiFailure {
 export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
 
 /**
- * 统一规则契约（供服务端、桌面端、Mock 共同对齐）
+ * 统一规则契约（供服务端与前端共同对齐）
  */
 export interface ContractRulesV1 {
   /** 同账号可见 */
   accountVisibility: 'same_account_only';
-  /** 文本实时广播 */
-  textBroadcast: 'realtime';
+  /** 文本创建后由客户端主动刷新列表 */
+  textBroadcast: 'client_refresh';
   /** 文件只广播元数据，点击下载 */
   fileBroadcast: 'metadata_only_click_to_download';
   /** 云端文件 90 天保留，可主动清理 */
@@ -34,7 +34,7 @@ export interface ContractRulesV1 {
 
 export const CONTRACT_RULES_V1: ContractRulesV1 = {
   accountVisibility: 'same_account_only',
-  textBroadcast: 'realtime',
+  textBroadcast: 'client_refresh',
   fileBroadcast: 'metadata_only_click_to_download',
   cloudFileRetention: '90_days_with_manual_cleanup',
 };
@@ -54,4 +54,3 @@ export interface PaginationMeta {
   nextCursor?: string;
   hasMore: boolean;
 }
-

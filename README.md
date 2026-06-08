@@ -1,22 +1,62 @@
 # NanoPaste
 
-NanoPaste 项目当前处于 **阶段 A（桌面端 + Mock）**。
+NanoPaste 是一个轻量的文本与文件中转工具，当前已经具备真实后端、多端前端和私有化部署能力。
 
-## 阶段 A 目标
+## 当前形态
 
-- 先实现桌面端（Windows/macOS）基础能力。
-- 技术方向采用 Tauri。
-- 使用本地 Mock（不接真实后端）。
-- 先规范项目目录结构，为后续云端后端接入做准备。
+- `apps/backend`：Go 1.22 + SQLite 后端，提供登录、文本条目、文件上传下载、收藏与清理接口，并可托管 Web 静态资源。
+- `apps/desktop`：Vue 3 + TypeScript + Pinia + UnoCSS 前端，同一套界面支持 Tauri 桌面端、Web、Android 构建和 Chrome 扩展 popup。
+- `packages/contracts`：前后端共享的 TypeScript v1 接口契约。
+- `build`：Docker 构建与 Compose 部署文件，镜像内包含后端二进制与 Web 静态资源。
+- `docs`：架构与 API 文档。
 
-## 目录说明
+## 常用命令
 
-- `apps/desktop`：桌面端应用（Tauri）目录。
-- `packages/contracts`：接口契约与数据结构定义目录。
-- `packages/mock-server`：本地 Mock 服务目录。
-- `packages/shared`：可复用共享模块目录。
-- `docs/architecture`：架构与阶段规划文档。
-- `docs/api`：接口文档与契约说明。
-- `scripts`：项目脚本目录。
+### 后端
 
-> 当前子任务仅完成目录与最小文档初始化，不包含业务代码实现。
+```bash
+cd apps/backend
+go run ./cmd/server
+go test ./...
+go build ./...
+```
+
+默认监听 `http://localhost:8080`，默认 SQLite 数据库为 `apps/backend/data/nanopaste.db`。
+
+### 前端
+
+```bash
+cd apps/desktop
+pnpm install
+pnpm run dev:web
+pnpm run build:web
+pnpm run build:ext
+pnpm run typecheck
+```
+
+### Docker 部署
+
+```bash
+cp build/.env.example build/.env
+bash build/docker-build.sh
+docker compose -f build/docker-compose.yml up -d
+```
+
+部署前请修改 `build/.env` 中的 `JWT_SECRET`。
+
+## 当前接口范围
+
+- `POST /v1/auth/login`
+- `POST /v1/auth/refresh`
+- `POST /v1/auth/logout`
+- `POST /v1/items`
+- `GET /v1/items`
+- `DELETE /v1/items/:itemId`
+- `POST /v1/items/:itemId/favorite`
+- `POST /v1/files/upload`
+- `POST /v1/files/:fileId/prepare-download`
+- `GET /v1/files/download/:fileId?access_token=...`
+- `POST /v1/files/cleanup`
+- `GET /health`
+
+说明：早期文档中提到的 Mock Server、devices、events、WebSocket 同步机制已经不属于当前实现范围。

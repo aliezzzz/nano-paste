@@ -30,7 +30,7 @@
 在 `apps/desktop` 目录执行：
 
 ```bat
-npm run android:dev
+pnpm run android:dev
 ```
 
 当前行为：
@@ -64,7 +64,7 @@ apps\desktop\build-android-arm64.bat
 脚本最终调用：
 
 ```bat
-npm run android:build
+pnpm run android:build
 ```
 
 而 `package.json` 中当前正式构建命令为：

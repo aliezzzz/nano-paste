@@ -1,39 +1,44 @@
-# NanoPaste Desktop（Mock 联调版）
+# NanoPaste Desktop
 
-本目录提供桌面端最小可运行联调流程，面向 `packages/mock-server`。
+本目录是 NanoPaste 前端应用，使用 Vue 3、TypeScript、Pinia、UnoCSS 和 Tauri 2。同一套 Vue UI 当前用于 Web、Tauri 桌面端、Android 构建和 Chrome 扩展 popup。
 
-## 本地联调步骤
+## 本地 Web 联调
 
-1. 启动 mock-server（先启动）：
+先启动真实后端：
 
-   ```bash
-   cd packages/mock-server
-   npm install
-   npm run dev
-   ```
+```bash
+cd apps/backend
+go run ./cmd/server
+```
 
-2. 启动 desktop（后启动）：
+再启动前端：
 
-   ```bash
-   cd apps/desktop
-   npm install
-   npm run dev:web
-   ```
+```bash
+cd apps/desktop
+pnpm install
+pnpm run dev:web
+```
 
-3. 打开页面后可直接进行以下操作：
+默认后端地址为 `http://localhost:8080`。如需修改，在应用配置弹窗中填写后端地址；Chrome 扩展环境会写入 `chrome.storage`，其他环境会写入 `localStorage`。
 
-   - 发送文本（调用 `POST /v1/items`）
-   - 查看最近条目（调用 `GET /v1/items` + `GET /v1/items/:itemId`）
-   - 点击“模拟上传完成”（调用 `POST /v1/files/prepare-upload` + `POST /v1/files/complete`）
-   - 对文件条目点击“下载”（调用 `POST /v1/files/:fileId/prepare-download`）
-   - WS 收到 `item_created` / `item_deleted` / `file_ready` 后自动刷新列表
+## 常用命令
 
-## 说明
+- `pnpm run dev:web`：启动 Web 开发环境
+- `pnpm run build:web`：构建 Web 静态资源
+- `pnpm run build:ext`：构建 Chrome 扩展产物
+- `pnpm run dev`：启动 Tauri 桌面端开发环境
+- `pnpm run build`：构建 Tauri 桌面端安装包
+- `pnpm run typecheck`：执行 Vue/TypeScript 类型检查
 
-- 当前是 **Mock 联调版本**。
-- 未实现真实系统剪贴板监听。
-- 未实现真实拖拽上传与本地文件读写。
-- 未实现真实文件传输（仅展示 mock 返回的下载地址）。
+## 当前能力
+
+- 登录、刷新 token、登出
+- 发送文本条目
+- 上传文件并生成文件条目
+- 查看、复制、下载、删除条目
+- 收藏条目并按收藏优先排序
+- 全局粘贴文本或文件到当前工作区
+- Chrome 扩展右键菜单发送选中文本、链接、页面或图片
 
 ## Chrome 扩展（MV3）
 
@@ -41,21 +46,21 @@
 
 ```bash
 cd apps/desktop
-npm install
-npm run build:ext
+pnpm install
+pnpm run build:ext
 ```
 
 构建产物目录：`apps/desktop/dist-extension`
 
-加载方式：打开 `chrome://extensions` -> 开启开发者模式 -> 选择“加载已解压的扩展程序” -> 选择 `dist-extension`。
+加载方式：打开 `chrome://extensions`，开启开发者模式，选择“加载已解压的扩展程序”，再选择 `dist-extension`。
 
 ## Android 打包配置（Tauri 2）
 
 已补充 Android 相关脚本、签名流程与移动端兼容配置。
 
-- `npm run android:init`：初始化 Android 工程骨架
-- `npm run android:dev`：Android ARMv8 真机开发调试
-- `npm run android:build`：构建 Android ARMv8 APK 安装包
+- `pnpm run android:init`：初始化 Android 工程骨架
+- `pnpm run android:dev`：Android ARMv8 真机开发调试
+- `pnpm run android:build`：构建 Android ARMv8 APK 安装包
 - `build-android-arm64.bat`：Windows 下推荐使用的一键构建入口
 
 说明：
