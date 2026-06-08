@@ -90,7 +90,7 @@
 
 ### POST `/v1/auth/refresh`
 
-请求兼容 `refresh_token` 与 `refreshToken`：
+请求：
 
 ```json
 {
@@ -115,7 +115,7 @@
 
 ### POST `/v1/auth/logout`
 
-请求兼容 `refresh_token` / `refreshToken` 和 `all_sessions` / `allSessions`：
+请求：
 
 ```json
 {

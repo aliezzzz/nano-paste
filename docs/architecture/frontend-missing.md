@@ -8,9 +8,9 @@
 - 现状：仓库已经统一到 `pnpm`，构建链路需要保持可复现。
 - 目标：持续使用 `pnpm install --frozen-lockfile`、`pnpm run typecheck`、`pnpm run build:web` 验证前端变更。
 
-2. 契约字段继续收口
-- 现状：前端兼容 `snake_case` 与 `camelCase` token 字段，后端 auth 响应仍使用 `snake_case`。
-- 目标：明确 contracts 中 auth 字段命名策略，减少双字段兼容逻辑。
+2. auth 内部模型说明
+- 现状：API 契约已对齐后端 `snake_case` 字段，前端 store 仍使用内部 `camelCase` 状态。
+- 目标：补充一份简短说明，明确 API payload 与前端内部状态的映射边界。
 
 3. 配置来源说明
 - 现状：Web/Tauri 使用 Pinia 持久化，Chrome 扩展使用 `chrome.storage`。

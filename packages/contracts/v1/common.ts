@@ -40,9 +40,9 @@ export const CONTRACT_RULES_V1: ContractRulesV1 = {
 };
 
 export interface AuthTokenPair {
-  accessToken: string;
-  refreshToken: string;
-  expiresInSeconds: number;
+  access_token: string;
+  refresh_token: string;
+  expires_in_seconds: number;
 }
 
 export interface PaginationInput {

@@ -6,6 +6,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import type { ApiResponse } from "../../../../packages/contracts/v1";
+import type { RefreshResponse } from "../../../../packages/contracts/v1";
 import { useAuthStore } from "../stores/auth";
 import { useRuntimeStore } from "../stores/runtime";
 
@@ -161,7 +162,6 @@ async function doRefreshAccessToken(): Promise<boolean> {
       url: "/v1/auth/refresh",
       data: {
         refresh_token: authStore.refreshToken,
-        refreshToken: authStore.refreshToken,
       },
 		baseURL: runtimeStore.apiBaseUrl,
 		authRequired: false,
@@ -187,23 +187,13 @@ async function doRefreshAccessToken(): Promise<boolean> {
   }
 }
 
-interface RefreshApiData {
-	tokens: TokenPayload;
-}
-
-interface TokenPayload {
-  access_token?: string;
-  refresh_token?: string;
-  expires_in_seconds?: number;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresInSeconds?: number;
-}
+type RefreshApiData = RefreshResponse;
+type TokenPayload = RefreshApiData["tokens"];
 
 function mapTokenPayload(payload: TokenPayload): { accessToken: string; refreshToken: string; expiresInSeconds: number } {
-  const accessToken = payload.access_token ?? payload.accessToken ?? "";
-  const refreshToken = payload.refresh_token ?? payload.refreshToken ?? "";
-  const expiresInSeconds = payload.expires_in_seconds ?? payload.expiresInSeconds ?? 0;
+  const accessToken = payload.access_token;
+  const refreshToken = payload.refresh_token;
+  const expiresInSeconds = payload.expires_in_seconds;
 
   if (!accessToken || !refreshToken || !expiresInSeconds) {
     throw new Error("invalid token payload");

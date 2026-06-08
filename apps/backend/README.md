@@ -146,7 +146,7 @@ go run ./cmd/server
 }
 ```
 
-刷新请求兼容 `refresh_token` 和 `refreshToken`：
+刷新请求：
 
 ```json
 {
@@ -154,7 +154,7 @@ go run ./cmd/server
 }
 ```
 
-登出请求兼容 `refresh_token` / `refreshToken` 和 `all_sessions` / `allSessions`：
+登出请求：
 
 ```json
 {

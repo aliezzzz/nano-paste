@@ -1,3 +1,4 @@
+import type { LoginResponse, RefreshResponse } from "../../../../packages/contracts/v1";
 import { request } from "./request";
 
 export interface AuthTokenBundle {
@@ -18,7 +19,7 @@ interface LoginResult {
 }
 
 export async function loginWithPassword(input: LoginInput): Promise<LoginResult> {
-  const payload = await postApi<LoginApiData>(`${input.baseUrl}/v1/auth/login`, {
+  const payload = await postApi<LoginResponse>(`${input.baseUrl}/v1/auth/login`, {
     username: input.username,
     password: input.password,
   });
@@ -35,7 +36,6 @@ export async function refreshWithToken(
 ): Promise<{ tokens: AuthTokenBundle }> {
   const payload = await postApi<RefreshApiData>(`${baseUrl}/v1/auth/refresh`, {
     refresh_token: refreshToken,
-    refreshToken,
   });
 
   return {
@@ -46,29 +46,12 @@ export async function refreshWithToken(
 export async function logoutWithRefreshToken(baseUrl: string, refreshToken: string): Promise<void> {
   await postApi(`${baseUrl}/v1/auth/logout`, {
     refresh_token: refreshToken,
-    refreshToken,
     all_sessions: false,
-    allSessions: false,
   });
 }
 
-interface LoginApiData {
-  username?: string;
-  tokens: TokenPayload;
-}
-
-interface RefreshApiData {
-  tokens: TokenPayload;
-}
-
-interface TokenPayload {
-  access_token?: string;
-  refresh_token?: string;
-  expires_in_seconds?: number;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresInSeconds?: number;
-}
+type RefreshApiData = RefreshResponse;
+type TokenPayload = LoginResponse["tokens"];
 
 async function postApi<T>(url: string, body: unknown): Promise<T> {
   return request<T>({
@@ -83,9 +66,9 @@ async function postApi<T>(url: string, body: unknown): Promise<T> {
 }
 
 function mapTokenPayload(payload: TokenPayload): AuthTokenBundle {
-  const accessToken = payload.access_token ?? payload.accessToken ?? "";
-  const refreshToken = payload.refresh_token ?? payload.refreshToken ?? "";
-  const expiresInSeconds = payload.expires_in_seconds ?? payload.expiresInSeconds ?? 0;
+  const accessToken = payload.access_token;
+  const refreshToken = payload.refresh_token;
+  const expiresInSeconds = payload.expires_in_seconds;
 
   if (!accessToken || !refreshToken || !expiresInSeconds) {
     throw new Error("invalid token payload");

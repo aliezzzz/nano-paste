@@ -10,7 +10,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  userId: string;
+  user_id: string;
   username: string;
   tokens: AuthTokenPair;
 }
@@ -23,7 +23,7 @@ export type LoginApi = {
 };
 
 export interface RefreshRequest {
-  refreshToken: string;
+  refresh_token: string;
 }
 
 export interface RefreshResponse {
@@ -38,8 +38,8 @@ export type RefreshApi = {
 };
 
 export interface LogoutRequest {
-  refreshToken: string;
-  allSessions?: boolean;
+  refresh_token: string;
+  all_sessions?: boolean;
 }
 
 export interface LogoutResponse {

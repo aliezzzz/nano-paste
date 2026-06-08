@@ -211,7 +211,6 @@ async function tryRefreshAuthToken(
     },
     body: JSON.stringify({
       refresh_token: normalizedRefreshToken,
-      refreshToken: normalizedRefreshToken,
     }),
   });
 
@@ -226,9 +225,6 @@ async function tryRefreshAuthToken(
         access_token?: string;
         refresh_token?: string;
         expires_in_seconds?: number;
-        accessToken?: string;
-        refreshToken?: string;
-        expiresInSeconds?: number;
       };
     };
   };
@@ -237,9 +233,9 @@ async function tryRefreshAuthToken(
     return null;
   }
 
-  const accessToken = payload.data.tokens.access_token ?? payload.data.tokens.accessToken ?? "";
-  const nextRefreshToken = payload.data.tokens.refresh_token ?? payload.data.tokens.refreshToken ?? "";
-  const expiresInSeconds = payload.data.tokens.expires_in_seconds ?? payload.data.tokens.expiresInSeconds ?? 0;
+  const accessToken = payload.data.tokens.access_token ?? "";
+  const nextRefreshToken = payload.data.tokens.refresh_token ?? "";
+  const expiresInSeconds = payload.data.tokens.expires_in_seconds ?? 0;
 
   if (!accessToken || !nextRefreshToken || !expiresInSeconds) {
     return null;
