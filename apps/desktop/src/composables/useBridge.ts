@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 import { useUploadQueueStore } from "../stores/upload-queue";
 import { useAuthStore } from "../stores/auth";
 import { useRuntimeStore } from "../stores/runtime";
+import { useUndoStore } from "../stores/undo";
 import { configureRequest } from "../utils/request";
 import { showToast } from "../components/feedback/toast";
 import { listItemDetails } from "../api/items";
@@ -20,6 +21,7 @@ export function useBridge(onLoggedOut: () => void) {
   const uploadQueueStore = useUploadQueueStore();
   const authStore = useAuthStore();
   const runtimeStore = useRuntimeStore();
+  const undoStore = useUndoStore();
 
 	const { queueViewItems: queueItems, completedVersion } = storeToRefs(uploadQueueStore);
 
@@ -108,7 +110,7 @@ export function useBridge(onLoggedOut: () => void) {
   }
 
   // 发送文本
-  async function sendTextItem(payload: { title?: string; content: string }): Promise<void> {
+  async function sendTextItem(payload: { title?: string; content: string; tags?: string[] }): Promise<void> {
     const content = payload.content?.trim();
     if (!content) {
       throw new Error("请输入内容");
@@ -119,6 +121,7 @@ export function useBridge(onLoggedOut: () => void) {
       await createTextItem({
         title: payload.title,
         content,
+        tags: payload.tags,
       });
       await loadItems();
       showToast("发送成功", "success");
@@ -141,6 +144,10 @@ export function useBridge(onLoggedOut: () => void) {
     uploadQueueStore.retry(id);
   }
 
+  function cancelUpload(id: string): void {
+    uploadQueueStore.cancel(id);
+  }
+
   // 清除已完成上传
   function clearFinishedUploads(): void {
     uploadQueueStore.clearFinished();
@@ -161,6 +168,7 @@ export function useBridge(onLoggedOut: () => void) {
           await deleteItem(id);
         }
         await loadItems();
+        undoStore.push("已删除，可撤销");
         showToast("已删除", "success");
       } else if (action === "copy") {
         if (type !== "text" || !payload.content) {
@@ -235,6 +243,7 @@ export function useBridge(onLoggedOut: () => void) {
 		sendTextItem,
     uploadFiles,
     retryUpload,
+    cancelUpload,
     clearFinishedUploads,
 		executeItemAction,
 		handleGlobalPasteEvent,

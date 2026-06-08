@@ -48,6 +48,7 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       @send-text="bridge.sendTextItem"
       @upload-files="bridge.uploadFiles"
       @retry-upload="bridge.retryUpload"
+      @cancel-upload="bridge.cancelUpload"
       @clear-finished-upload="bridge.clearFinishedUploads"
       @item-action="handleItemActionWrapper"
       @refresh-items="bridge.loadItems"

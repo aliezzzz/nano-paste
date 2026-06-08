@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS clipboard_items (
   content TEXT,
   file_id TEXT,
   created_by_device_id TEXT,
+  tags_json TEXT,
   created_at TEXT NOT NULL,
   deleted_at TEXT,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -101,4 +102,3 @@ CREATE INDEX IF NOT EXISTS idx_file_objects_retention
 
 CREATE INDEX IF NOT EXISTS idx_file_objects_user_category
   ON file_objects(user_id, category);
-

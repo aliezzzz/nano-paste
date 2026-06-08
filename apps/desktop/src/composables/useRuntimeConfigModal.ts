@@ -9,8 +9,10 @@ export function useRuntimeConfigModal(isAuthenticated: Ref<boolean>) {
 
   const configOpen = ref(false);
   const configSubmitting = ref(false);
+  const configTesting = ref(false);
   const configApiBaseUrl = ref(runtimeStore.apiBaseUrl);
   const configError = ref("");
+  const configTestStatus = ref("");
   const currentApiBaseUrl = computed(() => runtimeStore.apiBaseUrl);
 
   function isValidApiBaseUrl(input: string): boolean {
@@ -27,12 +29,14 @@ export function useRuntimeConfigModal(isAuthenticated: Ref<boolean>) {
   function openConfig(): void {
     configApiBaseUrl.value = runtimeStore.apiBaseUrl;
     configError.value = "";
+    configTestStatus.value = "";
     configOpen.value = true;
   }
 
   function closeConfig(): void {
     configOpen.value = false;
     configError.value = "";
+    configTestStatus.value = "";
   }
 
   async function saveConfig(): Promise<void> {
@@ -79,15 +83,44 @@ export function useRuntimeConfigModal(isAuthenticated: Ref<boolean>) {
     }
   }
 
+  async function testConfigConnection(): Promise<void> {
+    const baseUrl = configApiBaseUrl.value.trim().replace(/\/+$/, "");
+    configError.value = "";
+    configTestStatus.value = "";
+    if (!isValidApiBaseUrl(baseUrl)) {
+      configError.value = "请输入合法的 http/https 地址，例如 http://127.0.0.1:8080";
+      return;
+    }
+
+    try {
+      configTesting.value = true;
+      const response = await fetch(`${baseUrl}/health`);
+      if (!response.ok) {
+        throw new Error(`连接失败（HTTP ${response.status}）`);
+      }
+      configTestStatus.value = "连接成功，可以保存使用";
+      showToast("后端连接正常", "success");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "连接失败";
+      configError.value = message;
+      showToast(`连接失败: ${message}`, "error");
+    } finally {
+      configTesting.value = false;
+    }
+  }
+
   return {
     configOpen,
     configSubmitting,
+    configTesting,
     configApiBaseUrl,
     configError,
+    configTestStatus,
     currentApiBaseUrl,
     openConfig,
     closeConfig,
     saveConfig,
+    testConfigConnection,
     restoreDefaultConfig,
   };
 }

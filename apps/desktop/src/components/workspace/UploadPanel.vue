@@ -6,8 +6,9 @@ import SpinnerIcon from "../../assets/icons/spinner.svg";
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
-  status: "queued" | "uploading" | "done" | "failed";
+  status: "queued" | "uploading" | "done" | "failed" | "cancelled";
   error?: string;
+  progress: number;
 }
 
 const props = withDefaults(defineProps<{ compact?: boolean; queueItems?: UploadQueueViewItem[] }>(), {
@@ -18,6 +19,7 @@ const props = withDefaults(defineProps<{ compact?: boolean; queueItems?: UploadQ
 const emit = defineEmits<{
   (e: "clear-finished"): void;
   (e: "retry", id: string): void;
+  (e: "cancel", id: string): void;
   (e: "files-selected", files: File[]): void;
 }>();
 
@@ -53,6 +55,7 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
   uploading: { text: "上传中", color: "text-violet-400" },
   done: { text: "已完成", color: "text-emerald-400" },
   failed: { text: "失败", color: "text-red-400" },
+  cancelled: { text: "已取消", color: "text-slate-500" },
 };
 </script>
 
@@ -91,7 +94,13 @@ const statusMap: Record<UploadQueueViewItem["status"], { text: string; color: st
               {{ statusMap[item.status].text }}
             </p>
           </div>
-          <button v-if="item.status === 'failed'" class="upload-queue-retry" @click="emit('retry', item.id)">重试</button>
+          <div class="upload-queue-actions">
+            <button v-if="item.status === 'queued'" class="upload-queue-retry" @click="emit('cancel', item.id)">取消</button>
+            <button v-if="item.status === 'failed'" class="upload-queue-retry" @click="emit('retry', item.id)">重试</button>
+          </div>
+        </div>
+        <div class="upload-progress" aria-label="上传进度">
+          <span class="upload-progress-bar" :style="{ width: `${item.progress}%` }"></span>
         </div>
         <p v-if="item.error" class="upload-queue-error">{{ item.error }}</p>
       </div>

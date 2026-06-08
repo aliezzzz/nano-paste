@@ -12,6 +12,7 @@ export interface ItemSummary {
   title?: string;
   isFavorite: boolean;
   createdAt: string;
+  tags?: string[];
 }
 
 export interface TextItemDetail extends ItemSummary {
@@ -33,6 +34,7 @@ export interface CreateItemRequest {
   type: 'text';
   content: string;
   title?: string;
+  tags?: string[];
 }
 
 export interface CreateItemResponse {

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 const props = defineProps<{
   submitting: boolean;
+  testing: boolean;
   apiBaseUrl: string;
   currentApiBaseUrl: string;
   error: string;
+  testStatus: string;
 }>();
 
 const emit = defineEmits<{
   (e: "update:apiBaseUrl", value: string): void;
   (e: "save"): void;
+  (e: "test-connection"): void;
   (e: "restore-default"): void;
   (e: "close"): void;
 }>();
@@ -40,11 +43,13 @@ const emit = defineEmits<{
               @input="emit('update:apiBaseUrl', ($event.target as HTMLInputElement).value)"
             />
             <p v-if="props.error" class="app-config-error">{{ props.error }}</p>
+            <p v-if="props.testStatus" class="app-config-current">{{ props.testStatus }}</p>
             <p class="app-config-current">当前生效：<span class="app-config-current-value">{{ props.currentApiBaseUrl }}</span></p>
           </div>
 
           <div class="app-config-actions">
             <button type="button" class="app-config-btn app-config-btn--neutral" :disabled="props.submitting" @click="emit('restore-default')">恢复默认</button>
+            <button data-testid="test-connection" type="button" class="app-config-btn app-config-btn--neutral" :disabled="props.submitting || props.testing" @click="emit('test-connection')">{{ props.testing ? '测试中...' : '测试连接' }}</button>
             <button type="button" class="app-config-btn app-config-btn--neutral" :disabled="props.submitting" @click="emit('close')">取消</button>
             <button type="submit" class="app-config-btn app-config-btn--primary" :disabled="props.submitting">保存并应用</button>
           </div>

@@ -16,7 +16,9 @@
     "build:web": "pnpm run typecheck && node ./scripts/run-vite-with-build-target.mjs build web",
     "build:ext": "pnpm run typecheck && vite build --config vite.extension.config.ts",
     "build:web:tauri": "pnpm run typecheck && node ./scripts/run-vite-with-build-target.mjs build desktop",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
@@ -31,12 +33,15 @@
     "@unocss/postcss": "^66.6.7",
     "@unocss/preset-wind": "^66.6.7",
     "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/test-utils": "^2.4.11",
     "autoprefixer": "^10.4.27",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.8",
     "typescript": "^5.5.4",
     "unocss": "^66.6.7",
     "vite": "^8.0.5",
     "vite-svg-loader": "^5.1.1",
+    "vitest": "^4.1.8",
     "vue-tsc": "^2.1.10"
   }
 }

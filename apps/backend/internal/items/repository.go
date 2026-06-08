@@ -3,6 +3,7 @@ package items
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -24,6 +25,7 @@ type itemRecord struct {
 	FileName   string
 	FileSize   int64
 	MimeType   string
+	Tags       []string
 	CreatedAt  string
 	DeletedAt  string
 }
@@ -36,7 +38,7 @@ func newRepository(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
-func (r *repository) createTextItem(ctx context.Context, userID, title, content, clientEventID string) (itemRecord, error) {
+func (r *repository) createTextItem(ctx context.Context, userID, title, content, clientEventID string, tags []string) (itemRecord, error) {
 	if strings.TrimSpace(content) == "" {
 		return itemRecord{}, fmt.Errorf("content required")
 	}
@@ -47,6 +49,10 @@ func (r *repository) createTextItem(ctx context.Context, userID, title, content,
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339Nano)
+	tagsJSON, err := encodeTags(tags)
+	if err != nil {
+		return itemRecord{}, err
+	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -55,9 +61,9 @@ func (r *repository) createTextItem(ctx context.Context, userID, title, content,
 	defer func() { _ = tx.Rollback() }()
 
 	insertQ := `
-		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, created_at)
-		VALUES(?, ?, 'text', ?, ?, NULL, ?)`
-	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, now); err != nil {
+		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, tags_json, created_at)
+		VALUES(?, ?, 'text', ?, ?, NULL, ?, ?)`
+	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, nullIfEmpty(tagsJSON), now); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") && strings.TrimSpace(clientEventID) != "" {
 			existing, existingErr := queryItemByID(ctx, tx, userID, itemID)
 			if existingErr != nil {
@@ -95,7 +101,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 	}
 
 	query := `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -141,7 +147,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 
 func (r *repository) getItemByID(ctx context.Context, userID, itemID string) (itemRecord, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -212,7 +218,7 @@ func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (str
 
 func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (itemRecord, error) {
 	row := q.QueryRowContext(ctx, `
-		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0),
+		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -243,6 +249,7 @@ type queryable interface {
 func scanItemOne(row scanner) (itemRecord, error) {
 	var it itemRecord
 	var isFavorite int
+	var tagsJSON string
 	if err := row.Scan(
 		&it.ID,
 		&it.UserID,
@@ -251,6 +258,7 @@ func scanItemOne(row scanner) (itemRecord, error) {
 		&it.Content,
 		&it.FileID,
 		&isFavorite,
+		&tagsJSON,
 		&it.FileName,
 		&it.FileSize,
 		&it.MimeType,
@@ -260,6 +268,7 @@ func scanItemOne(row scanner) (itemRecord, error) {
 		return itemRecord{}, err
 	}
 	it.IsFavorite = isFavorite > 0
+	it.Tags = decodeTags(tagsJSON)
 	return it, nil
 }
 
@@ -279,4 +288,41 @@ func boolToInt(v bool) int {
 		return 1
 	}
 	return 0
+}
+
+func encodeTags(tags []string) (string, error) {
+	normalized := normalizeTags(tags)
+	if len(normalized) == 0 {
+		return "", nil
+	}
+	b, err := json.Marshal(normalized)
+	if err != nil {
+		return "", fmt.Errorf("encode tags: %w", err)
+	}
+	return string(b), nil
+}
+
+func decodeTags(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var tags []string
+	if err := json.Unmarshal([]byte(raw), &tags); err != nil {
+		return nil
+	}
+	return normalizeTags(tags)
+}
+
+func normalizeTags(tags []string) []string {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		normalized := strings.TrimSpace(tag)
+		if normalized == "" || seen[normalized] {
+			continue
+		}
+		seen[normalized] = true
+		out = append(out, normalized)
+	}
+	return out
 }

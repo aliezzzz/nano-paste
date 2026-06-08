@@ -53,11 +53,14 @@ function updateConfigApiUrl(value: string): void {
     <ConfigModal
       v-if="config.configOpen.value"
       :submitting="config.configSubmitting.value"
+      :testing="config.configTesting.value"
       :api-base-url="config.configApiBaseUrl.value"
       :current-api-base-url="config.currentApiBaseUrl.value"
       :error="config.configError.value"
+      :test-status="config.configTestStatus.value"
       @update:api-base-url="updateConfigApiUrl"
       @save="config.saveConfig"
+      @test-connection="config.testConfigConnection"
       @restore-default="config.restoreDefaultConfig"
       @close="config.closeConfig"
     />

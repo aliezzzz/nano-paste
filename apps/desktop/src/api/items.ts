@@ -11,6 +11,7 @@ import { request } from "../utils/request";
 export type CreateTextInput = {
   content: string;
   title?: string;
+  tags?: string[];
 };
 
 export async function createTextItem(input: CreateTextInput): Promise<void> {
@@ -21,6 +22,7 @@ export async function createTextItem(input: CreateTextInput): Promise<void> {
       type: "text",
       content: input.content,
       title: input.title,
+      tags: input.tags,
       client_event_id: `evt_${Date.now()}`,
     },
   });

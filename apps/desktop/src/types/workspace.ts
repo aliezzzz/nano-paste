@@ -9,6 +9,7 @@ export interface ItemView {
   isFavorite: boolean;
   createdAt: string;
   iconSvg: string;
+  tags?: string[];
 }
 
 export type ItemActionType = "copy" | "download" | "delete" | "favorite";
@@ -22,4 +23,3 @@ export interface ItemActionPayload {
   fileName?: string;
   isFavorite: boolean;
 }
-

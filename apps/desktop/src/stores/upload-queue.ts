@@ -4,7 +4,7 @@ import { toErrorMessage } from "../utils/errors";
 
 const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
 
-export type UploadQueueStatus = "queued" | "uploading" | "done" | "failed";
+export type UploadQueueStatus = "queued" | "uploading" | "done" | "failed" | "cancelled";
 
 interface UploadQueueItem {
   id: string;
@@ -13,6 +13,7 @@ interface UploadQueueItem {
   category: string;
   fileId?: string;
   error?: string;
+  progress: number;
 }
 
 export interface UploadQueueViewItem {
@@ -20,6 +21,7 @@ export interface UploadQueueViewItem {
   fileName: string;
   status: UploadQueueStatus;
   error?: string;
+  progress: number;
 }
 
 interface UploadQueueState {
@@ -40,10 +42,11 @@ export const useUploadQueueStore = defineStore("upload-queue", {
       fileName: item.file.name,
       status: item.status,
       error: item.error,
+      progress: item.progress,
     })),
   },
   actions: {
-    enqueue(files: FileList | File[]): void {
+    enqueue(files: FileList | File[], options: { autoStart?: boolean } = {}): void {
       const incoming = Array.from(files);
       if (!incoming.length) return;
 
@@ -54,6 +57,7 @@ export const useUploadQueueStore = defineStore("upload-queue", {
             file,
             status: "failed",
             category: "other",
+            progress: 0,
             error: `文件超过限制（最大 ${Math.floor(MAX_UPLOAD_SIZE_BYTES / 1024 / 1024)} MB）`,
           });
           continue;
@@ -64,9 +68,12 @@ export const useUploadQueueStore = defineStore("upload-queue", {
           file,
           status: "queued",
           category: "other",
+          progress: 0,
         });
       }
-      void this.runNext();
+      if (options.autoStart !== false) {
+        void this.runNext();
+      }
     },
     retry(id: string): void {
       const target = this.items.find((item) => item.id === id);
@@ -74,10 +81,18 @@ export const useUploadQueueStore = defineStore("upload-queue", {
 
       target.status = "queued";
       target.error = undefined;
+      target.progress = 0;
       void this.runNext();
     },
+    cancel(id: string): void {
+      const target = this.items.find((item) => item.id === id);
+      if (!target || target.status === "done" || target.status === "uploading") return;
+      target.status = "cancelled";
+      target.error = undefined;
+      target.progress = 0;
+    },
     clearFinished(): void {
-      this.items = this.items.filter((item) => item.status !== "done" && item.status !== "failed");
+      this.items = this.items.filter((item) => item.status !== "done" && item.status !== "failed" && item.status !== "cancelled");
     },
     reset(): void {
       this.items = [];
@@ -98,7 +113,7 @@ export const useUploadQueueStore = defineStore("upload-queue", {
       }
     },
     async processItem(id: string): Promise<void> {
-      const current = this.updateItem(id, { status: "uploading", error: undefined });
+      const current = this.updateItem(id, { status: "uploading", error: undefined, progress: 15 });
       if (!current) return;
 
       try {
@@ -109,11 +124,13 @@ export const useUploadQueueStore = defineStore("upload-queue", {
         this.updateItem(id, {
           status: "uploading",
           fileId: uploaded.fileId,
+          progress: 90,
         });
 
         const done = this.updateItem(id, {
           status: "done",
           error: undefined,
+          progress: 100,
         });
         if (done) {
           this.completedVersion += 1;
@@ -123,6 +140,7 @@ export const useUploadQueueStore = defineStore("upload-queue", {
         this.updateItem(id, {
           status: "failed",
           error: reason,
+          progress: 0,
         });
       }
     },

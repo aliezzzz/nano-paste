@@ -5,13 +5,14 @@ import SendPanel from "./workspace/SendPanel.vue";
 import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
+import type { MobileTab } from "./workspace/MobileTabs.vue";
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
 import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
 
-type SendPayload = { title?: string; content: string };
+type SendPayload = { title?: string; content: string; tags?: string[] };
 
 const props = withDefaults(
     defineProps<{
@@ -40,13 +41,14 @@ const emit = defineEmits<{
     (e: "logout"): void;
     (e: "refresh-items"): void;
     (e: "retry-upload", id: string): void;
+    (e: "cancel-upload", id: string): void;
     (e: "clear-finished-upload"): void;
     (e: "send-text", payload: SendPayload): void;
     (e: "upload-files", files: File[]): void;
     (e: "item-action", payload: ItemActionPayload): void;
 }>(); 
 
-const activeMobileTab = ref<"send" | "items">("send");
+const activeMobileTab = ref<MobileTab>("send");
 
 function openConfig(): void {
     emit("open-config");
@@ -58,6 +60,10 @@ function logout(): void {
 
 function retryUpload(id: string): void {
     emit("retry-upload", id);
+}
+
+function cancelUpload(id: string): void {
+    emit("cancel-upload", id);
 }
 
 function clearFinishedUpload(): void {
@@ -72,7 +78,11 @@ function refreshItems(): void {
     emit("refresh-items");
 }
 
-function switchMobileTab(tab: "send" | "items"): void {
+function switchMobileTab(tab: MobileTab): void {
+    if (tab === "settings") {
+        openConfig();
+        return;
+    }
     activeMobileTab.value = tab;
 }
 
@@ -162,6 +172,7 @@ function uploadFiles(files: File[]): void {
                     <UploadPanel
                         :queue-items="props.queueItems"
                         @retry="retryUpload"
+                        @cancel="cancelUpload"
                         @clear-finished="clearFinishedUpload"
                         @files-selected="uploadFiles"
                     />
@@ -259,6 +270,7 @@ function uploadFiles(files: File[]): void {
                             compact
                             :queue-items="props.queueItems"
                             @retry="retryUpload"
+                            @cancel="cancelUpload"
                             @clear-finished="clearFinishedUpload"
                             @files-selected="uploadFiles"
                         />
