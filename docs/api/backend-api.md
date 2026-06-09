@@ -148,11 +148,13 @@ Items 接口需要 `Authorization: Bearer <access_token>`。
   "type": "text",
   "title": "可选标题",
   "content": "hello nanopaste",
+  "tags": ["工作", "会议"],
   "client_event_id": "evt_001"
 }
 ```
 
 `client_event_id` 也兼容 `clientEventId`，用于生成幂等条目 ID。
+`tags` 可选，服务端会去除空标签和重复标签。
 
 响应：
 
@@ -165,6 +167,7 @@ Items 接口需要 `Authorization: Bearer <access_token>`。
       "type": "text",
       "title": "可选标题",
       "content": "hello nanopaste",
+      "tags": ["工作", "会议"],
       "isFavorite": false,
       "createdAt": "2026-06-08T10:00:00Z"
     }
@@ -196,6 +199,7 @@ Items 接口需要 `Authorization: Bearer <access_token>`。
         "fileName": "demo.txt",
         "fileSize": 1024,
         "mimeType": "text/plain",
+        "tags": ["设计"],
         "isFavorite": true,
         "createdAt": "2026-06-08T10:00:00Z"
       }

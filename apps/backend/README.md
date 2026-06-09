@@ -179,9 +179,12 @@ go run ./cmd/server
   "type": "text",
   "title": "可选标题",
   "content": "hello nanopaste",
+  "tags": ["工作", "会议"],
   "client_event_id": "evt_001"
 }
 ```
+
+`tags` 可选，服务端会去除空标签和重复标签。
 
 列表响应：
 
@@ -195,6 +198,7 @@ go run ./cmd/server
         "type": "text",
         "title": "可选标题",
         "content": "hello nanopaste",
+        "tags": ["工作", "会议"],
         "isFavorite": false,
         "createdAt": "2026-06-08T10:00:00Z"
       }
