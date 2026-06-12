@@ -41,6 +41,35 @@ winapp --version
 dotnet new list winui
 ```
 
+### 3.1 环境门禁
+
+在 `dotnet`、`winapp` 和 WinUI 3 templates 都可用之前，不创建 `apps/windows-winui` 工程，不手写 XAML / C# 实现代码。原因是 WinUI 3 packaged app 必须通过正确的构建、部署和激活链路验证；缺少这些工具时只能产生不可验证的代码。
+
+当前机器检查结果（2026-06-12）：
+
+| 项目 | 状态 | 说明 |
+|---|---|---|
+| Git | 可用 | `git version 2.53.0.windows.2` |
+| Windows 11 | 可用 | 已在 Windows 环境中 |
+| Developer Mode | 已开启 | `AllowDevelopmentWithoutDevLicense = 1` |
+| Windows App Runtime | 已安装 | 已存在 1.5 / 1.6 / 1.7 / 1.8 runtime |
+| .NET SDK | 缺失 | `dotnet` 不在 PATH，默认安装路径也未发现 |
+| WinApp CLI | 缺失 | `winapp` 不在 PATH |
+| WinUI 3 templates | 未验证 | 依赖 `dotnet` |
+| win-dev-skills | 未接入 | 未发现 `C:\dev\tools\win-dev-skills` 和本地 WinUI skills |
+
+最小安装顺序：
+
+```powershell
+winget install --id Microsoft.DotNet.SDK.10 --exact
+winget install --id Microsoft.WinAppCLI --exact
+dotnet new install Microsoft.WindowsAppSDK.WinUI.CSharp.Templates
+```
+
+安装后重开终端，重新执行检查命令。只有检查全部通过后，才进入项目骨架阶段。
+
+不安装环境时仍可做的工作：维护本计划文档、校准后端 API 契约、设计 C# DTO / service interface、拆解测试矩阵和实施路线图。
+
 ## 4. 克隆 win-dev-skills
 
 在 Windows 环境执行：
@@ -204,6 +233,9 @@ public sealed record CreateTextItemRequest(
     [property: JsonPropertyName("tags")] IReadOnlyList<string>? Tags,
     [property: JsonPropertyName("client_event_id")] string ClientEventId);
 
+public sealed record CreateItemResponse(
+    [property: JsonPropertyName("item")] ItemDetail Item);
+
 public sealed record ItemDetail(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("type")] string Type,
@@ -251,8 +283,8 @@ public interface INanoPasteApiClient
     Task<LoginResponse> LoginAsync(Uri baseUri, string username, string password, CancellationToken cancellationToken = default);
     Task<RefreshResponse> RefreshAsync(Uri baseUri, string refreshToken, CancellationToken cancellationToken = default);
     Task LogoutAsync(Uri baseUri, string refreshToken, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<ItemDetail>> ListItemsAsync(Uri baseUri, string accessToken, int limit = 50, CancellationToken cancellationToken = default);
-    Task<ItemDetail> CreateTextItemAsync(Uri baseUri, string accessToken, string content, string? title, IReadOnlyList<string>? tags, CancellationToken cancellationToken = default);
+    Task<ListItemsResponse> ListItemsAsync(Uri baseUri, string accessToken, int limit = 50, string? cursor = null, CancellationToken cancellationToken = default);
+    Task<CreateItemResponse> CreateTextItemAsync(Uri baseUri, string accessToken, string content, string? title, IReadOnlyList<string>? tags, CancellationToken cancellationToken = default);
     Task DeleteItemAsync(Uri baseUri, string accessToken, string itemId, CancellationToken cancellationToken = default);
     Task SetFavoriteAsync(Uri baseUri, string accessToken, string itemId, bool favorite, CancellationToken cancellationToken = default);
     Task<UploadFileResponse> UploadFileAsync(Uri baseUri, string accessToken, string filePath, string category, IProgress<double>? progress, CancellationToken cancellationToken = default);
@@ -266,8 +298,11 @@ public interface INanoPasteApiClient
 - 统一解析 `{ ok, data, error }` envelope。
 - API 错误抛出自定义 `NanoPasteApiException`，包含 `StatusCode`、`Code`、`Message`、`RequestId`。
 - `RefreshAsync` 只发送 `refresh_token`，不发送兼容字段。
+- `CreateTextItemAsync` 解析后端 `{ item }` 响应，不直接假设 data 就是条目。
+- `ListItemsAsync` 保留 `page.nextCursor` 和 `page.hasMore`，避免首版之后补分页时破坏接口。
 - `UploadFileAsync` 使用 `MultipartFormDataContent`，字段名为 `file` 和 `category`。
 - `PrepareDownloadAsync` 返回相对 `downloadUrl` 时，由调用方拼接后端 Base URL。
+- 当前后端上传文件接口不支持文件标签编辑；首版搜索可本地过滤 `title`、`content`、`fileName` 和已有 `tags`，但不要承诺文件标签编辑。
 
 ## 9. UI 设计方向
 
@@ -310,6 +345,8 @@ public interface INanoPasteApiClient
 | 10.8 Tray / Notification | mock service 测托盘状态、通知触发 | `TrayService`、`NotificationService` |
 | 10.9 UI Automation | 用 `winui-ui-testing` 做关键交互 | UI 自动化脚本 |
 
+推荐顺序是先完成 API Client、Settings、Auth 和 Workspace 的最小纵切，再接入托盘、全局快捷键、剪贴板监听和通知。UI Automation 放到 packaged app 可以稳定运行之后执行，避免早期被环境问题阻塞。
+
 ### 10.10 具体测试用例清单
 
 API Client：
@@ -318,8 +355,8 @@ API Client：
 - `LoginAsync_WhenEnvelopeOk_ReturnsSession`
 - `LoginAsync_WhenApiError_ThrowsNanoPasteApiException`
 - `RefreshAsync_SendsRefreshTokenSnakeCaseOnly`
-- `ListItemsAsync_AddsBearerTokenAndParsesTags`
-- `CreateTextItemAsync_SendsTagsAndClientEventId`
+- `ListItemsAsync_AddsBearerTokenAndKeepsPagination`
+- `CreateTextItemAsync_ParsesCreateItemResponseItem`
 - `UploadFileAsync_SendsMultipartFileAndCategory`
 - `PrepareDownloadAsync_ParsesRelativeDownloadUrl`
 
@@ -337,7 +374,7 @@ Workspace ViewModel：
 - `WorkspaceViewModel_Search_FiltersByTitleContentFileNameAndTags`
 - `WorkspaceViewModel_ToggleFavorite_UpdatesLocalStateAfterApiSuccess`
 - `WorkspaceViewModel_BatchDelete_DeletesSelectedItemsAndClearsSelection`
-- `WorkspaceViewModel_CopyText_ShowsNotification`
+- `WorkspaceViewModel_CopyText_ShowsLocalStatus`
 
 Upload Queue ViewModel：
 
@@ -357,22 +394,36 @@ Windows Integration Services：
 
 ## 11. 首版功能范围
 
-| 优先级 | 功能 |
-|---|---|
-| P0 | 后端地址配置 + 测试连接 |
-| P0 | 登录 / 登出 / refresh token |
-| P0 | 发送文本 |
-| P0 | 上传文件 |
-| P0 | 历史列表 |
-| P0 | 搜索 / 收藏 / 标签 |
-| P1 | 上传队列任务中心 |
-| P1 | 批量删除 |
-| P1 | 托盘常驻 |
-| P1 | 全局快捷键 |
-| P1 | 剪贴板自动捕获开关 |
-| P2 | AppNotification |
-| P2 | MSIX 打包签名 |
-| P2 | 开机自启动 |
+| 阶段 | 功能 | 验收标准 |
+|---|---|---|
+| Gate | 环境检查 | `dotnet --list-sdks`、`winapp --version`、`dotnet new list winui` 全部通过 |
+| P0 | 项目骨架 | `apps/windows-winui` 可 `dotnet build`，测试项目可运行空测试 |
+| P0 | 后端地址配置 + 测试连接 | 可保存合法 Base URL，非法 URL 禁止保存，`GET /health` 成功显示在线 |
+| P0 | 登录 / 登出 / refresh token | 登录保存 session，登出清理 session，401 后可 refresh，refresh 失败清理 session |
+| P0 | 发送文本 | `POST /v1/items` 成功后刷新历史列表 |
+| P0 | 历史列表 | `GET /v1/items` 显示文本和文件元数据，保留分页信息 |
+| P0 | 上传文件 | `POST /v1/files/upload` 成功后刷新历史列表 |
+| P0 | 搜索 / 收藏 | 本地搜索过滤历史；收藏调用 `/favorite` 后更新本地状态 |
+| P1 | 上传队列任务中心 | queued / uploading / done / failed / cancelled 状态完整，失败可重试 |
+| P1 | 批量删除 | 逐条调用 `DELETE /v1/items/:itemId`，成功后清理选择状态 |
+| P1 | 托盘常驻 | 最小化到托盘、恢复窗口、退出命令可用 |
+| P1 | 全局快捷键 | 快捷键触发送文本入口，冲突时给出可读错误 |
+| P1 | 剪贴板自动捕获开关 | 开启后捕获文本，关闭后不捕获 |
+| P2 | AppNotification | 发送 / 上传成功可触发系统通知 |
+| P2 | MSIX 打包签名 | 本地 dev cert 可安装，生产签名流程包含 timestamp |
+| P2 | 开机自启动 | 用户显式开启后生效，可关闭 |
+
+### 11.1 实施路线图
+
+1. 环境门禁：补齐 `.NET SDK`、`winapp`、WinUI 3 templates 和本地 WinUI skills。
+2. 工程骨架：创建 WinUI app、测试项目、`BuildAndRun.ps1`，固定 `x64`。
+3. API Client：先写 mock HTTP 单测，再实现 DTO、envelope 解析和 `NanoPasteApiException`。
+4. Settings + Auth：实现后端地址保存、测试连接、登录、登出、refresh。
+5. Workspace MVP：实现发送文本、历史列表、搜索、收藏、删除单条。
+6. Files MVP：实现文件选择、上传、prepare-download 和下载入口。
+7. Upload Queue：加入可取消、可重试的上传队列。
+8. Windows Integration：按托盘、热键、剪贴板、通知顺序逐个接入，每项先有 fake service 单测。
+9. Packaging：Release 构建、dev cert、本地 MSIX 安装，再补生产签名文档。
 
 ## 12. 构建和运行规则
 
@@ -400,7 +451,8 @@ dotnet build
 .\BuildAndRun.ps1 /p:Configuration=Release -SkipRun
 winapp cert generate --manifest .
 winapp cert install .\devcert.pfx
-winapp package <build-output-dir> --cert .\devcert.pfx
+$buildOutputDir = (Get-ChildItem -Path ".\src\NanoPaste.WinUI\bin\x64\Release" -Directory -Recurse | Where-Object { Test-Path (Join-Path $_.FullName "AppxManifest.xml") } | Select-Object -First 1).FullName
+winapp package "$buildOutputDir" --cert .\devcert.pfx
 Add-AppxPackage .\NanoPaste.msix
 ```
 
@@ -430,10 +482,10 @@ Add-AppxPackage .\NanoPaste.msix
 4. 如果满足，先生成详细实施计划，不要立刻写代码
 ```
 
-## 15. 当前 macOS 环境可做的准备
+## 15. 当前无 WinUI 开发环境可做的准备
 
 - 维护本计划文档。
 - 补齐后端 API 文档。
 - 约定 WinUI DTO 字段和现有 API 对齐。
 - 规划 `apps/windows-winui` 的目录和测试策略。
-- 不在 macOS 环境尝试构建或运行 WinUI 3。
+- 未安装 WinUI 工具链时，不尝试创建、构建或运行 WinUI 3 工程。

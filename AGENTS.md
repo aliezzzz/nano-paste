@@ -60,7 +60,7 @@
 
 补充：`dev:web` / `build:web` 会注入 `web` 平台；`dev:web:tauri` / `build:web:tauri` 默认按构建机映射 `macos/windows/linux`；Android 命令注入 `android`。前端可通过 `import.meta.env.VITE_BUILD_PLATFORM` 与 `import.meta.env.VITE_DEVICE_NAME` 读取。
 
-说明：`apps/desktop/package.json` 当前没有 `test`/`lint` 脚本。
+说明：`apps/desktop/package.json` 当前没有 `lint` 脚本；测试可用 `pnpm run test` 或 `pnpm run test:run`。
 
 补充说明：
 
@@ -75,7 +75,7 @@
 - 运行一组匹配测试：`go test ./path/to/pkg -run 'TestAuth|TestRefresh' -v`
 - 关闭缓存复现问题：`go test ./path/to/pkg -run '^TestName$' -count=1 -v`
 
-当前 TypeScript 端（`apps/desktop`）暂无标准测试脚本；若新增测试框架，必须补充本节。
+当前 TypeScript 端（`apps/desktop`）可执行：`pnpm run test:run`。单个 Vitest 用例可按文件或测试名过滤，例如：`pnpm run test:run -- src/stores/auth.test.ts -t 'refresh'`。
 
 ## 4. 通用代码风格
 
