@@ -11,17 +11,28 @@ import DownloadIcon from "../../assets/icons/download.svg";
 import DeleteIcon from "../../assets/icons/delete.svg";
 import InboxEmptyIcon from "../../assets/icons/inbox-empty.svg";
 import TopicBadge from "./TopicBadge.vue";
+import type { TopicInfo } from "./TopicList.vue";
 
 export type { ItemView };
 
-const props = withDefaults(defineProps<{ items?: ItemView[]; loading?: boolean }>(), {
+const props = withDefaults(defineProps<{
+  items?: ItemView[];
+  loading?: boolean;
+  topics?: TopicInfo[];
+  activeTopic?: string;
+  mode?: "all" | "favorites";
+}>(), {
   items: () => [],
   loading: false,
+  topics: () => [],
+  activeTopic: "",
+  mode: "all",
 });
 
 const emit = defineEmits<{
   (e: "item-action", payload: ItemActionPayload): void;
   (e: "refresh-items"): void;
+  (e: "select-topic", topic: string): void;
 }>();
 
 const favoriteOnly = ref(false);
@@ -32,7 +43,8 @@ let rotateTimer: number | null = null;
 
 const filteredItems = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  const source = favoriteOnly.value ? props.items.filter((item) => item.isFavorite) : props.items;
+  const shouldShowFavoritesOnly = props.mode === "favorites" || favoriteOnly.value;
+  const source = shouldShowFavoritesOnly ? props.items.filter((item) => item.isFavorite) : props.items;
   if (!query) return source;
 
   return source.filter((item) => {
@@ -46,8 +58,9 @@ const filteredItems = computed(() => {
 
 const favoriteItems = computed(() => filteredItems.value.filter((item) => item.isFavorite));
 const historyItems = computed(() => filteredItems.value.filter((item) => !item.isFavorite));
-const hasVisibleItems = computed(() => favoriteItems.value.length > 0 || historyItems.value.length > 0);
+const hasVisibleItems = computed(() => filteredItems.value.length > 0);
 const selectedItems = computed(() => props.items.filter((item) => selectedIds.value.includes(item.id)));
+const isFavoritesMode = computed(() => props.mode === "favorites");
 
 function refreshItems(): void {
   if (props.loading) return;
@@ -62,6 +75,10 @@ function refreshItems(): void {
   }, 620);
 
   emit("refresh-items");
+}
+
+function selectTopic(topic: string): void {
+  emit("select-topic", topic);
 }
 
 function formatItemTime(value: string): string {
@@ -158,7 +175,7 @@ onBeforeUnmount(() => {
     <div class="panel-header items-panel-topline">
       <h2 class="panel-title">
         <ClockIcon class="panel-title-icon" />
-        内容中转台
+        {{ isFavoritesMode ? '我的收藏' : '内容中转台' }}
       </h2>
       <div class="panel-actions">
         <button
@@ -176,7 +193,7 @@ onBeforeUnmount(() => {
           />
         </button>
 
-        <div class="filter-tabs">
+        <div v-if="!isFavoritesMode" class="filter-tabs">
           <button
             type="button"
             class="filter-tab"
@@ -195,6 +212,28 @@ onBeforeUnmount(() => {
           </button>
         </div>
       </div>
+    </div>
+
+    <div class="items-topic-filter" data-testid="topic-filter">
+      <button
+        type="button"
+        class="topic-chip"
+        :class="props.activeTopic === '' ? 'topic-chip--active' : ''"
+        @click="selectTopic('')"
+      >
+        全部
+      </button>
+      <button
+        v-for="topic in props.topics"
+        :key="topic.name"
+        type="button"
+        class="topic-chip"
+        :class="props.activeTopic === topic.name ? 'topic-chip--active' : ''"
+        @click="selectTopic(topic.name)"
+      >
+        <span>{{ topic.name }}</span>
+        <span class="topic-chip-count">{{ topic.count }}</span>
+      </button>
     </div>
 
     <div class="items-toolbar">
@@ -224,7 +263,44 @@ onBeforeUnmount(() => {
 
     <div class="list-container">
       <div v-if="hasVisibleItems" id="items-list" class="items-list custom-scrollbar">
-        <section data-testid="favorite-section" class="items-section">
+        <section v-if="isFavoritesMode" data-testid="mobile-favorites-section" class="items-section">
+          <div class="items-section-head">
+            <div>
+              <h3 class="items-section-title">我的收藏</h3>
+              <p class="items-section-hint">只看被你固定起来的内容</p>
+            </div>
+            <span class="items-section-count">{{ favoriteItems.length }}</span>
+          </div>
+          <div v-if="favoriteItems.length === 0" class="items-section-empty">还没有收藏内容</div>
+          <article v-for="item in favoriteItems" :key="item.id" class="item-card group item-card--favorite">
+            <div class="item-layout">
+              <input class="item-select" data-testid="item-select" type="checkbox" :checked="selectedIds.includes(item.id)" @change="toggleSelection(item.id, ($event.target as HTMLInputElement).checked)">
+              <div class="item-icon" v-html="item.iconSvg"></div>
+              <div class="item-content">
+                <div class="item-header">
+                  <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
+                  <button class="favorite-btn favorite-btn--active" title="取消收藏" @click="emit('item-action', itemPayload(item, 'favorite'))">
+                    <StarIcon class="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+                <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
+                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
+                <div class="item-footer">
+                  <div class="item-actions-left">
+                    <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                      <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
+                      {{ actionLabel(item) }}
+                    </button>
+                    <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+                  </div>
+                  <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section v-if="!isFavoritesMode" data-testid="favorite-section" class="items-section">
           <div class="items-section-head">
             <div>
               <h3 class="items-section-title">常用收藏</h3>
@@ -261,7 +337,7 @@ onBeforeUnmount(() => {
           </article>
         </section>
 
-        <section data-testid="history-section" class="items-section">
+        <section v-if="!isFavoritesMode" data-testid="history-section" class="items-section">
           <div class="items-section-head">
             <div>
               <h3 class="items-section-title">全部历史</h3>
@@ -308,15 +384,38 @@ onBeforeUnmount(() => {
       <div v-if="!props.loading && !hasVisibleItems" id="items-empty" class="items-empty-state">
         <InboxEmptyIcon class="items-empty-icon" />
         <strong>从这里开始</strong>
-        <span>{{ searchQuery ? '没有匹配的内容，换个关键词试试' : '粘贴文本、拖拽文件，或用浏览器右键菜单发送到 NanoPaste' }}</span>
+        <span>{{ searchQuery ? '没有匹配的内容，换个关键词试试' : (isFavoritesMode ? '收藏常用内容后会出现在这里' : '粘贴文本、拖拽文件，或用浏览器右键菜单发送到 NanoPaste') }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.items-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
 .refresh-icon--rotating {
   animation: refresh-spin-once 620ms ease-in-out 1;
+}
+
+.items-panel-topline {
+  flex: 0 0 44px;
+  min-height: 44px;
+  margin: 0;
+}
+
+.loading-text {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.hidden {
+  display: none;
 }
 
 @keyframes refresh-spin-once {
@@ -326,37 +425,89 @@ onBeforeUnmount(() => {
 
 .items-toolbar {
   display: flex;
-  align-items: end;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 14px 0 12px;
+  flex: 0 0 48px;
+  min-height: 48px;
+  margin: 0;
+}
+
+.items-topic-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 36px;
+  height: 36px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 3px 0;
+  scrollbar-width: none;
+}
+
+.items-topic-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.topic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  height: 28px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 10px;
+}
+
+.topic-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+.topic-chip--active {
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--text-accent);
+}
+
+.topic-chip-count {
+  min-width: 18px;
+  border-radius: 999px;
+  background: var(--border-soft);
+  color: inherit;
+  font-size: 10px;
+  line-height: 1;
+  padding: 3px 5px;
 }
 
 .items-search-wrap {
-  display: grid;
-  gap: 6px;
+  display: block;
   flex: 1;
 }
 
 .items-search-label {
-  color: var(--text-muted);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  display: none;
 }
 
 .items-search {
   width: 100%;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-raised);
-  color: var(--text-primary);
-  padding: 11px 14px;
+  height: 38px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--input-bg);
+  color: var(--text-main);
+  padding: 0 12px;
   outline: none;
 }
 
 .items-search:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
 .items-summary {
@@ -368,19 +519,20 @@ onBeforeUnmount(() => {
 }
 
 .items-section {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .items-section + .items-section {
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .items-section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2px;
+  padding: 2px 0;
 }
 
 .items-section-title {
@@ -390,7 +542,7 @@ onBeforeUnmount(() => {
 }
 
 .items-section-hint {
-  margin: 3px 0 0;
+  margin: 2px 0 0;
   color: var(--text-muted);
   font-size: 11px;
 }
@@ -410,7 +562,143 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   color: var(--text-muted);
   font-size: 12px;
-  padding: 14px;
+  padding: 10px 12px;
+}
+
+.item-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: var(--bg-card);
+  padding: 9px 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.item-layout {
+  display: grid;
+  grid-template-columns: 18px 32px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+}
+
+.item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--text-accent);
+}
+
+.item-icon :deep(svg) {
+  width: 18px;
+  height: 18px;
+}
+
+.item-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-content :deep(.meta-tags) {
+  margin-top: 0;
+  gap: 4px;
+}
+
+.item-content :deep(.meta-topic),
+.item-content :deep(.meta-tag) {
+  font-size: 10px;
+  padding: 2px 7px;
+}
+
+.item-header,
+.item-footer,
+.footer-meta,
+.item-actions-left {
+  display: flex;
+  align-items: center;
+}
+
+.item-header,
+.item-footer {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.item-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-main);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-title--file {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+}
+
+.favorite-btn {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.favorite-btn--active {
+  color: var(--text-accent);
+  background: rgba(var(--accent-rgb), 0.1);
+}
+
+.action-btn,
+.delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.action-btn {
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--text-accent);
+}
+
+.delete-btn {
+  color: var(--text-muted);
+}
+
+.action-btn-icon,
+.delete-btn-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.timestamp {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.list-container {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.items-list {
+  height: 100%;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .batch-bar {
@@ -418,7 +706,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 10px 0;
+  flex: 0 0 auto;
+  margin: 6px 0;
   border: 1px solid var(--border-subtle);
   border-radius: 16px;
   background: var(--surface-raised);
@@ -440,8 +729,8 @@ onBeforeUnmount(() => {
 }
 
 .item-select {
-  align-self: start;
-  margin-top: 12px;
+  align-self: center;
+  margin: 0;
   accent-color: var(--accent);
 }
 
@@ -451,7 +740,11 @@ onBeforeUnmount(() => {
 
 .item-text-content {
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -463,8 +756,10 @@ onBeforeUnmount(() => {
   border: 1px dashed var(--border-subtle);
   border-radius: 24px;
   color: var(--text-muted);
-  padding: 30px 18px;
+  padding: 22px 16px;
   text-align: center;
+  height: 100%;
+  align-content: center;
 }
 
 .items-empty-state strong {

@@ -167,7 +167,7 @@ export default defineConfig({
     "send-panel-submit-icon": "w-4 h-4",
 
     // UploadPanel.vue
-    "upload-panel": "p-2 md:p-6 flex flex-col min-h-0",
+    "upload-panel": "flex flex-col min-h-0",
     "upload-panel--full": "flex-1",
     "upload-panel-title":
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",

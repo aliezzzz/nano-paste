@@ -101,19 +101,17 @@ defineExpose({ clear });
 
 <style scoped>
 .send-panel {
-  padding: 18px;
-  border: 1px solid rgba(var(--accent-rgb), 0.12);
-  border-radius: 24px;
-  background:
-    linear-gradient(145deg, rgba(var(--accent-rgb), 0.08), transparent 42%),
-    var(--bg-card);
-  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+  box-shadow: none;
 }
 
 .send-panel-head {
   display: grid;
   gap: 4px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .send-panel-subtitle {
@@ -125,7 +123,7 @@ defineExpose({ clear });
 
 .send-panel-form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .send-field {
@@ -148,14 +146,14 @@ defineExpose({ clear });
 
 .send-input {
   width: 100%;
-  min-height: 44px;
-  border: 1px solid rgba(var(--accent-rgb), 0.2);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.72);
+  min-height: 40px;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--input-bg);
   color: var(--text-main);
   font-size: 14px;
   line-height: 1.45;
-  padding: 12px 14px;
+  padding: 10px 12px;
   outline: none;
   transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
@@ -178,14 +176,14 @@ defineExpose({ clear });
 .send-select {
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
-  background-position: calc(100% - 18px) 19px, calc(100% - 13px) 19px;
+  background-position: calc(100% - 18px) 17px, calc(100% - 13px) 17px;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
   padding-right: 34px;
 }
 
 .send-textarea {
-  min-height: 156px;
+  min-height: 132px;
   resize: vertical;
 }
 

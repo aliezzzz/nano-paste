@@ -44,6 +44,28 @@ describe("ItemsPanel", () => {
     expect(wrapper.get('[data-testid="history-section"]').text()).toContain("design.png");
   });
 
+  it("shows only favorite items in favorites mode", () => {
+    const wrapper = mount(ItemsPanel, { props: { items, mode: "favorites" } });
+
+    expect(wrapper.text()).toContain("我的收藏");
+    expect(wrapper.get('[data-testid="mobile-favorites-section"]').text()).toContain("会议纪要");
+    expect(wrapper.text()).not.toContain("design.png");
+    expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
+  });
+
+  it("emits selected topic from topic filter", async () => {
+    const wrapper = mount(ItemsPanel, {
+      props: {
+        items,
+        topics: [{ name: "工作", count: 2 }],
+      },
+    });
+
+    await wrapper.get('[data-testid="topic-filter"]').findAll("button")[1].trigger("click");
+
+    expect(wrapper.emitted("select-topic")?.[0]?.[0]).toBe("工作");
+  });
+
   it("shows actionable empty guidance", () => {
     const wrapper = mount(ItemsPanel, { props: { items: [] } });
 

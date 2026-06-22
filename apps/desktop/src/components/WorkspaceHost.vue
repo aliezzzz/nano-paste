@@ -6,7 +6,6 @@ import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
 import type { MobileTab } from "./workspace/MobileTabs.vue";
-import TopicList from "./workspace/TopicList.vue";
 import type { TopicInfo } from "./workspace/TopicList.vue";
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
@@ -196,18 +195,16 @@ function selectTopic(topic: string): void {
                         @clear-finished="clearFinishedUpload"
                         @files-selected="uploadFiles"
                     />
-                    <TopicList
-                        :topics="props.topics"
-                        :active-topic="props.activeTopic"
-                        @select-topic="selectTopic"
-                    />
                 </aside>
                 <section class="host-content">
                     <ItemsPanel
                         :items="props.items"
                         :loading="props.itemsLoading"
+                        :topics="props.topics"
+                        :active-topic="props.activeTopic"
                         @item-action="itemAction"
                         @refresh-items="refreshItems"
+                        @select-topic="selectTopic"
                     />
                 </section>
             </main>
@@ -306,8 +303,12 @@ function selectTopic(topic: string): void {
                     <ItemsPanel
                         :items="props.items"
                         :loading="props.itemsLoading"
+                        :topics="props.topics"
+                        :active-topic="props.activeTopic"
+                        :mode="activeMobileTab === 'favorites' ? 'favorites' : 'all'"
                         @item-action="itemAction"
                         @refresh-items="refreshItems"
+                        @select-topic="selectTopic"
                     />
                 </div>
             </main>
@@ -327,3 +328,30 @@ function selectTopic(topic: string): void {
         />
     </div>
 </template>
+
+<style scoped>
+.host-sidebar {
+    gap: 14px;
+    padding: 14px;
+}
+
+.host-content {
+    min-width: 0;
+    min-height: 0;
+}
+
+.host-mobile-send,
+.host-mobile-items {
+    padding: 12px;
+}
+
+.host-mobile-card + .host-mobile-card {
+    margin-top: 12px;
+}
+
+@media (max-width: 960px) {
+    .host-sidebar {
+        padding: 12px;
+    }
+}
+</style>
