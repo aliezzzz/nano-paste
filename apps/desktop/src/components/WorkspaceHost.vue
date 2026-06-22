@@ -6,13 +6,16 @@ import UploadPanel from "./workspace/UploadPanel.vue";
 import ItemsPanel from "./workspace/ItemsPanel.vue";
 import MobileTabs from "./workspace/MobileTabs.vue";
 import type { MobileTab } from "./workspace/MobileTabs.vue";
+import TopicList from "./workspace/TopicList.vue";
+import type { TopicInfo } from "./workspace/TopicList.vue";
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
 import SettingsIcon from "../assets/icons/settings.svg";
 import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
+import ImagePreviewModal from "./modals/ImagePreviewModal.vue";
 
-type SendPayload = { title?: string; content: string; tags?: string[] };
+type SendPayload = { title?: string; content: string; tags?: string[]; topic?: string };
 
 const props = withDefaults(
     defineProps<{
@@ -21,6 +24,9 @@ const props = withDefaults(
         itemsLoading?: boolean;
         sendingText?: boolean;
         username?: string;
+        imagePreview?: { imageUrl: string; fileName: string; fileSize?: number } | null;
+        topics?: TopicInfo[];
+        activeTopic?: string;
     }>(),
     {
         queueItems: () => [],
@@ -28,6 +34,9 @@ const props = withDefaults(
         itemsLoading: false,
         sendingText: false,
         username: "",
+        imagePreview: null,
+        topics: () => [],
+        activeTopic: "",
     },
 );
 
@@ -46,6 +55,8 @@ const emit = defineEmits<{
     (e: "send-text", payload: SendPayload): void;
     (e: "upload-files", files: File[]): void;
     (e: "item-action", payload: ItemActionPayload): void;
+    (e: "close-image-preview"): void;
+    (e: "select-topic", topic: string): void;
 }>(); 
 
 const activeMobileTab = ref<MobileTab>("send");
@@ -92,6 +103,14 @@ function sendText(payload: SendPayload): void {
 
 function uploadFiles(files: File[]): void {
     emit("upload-files", files);
+}
+
+function closeImagePreview(): void {
+    emit("close-image-preview");
+}
+
+function selectTopic(topic: string): void {
+    emit("select-topic", topic);
 }
 </script>
 
@@ -167,6 +186,7 @@ function uploadFiles(files: File[]): void {
                 <aside class="host-sidebar">
                     <SendPanel
                         :submitting="props.sendingText"
+                        :topic-suggestions="props.topics.map(t => t.name)"
                         @submit="sendText"
                     />
                     <UploadPanel
@@ -175,6 +195,11 @@ function uploadFiles(files: File[]): void {
                         @cancel="cancelUpload"
                         @clear-finished="clearFinishedUpload"
                         @files-selected="uploadFiles"
+                    />
+                    <TopicList
+                        :topics="props.topics"
+                        :active-topic="props.activeTopic"
+                        @select-topic="selectTopic"
                     />
                 </aside>
                 <section class="host-content">
@@ -262,6 +287,7 @@ function uploadFiles(files: File[]): void {
                     <div class="host-mobile-card">
                         <SendPanel
                             :submitting="props.sendingText"
+                            :topic-suggestions="props.topics.map(t => t.name)"
                             @submit="sendText"
                         />
                     </div>
@@ -291,5 +317,13 @@ function uploadFiles(files: File[]): void {
                 @switch="switchMobileTab"
             />
         </div>
+
+        <ImagePreviewModal
+            v-if="props.imagePreview"
+            :image-url="props.imagePreview.imageUrl"
+            :file-name="props.imagePreview.fileName"
+            :file-size="props.imagePreview.fileSize"
+            @close="closeImagePreview"
+        />
     </div>
 </template>

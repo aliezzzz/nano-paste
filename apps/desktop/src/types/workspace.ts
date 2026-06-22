@@ -10,9 +10,10 @@ export interface ItemView {
   createdAt: string;
   iconSvg: string;
   tags?: string[];
+  topic?: string;
 }
 
-export type ItemActionType = "copy" | "download" | "delete" | "favorite";
+export type ItemActionType = "copy" | "download" | "delete" | "favorite" | "preview" | "set-topic";
 
 export interface ItemActionPayload {
   id: string;
@@ -22,4 +23,5 @@ export interface ItemActionPayload {
   fileId?: string;
   fileName?: string;
   isFavorite: boolean;
+  topic?: string;
 }

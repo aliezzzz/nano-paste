@@ -4,7 +4,9 @@ import type {
   FavoriteItemResponse,
   ItemDetail,
   ListItemsResponse,
+  ListTopicsResponse,
   PrepareDownloadResponse,
+  SetItemTopicResponse,
 } from "../../../../packages/contracts/v1";
 import { request } from "../utils/request";
 
@@ -12,6 +14,7 @@ export type CreateTextInput = {
   content: string;
   title?: string;
   tags?: string[];
+  topic?: string;
 };
 
 export async function createTextItem(input: CreateTextInput): Promise<void> {
@@ -23,6 +26,7 @@ export async function createTextItem(input: CreateTextInput): Promise<void> {
       content: input.content,
       title: input.title,
       tags: input.tags,
+      topic: input.topic,
       client_event_id: `evt_${Date.now()}`,
     },
   });
@@ -30,12 +34,16 @@ export async function createTextItem(input: CreateTextInput): Promise<void> {
 
 type ListItemDetailsOptions = {
   sort?: "favorite";
+  topic?: string;
 };
 
 export async function listItemDetails(limit: number, options?: ListItemDetailsOptions): Promise<ItemDetail[]> {
   const query = new URLSearchParams({ limit: String(limit) });
   if (options?.sort === "favorite") {
     query.set("sort", "favorite");
+  }
+  if (options?.topic) {
+    query.set("topic", options.topic);
   }
 
   const list = await request<ListItemsResponse>({
@@ -44,6 +52,14 @@ export async function listItemDetails(limit: number, options?: ListItemDetailsOp
   });
 
   return list.items;
+}
+
+export async function listTopics(): Promise<ListTopicsResponse["topics"]> {
+  const response = await request<ListTopicsResponse>({
+    url: "/v1/topics",
+    method: "GET",
+  });
+  return response.topics;
 }
 
 export async function prepareFileDownload(fileId: string): Promise<PrepareDownloadResponse> {
@@ -65,5 +81,13 @@ export async function setItemFavorite(itemId: string, favorite: boolean): Promis
     url: `/v1/items/${encodeURIComponent(itemId)}/favorite`,
     method: "POST",
     data: { favorite },
+  });
+}
+
+export async function setItemTopic(itemId: string, topic: string): Promise<void> {
+  await request<SetItemTopicResponse>({
+    url: `/v1/items/${encodeURIComponent(itemId)}/topic`,
+    method: "PUT",
+    data: { topic },
   });
 }

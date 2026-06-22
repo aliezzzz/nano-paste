@@ -6,14 +6,15 @@ import { useRuntimeStore } from "../stores/runtime";
 import { useUndoStore } from "../stores/undo";
 import { configureRequest } from "../utils/request";
 import { showToast } from "../components/feedback/toast";
-import { listItemDetails } from "../api/items";
+import { listItemDetails, listTopics } from "../api/items";
 import { cleanupFiles } from "../api/files";
-import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite } from "../api/items";
+import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite, setItemTopic } from "../api/items";
 import { copyTextToClipboard } from "../utils/clipboard";
 import { triggerFileDownload } from "../utils/download";
 import { handleGlobalPaste } from "../utils/clipboard";
 import { getItemIconSvg } from "../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
+import type { TopicInfo } from "../components/workspace/TopicList.vue";
 
 export type { ItemView, ItemActionPayload };
 
@@ -29,6 +30,13 @@ export function useBridge(onLoggedOut: () => void) {
 	const itemsLoading = ref(false);
 	const sendingText = ref(false);
 
+  // 图片预览状态
+  const imagePreview = ref<{ imageUrl: string; fileName: string; fileSize?: number } | null>(null);
+
+  // 话题状态
+  const topics = ref<TopicInfo[]>([]);
+  const activeTopic = ref("");
+
   // 内部状态
   let stopUploadQueueSubscription: (() => void) | null = null;
 
@@ -41,7 +49,10 @@ export function useBridge(onLoggedOut: () => void) {
 
     try {
       itemsLoading.value = true;
-      const itemsData = await listItemDetails(50, { sort: "favorite" });
+      const itemsData = await listItemDetails(50, {
+        sort: "favorite",
+        topic: activeTopic.value || undefined,
+      });
       items.value = itemsData.map((item) => ({
         id: String(item.id),
         type: item.type,
@@ -53,6 +64,7 @@ export function useBridge(onLoggedOut: () => void) {
         isFavorite: item.isFavorite,
         createdAt: item.createdAt,
         iconSvg: getItemIconSvg(item),
+        topic: item.topic,
       }));
     } catch (err) {
       console.error("加载条目失败:", err);
@@ -67,6 +79,23 @@ export function useBridge(onLoggedOut: () => void) {
     stopUploadQueueSubscription?.();
     stopUploadQueueSubscription = null;
     onLoggedOut();
+  }
+
+  // 加载话题列表
+  async function loadTopics(): Promise<void> {
+    if (!isAuthenticated.value) return;
+
+    try {
+      topics.value = await listTopics();
+    } catch (err) {
+      console.error("加载话题列表失败:", err);
+    }
+  }
+
+  // 选择话题
+  function selectTopic(topic: string): void {
+    activeTopic.value = topic;
+    void loadItems();
   }
 
   // 显示工作台
@@ -89,6 +118,7 @@ export function useBridge(onLoggedOut: () => void) {
     });
 
     void loadItems();
+    void loadTopics();
 	}
 
   // 初始化
@@ -110,7 +140,7 @@ export function useBridge(onLoggedOut: () => void) {
   }
 
   // 发送文本
-  async function sendTextItem(payload: { title?: string; content: string; tags?: string[] }): Promise<void> {
+  async function sendTextItem(payload: { title?: string; content: string; tags?: string[]; topic?: string }): Promise<void> {
     const content = payload.content?.trim();
     if (!content) {
       throw new Error("请输入内容");
@@ -122,8 +152,10 @@ export function useBridge(onLoggedOut: () => void) {
         title: payload.title,
         content,
         tags: payload.tags,
+        topic: payload.topic,
       });
       await loadItems();
+      await loadTopics();
       showToast("发送成功", "success");
     } catch (error) {
       showToast(`发送失败: ${error instanceof Error ? error.message : "发送失败"}`, "error");
@@ -199,6 +231,28 @@ export function useBridge(onLoggedOut: () => void) {
           item.isFavorite = nextFavorite;
         }
         showToast("收藏状态已更新", "success");
+      } else if (action === "preview") {
+        if (type !== "file" || !payload.fileId) {
+          throw new Error("不是可预览的文件条目");
+        }
+        const prepared = await prepareFileDownload(payload.fileId);
+        const fullUrl = prepared.downloadUrl.startsWith("http")
+          ? prepared.downloadUrl
+          : `${runtimeStore.apiBaseUrl}${prepared.downloadUrl.startsWith("/") ? "" : "/"}${prepared.downloadUrl}`;
+        imagePreview.value = {
+          imageUrl: fullUrl,
+          fileName: prepared.fileName || payload.fileName || "image",
+          fileSize: prepared.fileSize,
+        };
+      } else if (action === "set-topic") {
+        const topic = payload.topic || "";
+        await setItemTopic(id, topic);
+        const item = items.value.find((i) => i.id === id);
+        if (item) {
+          item.topic = topic;
+        }
+        showToast("话题已更新", "success");
+        void loadTopics();
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "操作失败";
@@ -206,7 +260,9 @@ export function useBridge(onLoggedOut: () => void) {
         action === "delete" ? "删除" :
         action === "copy" ? "复制" :
         action === "download" ? "下载" :
-        action === "favorite" ? "收藏" : "操作";
+        action === "favorite" ? "收藏" :
+        action === "preview" ? "预览" :
+        action === "set-topic" ? "话题" : "操作";
       showToast(`${actionLabel}失败: ${message}`, "error");
       throw err;
     }
@@ -219,6 +275,11 @@ export function useBridge(onLoggedOut: () => void) {
       enqueueFiles: uploadFiles,
       sendText: sendTextItem,
     });
+  }
+
+  // 关闭图片预览
+  function closeImagePreview(): void {
+    imagePreview.value = null;
   }
 
 	async function applyRuntimeApiBaseUrlChange(): Promise<void> {
@@ -236,16 +297,22 @@ export function useBridge(onLoggedOut: () => void) {
 		items,
 		itemsLoading,
 		sendingText,
+		imagePreview,
+		topics,
+		activeTopic,
 		// 方法
 		initialize,
 		logout,
 		loadItems,
+		loadTopics,
 		sendTextItem,
     uploadFiles,
     retryUpload,
     cancelUpload,
     clearFinishedUploads,
 		executeItemAction,
+		closeImagePreview,
+		selectTopic,
 		handleGlobalPasteEvent,
 		applyRuntimeApiBaseUrlChange,
 	};

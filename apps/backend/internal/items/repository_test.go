@@ -13,7 +13,7 @@ func TestCreateTextItemStoresNormalizedTags(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", []string{" 工作 ", "", "会议", "工作"})
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", []string{" 工作 ", "", "会议", "工作"}, "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
@@ -22,7 +22,7 @@ func TestCreateTextItemStoresNormalizedTags(t *testing.T) {
 		t.Fatalf("unexpected created tags: %#v", item.Tags)
 	}
 
-	items, _, err := repo.listItems(ctx, "u-1", "", "", 20, 0)
+	items, _, err := repo.listItems(ctx, "u-1", "", "", "", 20, 0)
 	if err != nil {
 		t.Fatalf("listItems: %v", err)
 	}
@@ -31,6 +31,115 @@ func TestCreateTextItemStoresNormalizedTags(t *testing.T) {
 	}
 	if len(items[0].Tags) != 2 || items[0].Tags[0] != "工作" || items[0].Tags[1] != "会议" {
 		t.Fatalf("unexpected listed tags: %#v", items[0].Tags)
+	}
+}
+
+func TestCreateTextItemWithTopic(t *testing.T) {
+	db := openItemsTestDB(t)
+	repo := newRepository(db)
+	ctx := context.Background()
+
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "工作笔记")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+	if item.Topic != "工作笔记" {
+		t.Fatalf("expected topic '工作笔记', got %q", item.Topic)
+	}
+
+	fetched, err := repo.getItemByID(ctx, "u-1", item.ID)
+	if err != nil {
+		t.Fatalf("getItemByID: %v", err)
+	}
+	if fetched.Topic != "工作笔记" {
+		t.Fatalf("expected topic '工作笔记', got %q", fetched.Topic)
+	}
+
+	items, _, err := repo.listItems(ctx, "u-1", "", "", "工作笔记", 20, 0)
+	if err != nil {
+		t.Fatalf("listItems: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if items[0].Topic != "工作笔记" {
+		t.Fatalf("expected topic '工作笔记', got %q", items[0].Topic)
+	}
+}
+
+func TestSetItemTopic(t *testing.T) {
+	db := openItemsTestDB(t)
+	repo := newRepository(db)
+	ctx := context.Background()
+
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+	if item.Topic != "" {
+		t.Fatalf("expected empty topic, got %q", item.Topic)
+	}
+
+	updated, err := repo.setItemTopic(ctx, "u-1", item.ID, "学习")
+	if err != nil {
+		t.Fatalf("setItemTopic: %v", err)
+	}
+	if updated.Topic != "学习" {
+		t.Fatalf("expected topic '学习', got %q", updated.Topic)
+	}
+
+	fetched, err := repo.getItemByID(ctx, "u-1", item.ID)
+	if err != nil {
+		t.Fatalf("getItemByID: %v", err)
+	}
+	if fetched.Topic != "学习" {
+		t.Fatalf("expected topic '学习', got %q", fetched.Topic)
+	}
+
+	// Clear topic
+	cleared, err := repo.setItemTopic(ctx, "u-1", item.ID, "")
+	if err != nil {
+		t.Fatalf("setItemTopic clear: %v", err)
+	}
+	if cleared.Topic != "" {
+		t.Fatalf("expected empty topic after clear, got %q", cleared.Topic)
+	}
+}
+
+func TestListTopics(t *testing.T) {
+	db := openItemsTestDB(t)
+	repo := newRepository(db)
+	ctx := context.Background()
+
+	_, err := repo.createTextItem(ctx, "u-1", "t1", "c1", "evt-1", nil, "工作")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+	_, err = repo.createTextItem(ctx, "u-1", "t2", "c2", "evt-2", nil, "工作")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+	_, err = repo.createTextItem(ctx, "u-1", "t3", "c3", "evt-3", nil, "学习")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+	_, err = repo.createTextItem(ctx, "u-1", "t4", "c4", "evt-4", nil, "")
+	if err != nil {
+		t.Fatalf("createTextItem: %v", err)
+	}
+
+	topics, err := repo.listTopics(ctx, "u-1")
+	if err != nil {
+		t.Fatalf("listTopics: %v", err)
+	}
+	if len(topics) != 2 {
+		t.Fatalf("expected 2 topics, got %d: %#v", len(topics), topics)
+	}
+	if topics[0].Name != "工作" || topics[0].Count != 2 {
+		t.Fatalf("expected first topic '工作' count 2, got '%s' count %d", topics[0].Name, topics[0].Count)
+	}
+	if topics[1].Name != "学习" || topics[1].Count != 1 {
+		t.Fatalf("expected second topic '学习' count 1, got '%s' count %d", topics[1].Name, topics[1].Count)
 	}
 }
 
@@ -64,6 +173,7 @@ func openItemsTestDB(t *testing.T) *sql.DB {
 		  file_id TEXT,
 		  is_favorite INTEGER NOT NULL DEFAULT 0,
 		  tags_json TEXT,
+		  topic TEXT DEFAULT '',
 		  created_at TEXT NOT NULL,
 		  deleted_at TEXT,
 		  CHECK (type IN ('text', 'file'))

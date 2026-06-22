@@ -1,19 +1,19 @@
 @layer base {
   :root {
-    /* Refined Light Mode - Editorial Beige */
-    --bg-main: #f9f8f6;
+    /* Refined Light Mode - Fresh Natural Green */
+    --bg-main: #f5f9f7;
     --bg-card: #ffffff;
-    --bg-glass: rgba(255, 255, 255, 0.75);
-    --text-main: #1a1a1a;
-    --text-muted: #666666;
-    --accent-rgb: 85, 102, 255;
+    --bg-glass: rgba(255, 255, 255, 0.8);
+    --text-main: #1a2e28;
+    --text-muted: #5a7a6f;
+    --accent-rgb: 16, 185, 129;
     --text-accent: rgb(var(--accent-rgb));
-    --border-soft: rgba(0, 0, 0, 0.06);
-    --border-strong: rgba(0, 0, 0, 0.12);
+    --border-soft: rgba(16, 185, 129, 0.08);
+    --border-strong: rgba(16, 185, 129, 0.15);
     --accent-glow: rgba(var(--accent-rgb), 0.15);
-    --input-bg: #ffffff;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-    --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.06);
+    --input-bg: #f8fcfa;
+    --shadow-sm: 0 2px 8px rgba(16, 185, 129, 0.06);
+    --shadow-md: 0 10px 30px rgba(16, 185, 129, 0.08);
   }
 
   .dark {

@@ -13,6 +13,7 @@ export interface ItemSummary {
   isFavorite: boolean;
   createdAt: string;
   tags?: string[];
+  topic?: string;
 }
 
 export interface TextItemDetail extends ItemSummary {
@@ -35,6 +36,7 @@ export interface CreateItemRequest {
   content: string;
   title?: string;
   tags?: string[];
+  topic?: string;
 }
 
 export interface CreateItemResponse {
@@ -51,6 +53,7 @@ export type CreateItemApi = {
 export interface ListItemsRequest extends PaginationInput {
   type?: ItemType;
   sort?: 'favorite';
+  topic?: string;
 }
 
 export interface ListItemsResponse {
@@ -98,4 +101,38 @@ export type FavoriteItemApi = {
   method: 'POST';
   request: FavoriteItemRequest;
   response: ApiResponse<FavoriteItemResponse>;
+};
+
+export interface SetItemTopicRequest {
+  itemId: string;
+  topic: string;
+}
+
+export interface SetItemTopicResponse {
+  success: true;
+  itemId: string;
+  topic: string;
+}
+
+export type SetItemTopicApi = {
+  path: '/v1/items/:itemId/topic';
+  method: 'PUT';
+  request: SetItemTopicRequest;
+  response: ApiResponse<SetItemTopicResponse>;
+};
+
+export interface TopicInfo {
+  name: string;
+  count: number;
+}
+
+export interface ListTopicsResponse {
+  topics: TopicInfo[];
+}
+
+export type ListTopicsApi = {
+  path: '/v1/topics';
+  method: 'GET';
+  request: {};
+  response: ApiResponse<ListTopicsResponse>;
 };

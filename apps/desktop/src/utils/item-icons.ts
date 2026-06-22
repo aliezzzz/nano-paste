@@ -13,6 +13,11 @@ type FileKind =
   | "code"
   | "other";
 
+export function isImageFile(fileName: string): boolean {
+  const ext = getFileExtension(fileName);
+  return resolveFileKind(ext) === "image";
+}
+
 export function getItemIconSvg(item: ItemDetail): string {
   if (item.type === "text") {
     return iconByKind.text;
@@ -23,14 +28,14 @@ export function getItemIconSvg(item: ItemDetail): string {
   return iconByKind[kind] ?? iconByKind.other;
 }
 
-function getFileExtension(fileName: string): string {
+export function getFileExtension(fileName: string): string {
   const normalized = fileName.trim().toLowerCase();
   const dotIndex = normalized.lastIndexOf(".");
   if (dotIndex < 0 || dotIndex === normalized.length - 1) return "";
   return normalized.slice(dotIndex + 1);
 }
 
-function resolveFileKind(ext: string): FileKind {
+export function resolveFileKind(ext: string): FileKind {
   if (!ext) return "other";
   if (["txt", "md", "rtf"].includes(ext)) return "text";
   if (["doc", "docx"].includes(ext)) return "word";

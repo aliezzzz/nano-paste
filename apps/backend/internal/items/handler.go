@@ -25,6 +25,7 @@ func NewHandler() (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v1/items", h.items)
 	mux.HandleFunc("/v1/items/", h.itemByID)
+	mux.HandleFunc("/v1/topics", h.topics)
 	return mux, nil
 }
 
@@ -61,6 +62,22 @@ func (h *handler) itemByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.favorite(w, r, itemID)
+		return
+	}
+
+	if strings.HasSuffix(trimmed, "/topic") {
+		itemID := strings.TrimSpace(strings.TrimSuffix(trimmed, "/topic"))
+		if itemID == "" || strings.Contains(itemID, "/") {
+			requestID := common.RequestIDFromContext(r.Context())
+			common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+			return
+		}
+		if r.Method != http.MethodPut && r.Method != http.MethodPost {
+			requestID := common.RequestIDFromContext(r.Context())
+			common.WriteError(w, common.METHOD_NOT_ALLOWED, "method must be PUT or POST", nil, requestID)
+			return
+		}
+		h.setTopic(w, r, itemID)
 		return
 	}
 
@@ -103,7 +120,7 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.repo.createTextItem(r.Context(), userID, req.Title, req.Content, req.clientEventID(), req.Tags)
+	item, err := h.repo.createTextItem(r.Context(), userID, req.Title, req.Content, req.clientEventID(), req.Tags, req.Topic)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to create item", nil, requestID)
 		return
@@ -157,7 +174,9 @@ func (h *handler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, hasMore, err := h.repo.listItems(r.Context(), userID, itemType, sort, limit, offset)
+	topic := strings.TrimSpace(r.URL.Query().Get("topic"))
+
+	items, hasMore, err := h.repo.listItems(r.Context(), userID, itemType, sort, topic, limit, offset)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to list items", nil, requestID)
 		return
@@ -239,13 +258,78 @@ func (h *handler) favorite(w http.ResponseWriter, r *http.Request, itemID string
 	}, requestID)
 }
 
+func (h *handler) setTopic(w http.ResponseWriter, r *http.Request, itemID string) {
+	requestID := common.RequestIDFromContext(r.Context())
+	userID, err := authx.UserIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
+
+	var req setTopicRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		common.WriteError(w, common.VALIDATION_ERROR, "invalid json body", nil, requestID)
+		return
+	}
+
+	item, err := h.repo.setItemTopic(r.Context(), userID, itemID, req.Topic)
+	if err != nil {
+		if err == errItemNotFound {
+			common.WriteError(w, common.NOT_FOUND, "item not found", nil, requestID)
+			return
+		}
+		common.WriteError(w, common.INTERNAL, "failed to update item topic", nil, requestID)
+		return
+	}
+
+	common.WriteSuccess(w, http.StatusOK, setTopicResponse{
+		Success: true,
+		ItemID:  item.ID,
+		Topic:   item.Topic,
+	}, requestID)
+}
+
+func (h *handler) topics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		requestID := common.RequestIDFromContext(r.Context())
+		common.WriteError(w, common.NOT_FOUND, "not found", nil, requestID)
+		return
+	}
+
+	requestID := common.RequestIDFromContext(r.Context())
+	userID, err := authx.UserIDFromRequest(r)
+	if err != nil {
+		common.WriteError(w, common.UNAUTHORIZED, "missing or invalid access token", nil, requestID)
+		return
+	}
+
+	topics, err := h.repo.listTopics(r.Context(), userID)
+	if err != nil {
+		common.WriteError(w, common.INTERNAL, "failed to list topics", nil, requestID)
+		return
+	}
+
+	topicList := make([]map[string]any, 0, len(topics))
+	for _, t := range topics {
+		topicList = append(topicList, map[string]any{
+			"name":  t.Name,
+			"count": t.Count,
+		})
+	}
+
+	common.WriteSuccess(w, http.StatusOK, listTopicsResponse{
+		Topics: topicList,
+	}, requestID)
+}
+
 type createItemRequest struct {
-	Type               string `json:"type"`
-	Title              string `json:"title"`
-	Content            string `json:"content"`
-	ClientEventID      string `json:"client_event_id"`
-	ClientEventIDCamel string `json:"clientEventId"`
+	Type               string   `json:"type"`
+	Title              string   `json:"title"`
+	Content            string   `json:"content"`
+	ClientEventID      string   `json:"client_event_id"`
+	ClientEventIDCamel string   `json:"clientEventId"`
 	Tags               []string `json:"tags"`
+	Topic              string   `json:"topic"`
 }
 
 func (r createItemRequest) clientEventID() string {
@@ -262,6 +346,10 @@ type createItemResponse struct {
 type listItemsResponse struct {
 	Items []map[string]any `json:"items"`
 	Page  pageMeta         `json:"page"`
+}
+
+type listTopicsResponse struct {
+	Topics []map[string]any `json:"topics"`
 }
 
 type pageMeta struct {
@@ -285,6 +373,16 @@ type favoriteItemResponse struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
+type setTopicRequest struct {
+	Topic string `json:"topic"`
+}
+
+type setTopicResponse struct {
+	Success bool   `json:"success"`
+	ItemID  string `json:"itemId"`
+	Topic   string `json:"topic"`
+}
+
 func toItemDetail(item itemRecord) map[string]any {
 	base := map[string]any{
 		"id":         item.ID,
@@ -294,6 +392,9 @@ func toItemDetail(item itemRecord) map[string]any {
 	}
 	if strings.TrimSpace(item.Title) != "" {
 		base["title"] = item.Title
+	}
+	if strings.TrimSpace(item.Topic) != "" {
+		base["topic"] = item.Topic
 	}
 
 	if item.Type == "file" {

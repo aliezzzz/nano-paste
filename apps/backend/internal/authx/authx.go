@@ -37,6 +37,11 @@ func claimsFromRequest(r *http.Request) (tokenClaims, error) {
 		tokenString = strings.TrimSpace(strings.TrimPrefix(authorization, "Bearer "))
 	}
 
+	// 如果 Header 中没有 token，尝试从 URL 参数读取
+	if tokenString == "" {
+		tokenString = strings.TrimSpace(r.URL.Query().Get("access_token"))
+	}
+
 	if tokenString == "" {
 		return tokenClaims{}, errUnauthorized
 	}

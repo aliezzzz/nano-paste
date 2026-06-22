@@ -26,6 +26,7 @@ type itemRecord struct {
 	FileSize   int64
 	MimeType   string
 	Tags       []string
+	Topic      string
 	CreatedAt  string
 	DeletedAt  string
 }
@@ -38,7 +39,7 @@ func newRepository(db *sql.DB) *repository {
 	return &repository{db: db}
 }
 
-func (r *repository) createTextItem(ctx context.Context, userID, title, content, clientEventID string, tags []string) (itemRecord, error) {
+func (r *repository) createTextItem(ctx context.Context, userID, title, content, clientEventID string, tags []string, topic string) (itemRecord, error) {
 	if strings.TrimSpace(content) == "" {
 		return itemRecord{}, fmt.Errorf("content required")
 	}
@@ -61,9 +62,9 @@ func (r *repository) createTextItem(ctx context.Context, userID, title, content,
 	defer func() { _ = tx.Rollback() }()
 
 	insertQ := `
-		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, tags_json, created_at)
-		VALUES(?, ?, 'text', ?, ?, NULL, ?, ?)`
-	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, nullIfEmpty(tagsJSON), now); err != nil {
+		INSERT INTO clipboard_items(id, user_id, type, title, content, file_id, tags_json, topic, created_at)
+		VALUES(?, ?, 'text', ?, ?, NULL, ?, ?, ?)`
+	if _, err = tx.ExecContext(ctx, insertQ, itemID, userID, nullIfEmpty(title), content, nullIfEmpty(tagsJSON), nullIfEmpty(topic), now); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "unique") && strings.TrimSpace(clientEventID) != "" {
 			existing, existingErr := queryItemByID(ctx, tx, userID, itemID)
 			if existingErr != nil {
@@ -89,7 +90,7 @@ func (r *repository) createTextItem(ctx context.Context, userID, title, content,
 	return created, nil
 }
 
-func (r *repository) listItems(ctx context.Context, userID, itemType, sort string, limit, offset int) ([]itemRecord, bool, error) {
+func (r *repository) listItems(ctx context.Context, userID, itemType, sort, topic string, limit, offset int) ([]itemRecord, bool, error) {
 	if limit <= 0 {
 		limit = 20
 	}
@@ -102,6 +103,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 
 	query := `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
+		       COALESCE(i.topic, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -111,6 +113,10 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 	if itemType == "text" || itemType == "file" {
 		query += ` AND i.type = ?`
 		args = append(args, itemType)
+	}
+	if strings.TrimSpace(topic) != "" {
+		query += ` AND i.topic = ?`
+		args = append(args, strings.TrimSpace(topic))
 	}
 	if strings.TrimSpace(sort) == "favorite" {
 		query += ` ORDER BY COALESCE(i.is_favorite, 0) DESC, i.created_at DESC LIMIT ? OFFSET ?`
@@ -148,6 +154,7 @@ func (r *repository) listItems(ctx context.Context, userID, itemType, sort strin
 func (r *repository) getItemByID(ctx context.Context, userID, itemID string) (itemRecord, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
+		       COALESCE(i.topic, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -194,6 +201,31 @@ func (r *repository) setItemFavorite(ctx context.Context, userID, itemID string,
 	return item, now, nil
 }
 
+func (r *repository) setItemTopic(ctx context.Context, userID, itemID, topic string) (itemRecord, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE clipboard_items
+		SET topic = ?
+		WHERE user_id = ? AND id = ? AND deleted_at IS NULL`, nullIfEmpty(topic), userID, itemID)
+	if err != nil {
+		return itemRecord{}, fmt.Errorf("set item topic: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return itemRecord{}, fmt.Errorf("set item topic rows affected: %w", err)
+	}
+	if affected == 0 {
+		return itemRecord{}, errItemNotFound
+	}
+
+	item, err := r.getItemByID(ctx, userID, itemID)
+	if err != nil {
+		return itemRecord{}, err
+	}
+
+	return item, nil
+}
+
 func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (string, error) {
 	now := time.Now().UTC().Format(time.RFC3339Nano)
 
@@ -219,6 +251,7 @@ func (r *repository) deleteItem(ctx context.Context, userID, itemID string) (str
 func queryItemByID(ctx context.Context, q queryable, userID, itemID string) (itemRecord, error) {
 	row := q.QueryRowContext(ctx, `
 		SELECT i.id, i.user_id, i.type, COALESCE(i.title, ''), COALESCE(i.content, ''), COALESCE(i.file_id, ''), COALESCE(i.is_favorite, 0), COALESCE(i.tags_json, ''),
+		       COALESCE(i.topic, ''),
 		       COALESCE(f.file_name, ''), COALESCE(f.file_size, 0), COALESCE(f.mime_type, ''),
 		       i.created_at, COALESCE(i.deleted_at, '')
 		FROM clipboard_items i
@@ -259,6 +292,7 @@ func scanItemOne(row scanner) (itemRecord, error) {
 		&it.FileID,
 		&isFavorite,
 		&tagsJSON,
+		&it.Topic,
 		&it.FileName,
 		&it.FileSize,
 		&it.MimeType,
@@ -325,4 +359,38 @@ func normalizeTags(tags []string) []string {
 		out = append(out, normalized)
 	}
 	return out
+}
+
+type topicInfo struct {
+	Name  string
+	Count int
+}
+
+func (r *repository) listTopics(ctx context.Context, userID string) ([]topicInfo, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT topic, COUNT(*) as cnt
+		FROM clipboard_items
+		WHERE user_id = ? AND deleted_at IS NULL AND topic != ''
+		GROUP BY topic
+		ORDER BY cnt DESC, topic ASC`,
+		userID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list topics: %w", err)
+	}
+	defer rows.Close()
+
+	topics := make([]topicInfo, 0)
+	for rows.Next() {
+		var t topicInfo
+		if err := rows.Scan(&t.Name, &t.Count); err != nil {
+			return nil, fmt.Errorf("scan topic row: %w", err)
+		}
+		topics = append(topics, t)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate topics rows: %w", err)
+	}
+
+	return topics, nil
 }

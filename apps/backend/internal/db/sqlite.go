@@ -155,8 +155,15 @@ func ensureCoreSyncTables(db *sql.DB) error {
 	if err := ensureColumnExists(db, "clipboard_items", "tags_json", "TEXT"); err != nil {
 		return fmt.Errorf("ensure core sync tables: %w", err)
 	}
+	if err := ensureColumnExists(db, "clipboard_items", "topic", "TEXT DEFAULT ''"); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
 
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_items_user_favorite_created ON clipboard_items(user_id, is_favorite, created_at DESC);`); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
+
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_items_user_topic ON clipboard_items(user_id, topic, created_at DESC);`); err != nil {
 		return fmt.Errorf("ensure core sync tables: %w", err)
 	}
 

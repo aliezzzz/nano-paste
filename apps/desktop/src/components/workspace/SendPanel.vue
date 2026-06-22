@@ -1,26 +1,31 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import EditIcon from "../../assets/icons/edit.svg";
 import SendIcon from "../../assets/icons/send.svg";
 
-const props = withDefaults(defineProps<{ submitting?: boolean }>(), {
+const props = withDefaults(defineProps<{ submitting?: boolean; topicSuggestions?: string[] }>(), {
   submitting: false,
+  topicSuggestions: () => [],
 });
 
 const emit = defineEmits<{
-  (e: "submit", payload: { title?: string; content: string; tags?: string[] }): void;
+  (e: "submit", payload: { title?: string; content: string; tags?: string[]; topic?: string }): void;
 }>();
 
 const title = ref("");
 const content = ref("");
-const tagsInput = ref("");
+const selectedTopic = ref("");
+const customTopic = ref("");
+
+const hasExistingTopics = computed(() => props.topicSuggestions.length > 0);
+const topicValue = computed(() => customTopic.value.trim() || selectedTopic.value.trim());
 
 function handleSubmit(e: Event): void {
   e.preventDefault();
   const payload = {
     title: title.value.trim() || undefined,
     content: content.value,
-    tags: normalizeTagsInput(tagsInput.value),
+    topic: topicValue.value || undefined,
   };
   if (!payload.content.trim()) {
     return;
@@ -28,16 +33,17 @@ function handleSubmit(e: Event): void {
   emit("submit", payload);
 }
 
-function normalizeTagsInput(value: string): string[] | undefined {
-  const tags = value.split(/[\s,，]+/).map((tag) => tag.trim()).filter(Boolean);
-  const unique = Array.from(new Set(tags));
-  return unique.length > 0 ? unique : undefined;
+function handleCustomTopicInput(): void {
+  if (customTopic.value.trim()) {
+    selectedTopic.value = "";
+  }
 }
 
 function clear(): void {
   title.value = "";
   content.value = "";
-  tagsInput.value = "";
+  selectedTopic.value = "";
+  customTopic.value = "";
 }
 
 defineExpose({ clear });
@@ -45,14 +51,46 @@ defineExpose({ clear });
 
 <template>
   <div class="send-panel">
-    <h2 class="send-panel-title">
-      <EditIcon class="send-panel-title-icon" />
-      发送文本
-    </h2>
+    <div class="send-panel-head">
+      <h2 class="send-panel-title">
+        <EditIcon class="send-panel-title-icon" />
+        发送文本
+      </h2>
+      <p class="send-panel-subtitle">把临时文本投递到一个清晰的话题分组里。</p>
+    </div>
     <form id="text-form" class="send-panel-form" @submit="handleSubmit">
-      <input v-model="title" type="text" id="text-title" placeholder="标题（可选）" maxlength="80" class="ui-input">
-      <input v-model="tagsInput" data-testid="text-tags" type="text" placeholder="标签，用空格或逗号分隔（可选）" maxlength="120" class="ui-input">
-      <textarea v-model="content" id="text-content" placeholder="输入要同步的文本..." rows="3" maxlength="500" class="ui-input ui-textarea"></textarea>
+      <label class="send-field">
+        <span class="send-label">标题</span>
+        <input v-model="title" type="text" id="text-title" placeholder="给这段文本一个短标题，可留空" maxlength="80" class="send-input">
+      </label>
+
+      <div class="send-topic-grid">
+        <label class="send-field">
+          <span class="send-label">话题</span>
+          <select v-model="selectedTopic" data-testid="text-topic-select" class="send-input send-select" :disabled="!hasExistingTopics || Boolean(customTopic.trim())">
+            <option value="">{{ hasExistingTopics ? '选择已有话题' : '暂无话题' }}</option>
+            <option v-for="topic in topicSuggestions" :key="topic" :value="topic">{{ topic }}</option>
+          </select>
+        </label>
+        <label class="send-field">
+          <span class="send-label">新话题</span>
+          <input
+            v-model="customTopic"
+            data-testid="text-topic"
+            type="text"
+            placeholder="输入后自动创建"
+            maxlength="50"
+            class="send-input"
+            @input="handleCustomTopicInput"
+          >
+        </label>
+      </div>
+
+      <label class="send-field send-field--content">
+        <span class="send-label">正文</span>
+        <textarea v-model="content" id="text-content" placeholder="粘贴或输入要同步的文本..." rows="6" maxlength="500" class="send-input send-textarea"></textarea>
+      </label>
+
       <button type="submit" id="text-submit-btn" class="send-panel-submit" :disabled="props.submitting">
         <SendIcon class="send-panel-submit-icon" />
         {{ props.submitting ? "发送中..." : "发送" }}
@@ -60,3 +98,104 @@ defineExpose({ clear });
     </form>
   </div>
 </template>
+
+<style scoped>
+.send-panel {
+  padding: 18px;
+  border: 1px solid rgba(var(--accent-rgb), 0.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(var(--accent-rgb), 0.08), transparent 42%),
+    var(--bg-card);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.send-panel-head {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.send-panel-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.send-panel-form {
+  display: grid;
+  gap: 14px;
+}
+
+.send-field {
+  display: grid;
+  gap: 7px;
+}
+
+.send-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.send-topic-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.send-input {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.send-input::placeholder {
+  color: var(--text-muted);
+}
+
+.send-input:focus {
+  border-color: rgba(var(--accent-rgb), 0.65);
+  background: var(--bg-card);
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.12);
+}
+
+.send-input:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.send-select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 19px, calc(100% - 13px) 19px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+.send-textarea {
+  min-height: 156px;
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .send-panel {
+    padding: 16px;
+  }
+
+  .send-topic-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

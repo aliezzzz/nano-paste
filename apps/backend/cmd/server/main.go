@@ -65,6 +65,7 @@ func main() {
 	mux.Handle("/v1/auth/", authHandler)
 	mux.Handle("/v1/items", itemsHandler)
 	mux.Handle("/v1/items/", itemsHandler)
+	mux.Handle("/v1/topics", itemsHandler)
 	mux.Handle("/v1/files/upload", filesHandler)
 	mux.Handle("/v1/files/cleanup", filesHandler)
 	mux.Handle("/v1/files/", filesHandler)

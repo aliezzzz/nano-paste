@@ -43,6 +43,9 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       :items-loading="bridge.itemsLoading.value"
       :sending-text="bridge.sendingText.value"
       :username="currentUsername"
+      :image-preview="bridge.imagePreview.value"
+      :topics="bridge.topics.value"
+      :active-topic="bridge.activeTopic.value"
       @open-config="emit('open-config')"
       @logout="bridge.logout"
       @send-text="bridge.sendTextItem"
@@ -52,6 +55,8 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       @clear-finished-upload="bridge.clearFinishedUploads"
       @item-action="handleItemActionWrapper"
       @refresh-items="bridge.loadItems"
+      @close-image-preview="bridge.closeImagePreview"
+      @select-topic="bridge.selectTopic"
     />
   </div>
 </template>

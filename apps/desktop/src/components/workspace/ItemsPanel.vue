@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from "vue";
 import { formatBytes } from "../../utils/format";
+import { isImageFile } from "../../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
 import ClockIcon from "../../assets/icons/clock.svg";
 import RefreshIcon from "../../assets/icons/refresh.svg";
@@ -9,6 +10,7 @@ import CopyIcon from "../../assets/icons/copy.svg";
 import DownloadIcon from "../../assets/icons/download.svg";
 import DeleteIcon from "../../assets/icons/delete.svg";
 import InboxEmptyIcon from "../../assets/icons/inbox-empty.svg";
+import TopicBadge from "./TopicBadge.vue";
 
 export type { ItemView };
 
@@ -90,7 +92,16 @@ function displayTitle(item: ItemView): string {
 }
 
 function primaryAction(item: ItemView): ItemActionPayload["action"] {
-  return item.type === "text" ? "copy" : "download";
+  if (item.type === "text") return "copy";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "preview";
+  return "download";
+}
+
+function actionLabel(item: ItemView): string {
+  const action = primaryAction(item);
+  if (action === "copy") return "复制";
+  if (action === "preview") return "预览";
+  return "下载";
 }
 
 function sectionItems(kind: "favorite" | "history"): ItemView[] {
@@ -119,6 +130,19 @@ function runBatchUnfavorite(): void {
     emit("item-action", itemPayload(item, "favorite"));
   }
   selectedIds.value = [];
+}
+
+function updateItemTopic(item: ItemView, topic: string): void {
+  emit("item-action", {
+    id: item.id,
+    action: "set-topic",
+    type: item.type,
+    content: item.content,
+    fileId: item.fileId,
+    fileName: item.fileName,
+    isFavorite: item.isFavorite,
+    topic,
+  });
 }
 
 onBeforeUnmount(() => {
@@ -221,14 +245,12 @@ onBeforeUnmount(() => {
                   </button>
                 </div>
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
-                <div v-if="item.tags?.length" class="item-tags">
-                  <span v-for="tag in item.tags" :key="tag" class="item-tag">#{{ tag }}</span>
-                </div>
+                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
                 <div class="item-footer">
                   <div class="item-actions-left">
                     <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
                       <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
-                      {{ item.type === 'text' ? '复制' : '下载' }}
+                      {{ actionLabel(item) }}
                     </button>
                     <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
                   </div>
@@ -260,14 +282,12 @@ onBeforeUnmount(() => {
                   </button>
                 </div>
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
-                <div v-if="item.tags?.length" class="item-tags">
-                  <span v-for="tag in item.tags" :key="tag" class="item-tag">#{{ tag }}</span>
-                </div>
+                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
                 <div class="item-footer">
                   <div class="item-actions-left">
                     <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
                       <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
-                      {{ item.type === 'text' ? '复制' : '下载' }}
+                      {{ actionLabel(item) }}
                     </button>
                     <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
                   </div>
@@ -434,21 +454,6 @@ onBeforeUnmount(() => {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.item-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.item-tag {
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 11px;
-  padding: 3px 8px;
 }
 
 .items-empty-state {

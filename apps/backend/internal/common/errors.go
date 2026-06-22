@@ -5,13 +5,14 @@ import "net/http"
 type ErrorCode string
 
 const (
-	UNAUTHORIZED     ErrorCode = "UNAUTHORIZED"
-	FORBIDDEN        ErrorCode = "FORBIDDEN"
-	NOT_FOUND        ErrorCode = "NOT_FOUND"
-	CONFLICT         ErrorCode = "CONFLICT"
-	RATE_LIMIT       ErrorCode = "RATE_LIMIT"
-	INTERNAL         ErrorCode = "INTERNAL"
-	VALIDATION_ERROR ErrorCode = "VALIDATION_ERROR"
+	UNAUTHORIZED       ErrorCode = "UNAUTHORIZED"
+	FORBIDDEN          ErrorCode = "FORBIDDEN"
+	NOT_FOUND          ErrorCode = "NOT_FOUND"
+	METHOD_NOT_ALLOWED ErrorCode = "METHOD_NOT_ALLOWED"
+	CONFLICT           ErrorCode = "CONFLICT"
+	RATE_LIMIT         ErrorCode = "RATE_LIMIT"
+	INTERNAL           ErrorCode = "INTERNAL"
+	VALIDATION_ERROR   ErrorCode = "VALIDATION_ERROR"
 )
 
 type APIError struct {
@@ -29,6 +30,8 @@ func MapErrorCodeToStatus(code ErrorCode) int {
 		return http.StatusForbidden
 	case NOT_FOUND:
 		return http.StatusNotFound
+	case METHOD_NOT_ALLOWED:
+		return http.StatusMethodNotAllowed
 	case CONFLICT:
 		return http.StatusConflict
 	case RATE_LIMIT:
