@@ -132,6 +132,8 @@ func ensureCoreSyncTables(db *sql.DB) error {
 		  file_id TEXT,
 		  is_favorite INTEGER NOT NULL DEFAULT 0,
 		  tags_json TEXT,
+		  content_kind TEXT NOT NULL DEFAULT 'text',
+		  language TEXT,
 		  created_at TEXT NOT NULL,
 		  deleted_at TEXT,
 		  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -156,6 +158,12 @@ func ensureCoreSyncTables(db *sql.DB) error {
 		return fmt.Errorf("ensure core sync tables: %w", err)
 	}
 	if err := ensureColumnExists(db, "clipboard_items", "topic", "TEXT DEFAULT ''"); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
+	if err := ensureColumnExists(db, "clipboard_items", "content_kind", "TEXT NOT NULL DEFAULT 'text'"); err != nil {
+		return fmt.Errorf("ensure core sync tables: %w", err)
+	}
+	if err := ensureColumnExists(db, "clipboard_items", "language", "TEXT"); err != nil {
 		return fmt.Errorf("ensure core sync tables: %w", err)
 	}
 

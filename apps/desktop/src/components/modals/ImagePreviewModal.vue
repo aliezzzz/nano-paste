@@ -96,9 +96,9 @@ onUnmounted(() => {
 
 .image-preview-title {
   margin: 0;
-  color: var(--text-primary);
+  color: var(--text-main);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

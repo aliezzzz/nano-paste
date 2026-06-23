@@ -35,15 +35,13 @@ const emit = defineEmits<{
   (e: "select-topic", topic: string): void;
 }>();
 
-const favoriteOnly = ref(false);
 const searchQuery = ref("");
-const selectedIds = ref<string[]>([]);
 const rotating = ref(false);
 let rotateTimer: number | null = null;
 
 const filteredItems = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  const shouldShowFavoritesOnly = props.mode === "favorites" || favoriteOnly.value;
+  const shouldShowFavoritesOnly = props.mode === "favorites";
   const source = shouldShowFavoritesOnly ? props.items.filter((item) => item.isFavorite) : props.items;
   if (!query) return source;
 
@@ -57,9 +55,7 @@ const filteredItems = computed(() => {
 });
 
 const favoriteItems = computed(() => filteredItems.value.filter((item) => item.isFavorite));
-const historyItems = computed(() => filteredItems.value.filter((item) => !item.isFavorite));
 const hasVisibleItems = computed(() => filteredItems.value.length > 0);
-const selectedItems = computed(() => props.items.filter((item) => selectedIds.value.includes(item.id)));
 const isFavoritesMode = computed(() => props.mode === "favorites");
 
 function refreshItems(): void {
@@ -100,15 +96,22 @@ function itemPayload(item: ItemView, action: ItemActionPayload["action"]): ItemA
     fileId: item.fileId,
     fileName: item.fileName,
     isFavorite: item.isFavorite,
+    title: displayTitle(item),
+    language: item.language,
   };
 }
 
 function displayTitle(item: ItemView): string {
   if (item.type === "file") return item.fileName || "无文件名";
-  return item.title || "无标题";
+  return item.title?.trim() || item.content?.trim() || "空文本";
+}
+
+function isCodeItem(item: ItemView): boolean {
+  return item.type === "text" && item.contentKind === "code";
 }
 
 function primaryAction(item: ItemView): ItemActionPayload["action"] {
+  if (isCodeItem(item)) return "preview-code";
   if (item.type === "text") return "copy";
   if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "preview";
   return "download";
@@ -117,36 +120,15 @@ function primaryAction(item: ItemView): ItemActionPayload["action"] {
 function actionLabel(item: ItemView): string {
   const action = primaryAction(item);
   if (action === "copy") return "复制";
+  if (action === "preview-code") return "预览代码";
   if (action === "preview") return "预览";
   return "下载";
 }
 
-function sectionItems(kind: "favorite" | "history"): ItemView[] {
-  return kind === "favorite" ? favoriteItems.value : historyItems.value;
-}
-
-function toggleSelection(itemID: string, checked: boolean): void {
-  if (checked && !selectedIds.value.includes(itemID)) {
-    selectedIds.value = [...selectedIds.value, itemID];
-    return;
-  }
-  if (!checked) {
-    selectedIds.value = selectedIds.value.filter((id) => id !== itemID);
-  }
-}
-
-function runBatchDelete(): void {
-  for (const item of selectedItems.value) {
-    emit("item-action", itemPayload(item, "delete"));
-  }
-  selectedIds.value = [];
-}
-
-function runBatchUnfavorite(): void {
-  for (const item of selectedItems.value.filter((item) => item.isFavorite)) {
-    emit("item-action", itemPayload(item, "favorite"));
-  }
-  selectedIds.value = [];
+function actionIcon(item: ItemView) {
+  const action = primaryAction(item);
+  if (action === "download" || action === "preview") return DownloadIcon;
+  return CopyIcon;
 }
 
 function updateItemTopic(item: ItemView, topic: string): void {
@@ -193,24 +175,6 @@ onBeforeUnmount(() => {
           />
         </button>
 
-        <div v-if="!isFavoritesMode" class="filter-tabs">
-          <button
-            type="button"
-            class="filter-tab"
-            :class="!favoriteOnly ? 'filter-tab--active' : 'filter-tab--inactive'"
-            @click="favoriteOnly = false"
-          >
-            全部
-          </button>
-          <button
-            type="button"
-            class="filter-tab"
-            :class="favoriteOnly ? 'filter-tab--favorite-active' : 'filter-tab--favorite-inactive'"
-            @click="favoriteOnly = true"
-          >
-            仅收藏
-          </button>
-        </div>
       </div>
     </div>
 
@@ -255,12 +219,6 @@ onBeforeUnmount(() => {
 
     <p id="items-loading" class="loading-text" :class="props.loading ? '' : 'hidden'">加载中...</p>
 
-    <div v-if="selectedItems.length > 0" data-testid="batch-bar" class="batch-bar">
-      <span>已选 {{ selectedItems.length }} 项</span>
-      <button data-testid="batch-unfavorite" type="button" class="batch-btn" @click="runBatchUnfavorite">取消收藏</button>
-      <button data-testid="batch-delete" type="button" class="batch-btn batch-btn--danger" @click="runBatchDelete">批量删除</button>
-    </div>
-
     <div class="list-container">
       <div v-if="hasVisibleItems" id="items-list" class="items-list custom-scrollbar">
         <section v-if="isFavoritesMode" data-testid="mobile-favorites-section" class="items-section">
@@ -274,7 +232,6 @@ onBeforeUnmount(() => {
           <div v-if="favoriteItems.length === 0" class="items-section-empty">还没有收藏内容</div>
           <article v-for="item in favoriteItems" :key="item.id" class="item-card group item-card--favorite">
             <div class="item-layout">
-              <input class="item-select" data-testid="item-select" type="checkbox" :checked="selectedIds.includes(item.id)" @change="toggleSelection(item.id, ($event.target as HTMLInputElement).checked)">
               <div class="item-icon" v-html="item.iconSvg"></div>
               <div class="item-content">
                 <div class="item-header">
@@ -288,7 +245,7 @@ onBeforeUnmount(() => {
                 <div class="item-footer">
                   <div class="item-actions-left">
                     <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
-                      <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
+                      <component :is="actionIcon(item)" class="action-btn-icon" />
                       {{ actionLabel(item) }}
                     </button>
                     <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
@@ -300,23 +257,21 @@ onBeforeUnmount(() => {
           </article>
         </section>
 
-        <section v-if="!isFavoritesMode" data-testid="favorite-section" class="items-section">
+        <section v-if="!isFavoritesMode" data-testid="all-section" class="items-section">
           <div class="items-section-head">
             <div>
-              <h3 class="items-section-title">常用收藏</h3>
-              <p class="items-section-hint">把常用文本和文件固定在最顺手的位置</p>
+              <h3 class="items-section-title">全部内容</h3>
+              <p class="items-section-hint">按当前排序显示文本、文件和收藏内容</p>
             </div>
-            <span class="items-section-count">{{ favoriteItems.length }}</span>
+            <span class="items-section-count">{{ filteredItems.length }}</span>
           </div>
-          <div v-if="favoriteItems.length === 0" class="items-section-empty">还没有收藏内容</div>
-          <article v-for="item in favoriteItems" :key="item.id" class="item-card group item-card--favorite">
+          <article v-for="item in filteredItems" :key="item.id" class="item-card group" :class="item.isFavorite ? 'item-card--favorite' : ''">
             <div class="item-layout">
-              <input class="item-select" data-testid="item-select" type="checkbox" :checked="selectedIds.includes(item.id)" @change="toggleSelection(item.id, ($event.target as HTMLInputElement).checked)">
               <div class="item-icon" v-html="item.iconSvg"></div>
               <div class="item-content">
                 <div class="item-header">
                   <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
-                  <button class="favorite-btn favorite-btn--active" title="取消收藏" @click="emit('item-action', itemPayload(item, 'favorite'))">
+                  <button class="favorite-btn" :class="item.isFavorite ? 'favorite-btn--active' : 'favorite-btn--inactive'" :title="item.isFavorite ? '取消收藏' : '收藏'" @click="emit('item-action', itemPayload(item, 'favorite'))">
                     <StarIcon class="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
@@ -325,44 +280,7 @@ onBeforeUnmount(() => {
                 <div class="item-footer">
                   <div class="item-actions-left">
                     <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
-                      <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
-                      {{ actionLabel(item) }}
-                    </button>
-                    <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
-                  </div>
-                  <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
-                </div>
-              </div>
-            </div>
-          </article>
-        </section>
-
-        <section v-if="!isFavoritesMode" data-testid="history-section" class="items-section">
-          <div class="items-section-head">
-            <div>
-              <h3 class="items-section-title">全部历史</h3>
-              <p class="items-section-hint">最近发送和上传的内容都会在这里</p>
-            </div>
-            <span class="items-section-count">{{ historyItems.length }}</span>
-          </div>
-          <div v-if="historyItems.length === 0" class="items-section-empty">暂无普通历史</div>
-          <article v-for="item in historyItems" :key="item.id" class="item-card group">
-            <div class="item-layout">
-              <input class="item-select" data-testid="item-select" type="checkbox" :checked="selectedIds.includes(item.id)" @change="toggleSelection(item.id, ($event.target as HTMLInputElement).checked)">
-              <div class="item-icon" v-html="item.iconSvg"></div>
-              <div class="item-content">
-                <div class="item-header">
-                  <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
-                  <button class="favorite-btn favorite-btn--inactive" title="收藏" @click="emit('item-action', itemPayload(item, 'favorite'))">
-                    <StarIcon class="w-4 h-4" aria-hidden="true" />
-                  </button>
-                </div>
-                <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
-                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
-                <div class="item-footer">
-                  <div class="item-actions-left">
-                    <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
-                      <component :is="item.type === 'text' ? CopyIcon : DownloadIcon" class="action-btn-icon" />
+                      <component :is="actionIcon(item)" class="action-btn-icon" />
                       {{ actionLabel(item) }}
                     </button>
                     <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
@@ -575,7 +493,7 @@ onBeforeUnmount(() => {
 
 .item-layout {
   display: grid;
-  grid-template-columns: 18px 32px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
 }
@@ -701,39 +619,6 @@ onBeforeUnmount(() => {
   padding-right: 4px;
 }
 
-.batch-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex: 0 0 auto;
-  margin: 6px 0;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  background: var(--surface-raised);
-  color: var(--text-primary);
-  padding: 10px 12px;
-  font-size: 12px;
-}
-
-.batch-btn {
-  border: 1px solid var(--border-subtle);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-primary);
-  padding: 6px 10px;
-}
-
-.batch-btn--danger {
-  color: var(--danger);
-}
-
-.item-select {
-  align-self: center;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
 .item-card--favorite {
   border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
 }
@@ -744,7 +629,7 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.45;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

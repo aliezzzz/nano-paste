@@ -23,6 +23,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",
     "axios": "^1.14.0",
+    "highlight.js": "^11.11.1",
     "lucide": "^1.7.0",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",

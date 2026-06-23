@@ -13,7 +13,7 @@ func TestCreateTextItemStoresNormalizedTags(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", []string{" 工作 ", "", "会议", "工作"}, "")
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", []string{" 工作 ", "", "会议", "工作"}, "", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
@@ -39,7 +39,7 @@ func TestCreateTextItemWithTopic(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "工作笔记")
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "工作笔记", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
@@ -72,7 +72,7 @@ func TestSetItemTopic(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "")
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
@@ -111,19 +111,19 @@ func TestListTopics(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	_, err := repo.createTextItem(ctx, "u-1", "t1", "c1", "evt-1", nil, "工作")
+	_, err := repo.createTextItem(ctx, "u-1", "t1", "c1", "evt-1", nil, "工作", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
-	_, err = repo.createTextItem(ctx, "u-1", "t2", "c2", "evt-2", nil, "工作")
+	_, err = repo.createTextItem(ctx, "u-1", "t2", "c2", "evt-2", nil, "工作", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
-	_, err = repo.createTextItem(ctx, "u-1", "t3", "c3", "evt-3", nil, "学习")
+	_, err = repo.createTextItem(ctx, "u-1", "t3", "c3", "evt-3", nil, "学习", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
-	_, err = repo.createTextItem(ctx, "u-1", "t4", "c4", "evt-4", nil, "")
+	_, err = repo.createTextItem(ctx, "u-1", "t4", "c4", "evt-4", nil, "", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}
@@ -173,6 +173,8 @@ func openItemsTestDB(t *testing.T) *sql.DB {
 		  file_id TEXT,
 		  is_favorite INTEGER NOT NULL DEFAULT 0,
 		  tags_json TEXT,
+		  content_kind TEXT NOT NULL DEFAULT 'text',
+		  language TEXT,
 		  topic TEXT DEFAULT '',
 		  created_at TEXT NOT NULL,
 		  deleted_at TEXT,

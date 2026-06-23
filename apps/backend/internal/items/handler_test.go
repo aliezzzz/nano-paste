@@ -15,7 +15,7 @@ func TestSetItemTopicEndToEnd(t *testing.T) {
 	repo := newRepository(db)
 	ctx := context.Background()
 
-	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "")
+	item, err := repo.createTextItem(ctx, "u-1", "title", "content", "evt-1", nil, "", "", "")
 	if err != nil {
 		t.Fatalf("createTextItem: %v", err)
 	}

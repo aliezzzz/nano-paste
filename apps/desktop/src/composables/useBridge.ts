@@ -29,9 +29,11 @@ export function useBridge(onLoggedOut: () => void) {
 	const items = ref<ItemView[]>([]);
 	const itemsLoading = ref(false);
 	const sendingText = ref(false);
+	const sentTextVersion = ref(0);
 
   // 图片预览状态
   const imagePreview = ref<{ imageUrl: string; fileName: string; fileSize?: number } | null>(null);
+  const codePreview = ref<{ title?: string; code: string; language?: string } | null>(null);
 
   // 话题状态
   const topics = ref<TopicInfo[]>([]);
@@ -65,6 +67,8 @@ export function useBridge(onLoggedOut: () => void) {
         createdAt: item.createdAt,
         iconSvg: getItemIconSvg(item),
         topic: item.topic,
+        contentKind: item.type === "text" ? item.contentKind : undefined,
+        language: item.type === "text" ? item.language : undefined,
       }));
     } catch (err) {
       console.error("加载条目失败:", err);
@@ -140,7 +144,7 @@ export function useBridge(onLoggedOut: () => void) {
   }
 
   // 发送文本
-  async function sendTextItem(payload: { title?: string; content: string; tags?: string[]; topic?: string }): Promise<void> {
+  async function sendTextItem(payload: { title?: string; content: string; tags?: string[]; topic?: string; contentKind?: "text" | "code"; language?: string }): Promise<void> {
     const content = payload.content?.trim();
     if (!content) {
       throw new Error("请输入内容");
@@ -153,9 +157,12 @@ export function useBridge(onLoggedOut: () => void) {
         content,
         tags: payload.tags,
         topic: payload.topic,
+        contentKind: payload.contentKind,
+        language: payload.language,
       });
       await loadItems();
       await loadTopics();
+      sentTextVersion.value += 1;
       showToast("发送成功", "success");
     } catch (error) {
       showToast(`发送失败: ${error instanceof Error ? error.message : "发送失败"}`, "error");
@@ -244,6 +251,15 @@ export function useBridge(onLoggedOut: () => void) {
           fileName: prepared.fileName || payload.fileName || "image",
           fileSize: prepared.fileSize,
         };
+      } else if (action === "preview-code") {
+        if (type !== "text" || !payload.content) {
+          throw new Error("不是可预览的代码条目");
+        }
+        codePreview.value = {
+          title: payload.title,
+          code: payload.content,
+          language: payload.language,
+        };
       } else if (action === "set-topic") {
         const topic = payload.topic || "";
         await setItemTopic(id, topic);
@@ -262,6 +278,7 @@ export function useBridge(onLoggedOut: () => void) {
         action === "download" ? "下载" :
         action === "favorite" ? "收藏" :
         action === "preview" ? "预览" :
+        action === "preview-code" ? "代码预览" :
         action === "set-topic" ? "话题" : "操作";
       showToast(`${actionLabel}失败: ${message}`, "error");
       throw err;
@@ -282,6 +299,10 @@ export function useBridge(onLoggedOut: () => void) {
     imagePreview.value = null;
   }
 
+  function closeCodePreview(): void {
+    codePreview.value = null;
+  }
+
 	async function applyRuntimeApiBaseUrlChange(): Promise<void> {
 		await loadItems();
 	}
@@ -297,7 +318,9 @@ export function useBridge(onLoggedOut: () => void) {
 		items,
 		itemsLoading,
 		sendingText,
+		sentTextVersion,
 		imagePreview,
+		codePreview,
 		topics,
 		activeTopic,
 		// 方法
@@ -312,6 +335,7 @@ export function useBridge(onLoggedOut: () => void) {
     clearFinishedUploads,
 		executeItemAction,
 		closeImagePreview,
+		closeCodePreview,
 		selectTopic,
 		handleGlobalPasteEvent,
 		applyRuntimeApiBaseUrlChange,

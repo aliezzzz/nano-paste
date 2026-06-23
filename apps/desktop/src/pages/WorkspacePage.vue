@@ -42,8 +42,10 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       :items="bridge.items.value"
       :items-loading="bridge.itemsLoading.value"
       :sending-text="bridge.sendingText.value"
+      :sent-text-version="bridge.sentTextVersion.value"
       :username="currentUsername"
       :image-preview="bridge.imagePreview.value"
+      :code-preview="bridge.codePreview.value"
       :topics="bridge.topics.value"
       :active-topic="bridge.activeTopic.value"
       @open-config="emit('open-config')"
@@ -56,6 +58,7 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       @item-action="handleItemActionWrapper"
       @refresh-items="bridge.loadItems"
       @close-image-preview="bridge.closeImagePreview"
+      @close-code-preview="bridge.closeCodePreview"
       @select-topic="bridge.selectTopic"
     />
   </div>

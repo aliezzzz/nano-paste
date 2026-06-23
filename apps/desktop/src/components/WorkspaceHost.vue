@@ -13,8 +13,9 @@ import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
 import ImagePreviewModal from "./modals/ImagePreviewModal.vue";
+import CodePreviewModal from "./modals/CodePreviewModal.vue";
 
-type SendPayload = { title?: string; content: string; tags?: string[]; topic?: string };
+type SendPayload = { title?: string; content: string; tags?: string[]; topic?: string; contentKind?: "text" | "code"; language?: string };
 
 const props = withDefaults(
     defineProps<{
@@ -22,8 +23,10 @@ const props = withDefaults(
         items?: ItemView[];
         itemsLoading?: boolean;
         sendingText?: boolean;
+        sentTextVersion?: number;
         username?: string;
         imagePreview?: { imageUrl: string; fileName: string; fileSize?: number } | null;
+        codePreview?: { title?: string; code: string; language?: string } | null;
         topics?: TopicInfo[];
         activeTopic?: string;
     }>(),
@@ -32,8 +35,10 @@ const props = withDefaults(
         items: () => [],
         itemsLoading: false,
         sendingText: false,
+        sentTextVersion: 0,
         username: "",
         imagePreview: null,
+        codePreview: null,
         topics: () => [],
         activeTopic: "",
     },
@@ -55,6 +60,7 @@ const emit = defineEmits<{
     (e: "upload-files", files: File[]): void;
     (e: "item-action", payload: ItemActionPayload): void;
     (e: "close-image-preview"): void;
+    (e: "close-code-preview"): void;
     (e: "select-topic", topic: string): void;
 }>(); 
 
@@ -106,6 +112,10 @@ function uploadFiles(files: File[]): void {
 
 function closeImagePreview(): void {
     emit("close-image-preview");
+}
+
+function closeCodePreview(): void {
+    emit("close-code-preview");
 }
 
 function selectTopic(topic: string): void {
@@ -185,6 +195,7 @@ function selectTopic(topic: string): void {
                 <aside class="host-sidebar">
                     <SendPanel
                         :submitting="props.sendingText"
+                        :clear-version="props.sentTextVersion"
                         :topic-suggestions="props.topics.map(t => t.name)"
                         @submit="sendText"
                     />
@@ -281,23 +292,20 @@ function selectTopic(topic: string): void {
                     v-if="activeMobileTab === 'send'"
                     class="host-mobile-send custom-scrollbar"
                 >
-                    <div class="host-mobile-card">
-                        <SendPanel
-                            :submitting="props.sendingText"
-                            :topic-suggestions="props.topics.map(t => t.name)"
-                            @submit="sendText"
-                        />
-                    </div>
-                    <div class="host-mobile-card">
-                        <UploadPanel
-                            compact
-                            :queue-items="props.queueItems"
-                            @retry="retryUpload"
-                            @cancel="cancelUpload"
-                            @clear-finished="clearFinishedUpload"
-                            @files-selected="uploadFiles"
-                        />
-                    </div>
+                    <SendPanel
+                        :submitting="props.sendingText"
+                        :clear-version="props.sentTextVersion"
+                        :topic-suggestions="props.topics.map(t => t.name)"
+                        @submit="sendText"
+                    />
+                    <UploadPanel
+                        compact
+                        :queue-items="props.queueItems"
+                        @retry="retryUpload"
+                        @cancel="cancelUpload"
+                        @clear-finished="clearFinishedUpload"
+                        @files-selected="uploadFiles"
+                    />
                 </div>
                 <div v-else class="host-mobile-items custom-scrollbar">
                     <ItemsPanel
@@ -326,6 +334,13 @@ function selectTopic(topic: string): void {
             :file-size="props.imagePreview.fileSize"
             @close="closeImagePreview"
         />
+        <CodePreviewModal
+            v-if="props.codePreview"
+            :title="props.codePreview.title"
+            :code="props.codePreview.code"
+            :language="props.codePreview.language"
+            @close="closeCodePreview"
+        />
     </div>
 </template>
 
@@ -345,8 +360,9 @@ function selectTopic(topic: string): void {
     padding: 12px;
 }
 
-.host-mobile-card + .host-mobile-card {
-    margin-top: 12px;
+.host-mobile-send {
+    display: grid;
+    gap: 12px;
 }
 
 @media (max-width: 960px) {

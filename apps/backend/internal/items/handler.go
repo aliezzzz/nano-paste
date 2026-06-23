@@ -120,7 +120,7 @@ func (h *handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item, err := h.repo.createTextItem(r.Context(), userID, req.Title, req.Content, req.clientEventID(), req.Tags, req.Topic)
+	item, err := h.repo.createTextItem(r.Context(), userID, req.Title, req.Content, req.clientEventID(), req.Tags, req.Topic, req.ContentKind, req.Language)
 	if err != nil {
 		common.WriteError(w, common.INTERNAL, "failed to create item", nil, requestID)
 		return
@@ -330,6 +330,8 @@ type createItemRequest struct {
 	ClientEventIDCamel string   `json:"clientEventId"`
 	Tags               []string `json:"tags"`
 	Topic              string   `json:"topic"`
+	ContentKind        string   `json:"contentKind"`
+	Language           string   `json:"language"`
 }
 
 func (r createItemRequest) clientEventID() string {
@@ -395,6 +397,12 @@ func toItemDetail(item itemRecord) map[string]any {
 	}
 	if strings.TrimSpace(item.Topic) != "" {
 		base["topic"] = item.Topic
+	}
+	if item.Type == "text" {
+		base["contentKind"] = item.ContentKind
+		if strings.TrimSpace(item.Language) != "" {
+			base["language"] = item.Language
+		}
 	}
 
 	if item.Type == "file" {

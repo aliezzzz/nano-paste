@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import EditIcon from "../../assets/icons/edit.svg";
 import SendIcon from "../../assets/icons/send.svg";
 
-const props = withDefaults(defineProps<{ submitting?: boolean; topicSuggestions?: string[] }>(), {
+const props = withDefaults(defineProps<{ submitting?: boolean; topicSuggestions?: string[]; clearVersion?: number }>(), {
   submitting: false,
   topicSuggestions: () => [],
+  clearVersion: 0,
 });
 
 const emit = defineEmits<{
-  (e: "submit", payload: { title?: string; content: string; tags?: string[]; topic?: string }): void;
+  (e: "submit", payload: { title?: string; content: string; tags?: string[]; topic?: string; contentKind?: "text" | "code"; language?: string }): void;
 }>();
 
 const title = ref("");
 const content = ref("");
 const selectedTopic = ref("");
 const customTopic = ref("");
+const contentKind = ref<"text" | "code">("text");
+const language = ref("");
 
 const hasExistingTopics = computed(() => props.topicSuggestions.length > 0);
 const topicValue = computed(() => customTopic.value.trim() || selectedTopic.value.trim());
@@ -26,6 +29,8 @@ function handleSubmit(e: Event): void {
     title: title.value.trim() || undefined,
     content: content.value,
     topic: topicValue.value || undefined,
+    contentKind: contentKind.value,
+    language: contentKind.value === "code" ? language.value || undefined : undefined,
   };
   if (!payload.content.trim()) {
     return;
@@ -44,7 +49,18 @@ function clear(): void {
   content.value = "";
   selectedTopic.value = "";
   customTopic.value = "";
+  contentKind.value = "text";
+  language.value = "";
 }
+
+watch(
+  () => props.clearVersion,
+  (version, previousVersion) => {
+    if (version > 0 && version !== previousVersion) {
+      clear();
+    }
+  },
+);
 
 defineExpose({ clear });
 </script>
@@ -86,9 +102,31 @@ defineExpose({ clear });
         </label>
       </div>
 
+      <div class="send-kind-row">
+        <div class="send-kind-toggle" aria-label="内容类型">
+          <button type="button" class="send-kind-btn" :class="contentKind === 'text' ? 'send-kind-btn--active' : ''" @click="contentKind = 'text'">普通文本</button>
+          <button type="button" class="send-kind-btn" :class="contentKind === 'code' ? 'send-kind-btn--active' : ''" @click="contentKind = 'code'">代码片段</button>
+        </div>
+        <select v-if="contentKind === 'code'" v-model="language" data-testid="text-language" class="send-input send-select send-language-select">
+          <option value="">自动识别</option>
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="json">JSON</option>
+          <option value="bash">Shell</option>
+          <option value="css">CSS</option>
+          <option value="xml">HTML/XML</option>
+          <option value="go">Go</option>
+          <option value="python">Python</option>
+          <option value="java">Java</option>
+          <option value="sql">SQL</option>
+          <option value="markdown">Markdown</option>
+          <option value="yaml">YAML</option>
+        </select>
+      </div>
+
       <label class="send-field send-field--content">
         <span class="send-label">正文</span>
-        <textarea v-model="content" id="text-content" placeholder="粘贴或输入要同步的文本..." rows="6" maxlength="500" class="send-input send-textarea"></textarea>
+        <textarea v-model="content" id="text-content" placeholder="粘贴或输入要同步的文本..." rows="6" maxlength="50000" class="send-input send-textarea"></textarea>
       </label>
 
       <button type="submit" id="text-submit-btn" class="send-panel-submit" :disabled="props.submitting">
@@ -144,6 +182,41 @@ defineExpose({ clear });
   gap: 10px;
 }
 
+.send-kind-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.send-kind-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--input-bg);
+}
+
+.send-kind-btn {
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.send-kind-btn--active {
+  background: rgba(var(--accent-rgb), 0.14);
+  color: var(--text-accent);
+}
+
+.send-language-select {
+  min-height: 36px;
+  max-width: 160px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
 .send-input {
   width: 100%;
   min-height: 40px;
@@ -194,6 +267,15 @@ defineExpose({ clear });
 
   .send-topic-grid {
     grid-template-columns: 1fr;
+  }
+
+  .send-kind-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .send-language-select {
+    max-width: none;
   }
 }
 </style>

@@ -1,4 +1,5 @@
 import type {
+  ContentKind,
   CreateItemResponse,
   DeleteItemResponse,
   FavoriteItemResponse,
@@ -15,6 +16,8 @@ export type CreateTextInput = {
   title?: string;
   tags?: string[];
   topic?: string;
+  contentKind?: ContentKind;
+  language?: string;
 };
 
 export async function createTextItem(input: CreateTextInput): Promise<void> {
@@ -27,6 +30,8 @@ export async function createTextItem(input: CreateTextInput): Promise<void> {
       title: input.title,
       tags: input.tags,
       topic: input.topic,
+      contentKind: input.contentKind,
+      language: input.language,
       client_event_id: `evt_${Date.now()}`,
     },
   });

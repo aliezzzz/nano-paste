@@ -5,6 +5,7 @@
 import type { ApiResponse, PaginationInput, PaginationMeta } from './common';
 
 export type ItemType = 'text' | 'file';
+export type ContentKind = 'text' | 'code';
 
 export interface ItemSummary {
   id: string;
@@ -19,6 +20,8 @@ export interface ItemSummary {
 export interface TextItemDetail extends ItemSummary {
   type: 'text';
   content: string;
+  contentKind?: ContentKind;
+  language?: string;
 }
 
 export interface FileItemDetail extends ItemSummary {
@@ -37,6 +40,8 @@ export interface CreateItemRequest {
   title?: string;
   tags?: string[];
   topic?: string;
+  contentKind?: ContentKind;
+  language?: string;
 }
 
 export interface CreateItemResponse {

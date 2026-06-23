@@ -24,6 +24,16 @@ const items: ItemView[] = [
     iconSvg: "<svg></svg>",
     tags: ["设计"],
   },
+  {
+    id: "code-1",
+    type: "text",
+    content: "const answer = 42;",
+    contentKind: "code",
+    language: "typescript",
+    isFavorite: false,
+    createdAt: "2026-06-08T12:00:00Z",
+    iconSvg: "<svg></svg>",
+  },
 ];
 
 describe("ItemsPanel", () => {
@@ -37,11 +47,14 @@ describe("ItemsPanel", () => {
     expect(wrapper.text()).not.toContain("会议纪要");
   });
 
-  it("renders favorite items in a distinct quick access section", () => {
+  it("renders all items together in all mode", () => {
     const wrapper = mount(ItemsPanel, { props: { items } });
 
-    expect(wrapper.get('[data-testid="favorite-section"]').text()).toContain("会议纪要");
-    expect(wrapper.get('[data-testid="history-section"]').text()).toContain("design.png");
+    const allSectionText = wrapper.get('[data-testid="all-section"]').text();
+    expect(allSectionText).toContain("会议纪要");
+    expect(allSectionText).toContain("design.png");
+    expect(wrapper.find('[data-testid="favorite-section"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
   });
 
   it("shows only favorite items in favorites mode", () => {
@@ -50,6 +63,7 @@ describe("ItemsPanel", () => {
     expect(wrapper.text()).toContain("我的收藏");
     expect(wrapper.get('[data-testid="mobile-favorites-section"]').text()).toContain("会议纪要");
     expect(wrapper.text()).not.toContain("design.png");
+    expect(wrapper.find('[data-testid="all-section"]').exists()).toBe(false);
     expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
   });
 
@@ -74,19 +88,24 @@ describe("ItemsPanel", () => {
     expect(wrapper.text()).toContain("拖拽文件");
   });
 
-  it("supports selecting multiple items for batch actions", async () => {
+  it("uses content as the title when text has no title", () => {
     const wrapper = mount(ItemsPanel, { props: { items } });
 
-    const checkboxes = wrapper.findAll('[data-testid="item-select"]');
-    await checkboxes[0].setValue(true);
-    await checkboxes[1].setValue(true);
+    expect(wrapper.text()).toContain("const answer = 42;");
+    expect(wrapper.text()).not.toContain("无标题");
+  });
 
-    expect(wrapper.get('[data-testid="batch-bar"]').text()).toContain("已选 2 项");
-    await wrapper.get('[data-testid="batch-delete"]').trigger("click");
+  it("emits code preview action for code items", async () => {
+    const wrapper = mount(ItemsPanel, { props: { items } });
 
-    expect(wrapper.emitted("item-action")?.map((event) => event[0])).toEqual([
-      expect.objectContaining({ id: "text-1", action: "delete" }),
-      expect.objectContaining({ id: "file-1", action: "delete" }),
-    ]);
+    const buttons = wrapper.findAll("button").filter((button) => button.text().includes("预览代码"));
+    await buttons[0].trigger("click");
+
+    const emitted = wrapper.emitted("item-action") ?? [];
+    expect(emitted[emitted.length - 1]?.[0]).toEqual(expect.objectContaining({
+      id: "code-1",
+      action: "preview-code",
+      language: "typescript",
+    }));
   });
 });
