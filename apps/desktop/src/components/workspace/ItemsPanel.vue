@@ -160,6 +160,15 @@ onBeforeUnmount(() => {
         {{ isFavoritesMode ? '我的收藏' : '内容中转台' }}
       </h2>
       <div class="panel-actions">
+        <label class="items-search-wrap">
+          <input
+            v-model="searchQuery"
+            data-testid="items-search"
+            class="items-search"
+            type="search"
+            placeholder="搜索文本、文件名或标签"
+          >
+        </label>
         <button
           type="button"
           class="refresh-btn"
@@ -174,7 +183,6 @@ onBeforeUnmount(() => {
             aria-hidden="true"
           />
         </button>
-
       </div>
     </div>
 
@@ -200,23 +208,6 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <div class="items-toolbar">
-      <label class="items-search-wrap">
-        <span class="items-search-label">快速找回</span>
-        <input
-          v-model="searchQuery"
-          data-testid="items-search"
-          class="items-search"
-          type="search"
-          placeholder="搜索文本、文件名或标签"
-        >
-      </label>
-      <div class="items-summary">
-        <span>{{ filteredItems.length }} 条结果</span>
-        <span v-if="favoriteItems.length">{{ favoriteItems.length }} 条收藏</span>
-      </div>
-    </div>
-
     <p id="items-loading" class="loading-text" :class="props.loading ? '' : 'hidden'">加载中...</p>
 
     <div class="list-container">
@@ -225,7 +216,6 @@ onBeforeUnmount(() => {
           <div class="items-section-head">
             <div>
               <h3 class="items-section-title">我的收藏</h3>
-              <p class="items-section-hint">只看被你固定起来的内容</p>
             </div>
             <span class="items-section-count">{{ favoriteItems.length }}</span>
           </div>
@@ -261,7 +251,6 @@ onBeforeUnmount(() => {
           <div class="items-section-head">
             <div>
               <h3 class="items-section-title">全部内容</h3>
-              <p class="items-section-hint">按当前排序显示文本、文件和收藏内容</p>
             </div>
             <span class="items-section-count">{{ filteredItems.length }}</span>
           </div>
@@ -341,16 +330,6 @@ onBeforeUnmount(() => {
   to { transform: rotate(360deg); }
 }
 
-.items-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex: 0 0 48px;
-  min-height: 48px;
-  margin: 0;
-}
-
 .items-topic-filter {
   display: flex;
   align-items: center;
@@ -406,21 +385,19 @@ onBeforeUnmount(() => {
 .items-search-wrap {
   display: block;
   flex: 1;
-}
-
-.items-search-label {
-  display: none;
+  min-width: 0;
 }
 
 .items-search {
   width: 100%;
-  height: 38px;
+  height: 36px;
   border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--input-bg);
   color: var(--text-main);
   padding: 0 12px;
   outline: none;
+  font-size: 13px;
 }
 
 .items-search:focus {
@@ -428,18 +405,10 @@ onBeforeUnmount(() => {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
-.items-summary {
-  display: flex;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-
 .items-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
 }
 
 .items-section + .items-section {
@@ -447,6 +416,7 @@ onBeforeUnmount(() => {
 }
 
 .items-section-head {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -457,12 +427,6 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--text-primary);
   font-size: 14px;
-}
-
-.items-section-hint {
-  margin: 2px 0 0;
-  color: var(--text-muted);
-  font-size: 11px;
 }
 
 .items-section-count {
@@ -487,37 +451,47 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   background: var(--bg-card);
-  padding: 9px 10px;
+  padding: 12px;
   box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.item-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
 }
 
 .item-layout {
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr);
-  gap: 9px;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .item-icon {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 11px;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
   background: rgba(var(--accent-rgb), 0.08);
   color: var(--text-accent);
 }
 
 .item-icon :deep(svg) {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .item-content {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .item-content :deep(.meta-tags) {
@@ -532,6 +506,7 @@ onBeforeUnmount(() => {
 }
 
 .item-header,
+.item-header,
 .item-footer,
 .footer-meta,
 .item-actions-left {
@@ -539,10 +514,15 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
-.item-header,
+.item-header {
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .item-footer {
   justify-content: space-between;
   gap: 8px;
+  margin-top: auto;
 }
 
 .item-title {
@@ -551,9 +531,11 @@ onBeforeUnmount(() => {
   color: var(--text-main);
   font-size: 14px;
   font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .item-title--file {
@@ -615,13 +597,11 @@ onBeforeUnmount(() => {
 
 .items-list {
   height: 100%;
-  overflow: auto;
-  padding-right: 4px;
 }
 
 .item-card--favorite {
-  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.08), var(--bg-card) 42%);
-  box-shadow: inset 3px 0 0 var(--text-accent);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.08), var(--bg-card) 50%);
+  border-left: 3px solid var(--text-accent);
 }
 
 .item-text-content {
@@ -629,10 +609,11 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--text-muted);
   font-size: 12px;
-  line-height: 1.45;
-  -webkit-line-clamp: 2;
+  line-height: 1.5;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word;
 }
 
 .items-empty-state {

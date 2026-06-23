@@ -303,10 +303,6 @@ export function useBridge(onLoggedOut: () => void) {
     codePreview.value = null;
   }
 
-	async function applyRuntimeApiBaseUrlChange(): Promise<void> {
-		await loadItems();
-	}
-
   onUnmounted(() => {
     stopUploadQueueSubscription?.();
     stopUploadQueueSubscription = null;
@@ -338,6 +334,5 @@ export function useBridge(onLoggedOut: () => void) {
 		closeCodePreview,
 		selectTopic,
 		handleGlobalPasteEvent,
-		applyRuntimeApiBaseUrlChange,
 	};
 }

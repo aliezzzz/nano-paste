@@ -8,7 +8,6 @@ import MobileTabs from "./workspace/MobileTabs.vue";
 import type { MobileTab } from "./workspace/MobileTabs.vue";
 import type { TopicInfo } from "./workspace/TopicList.vue";
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
-import SettingsIcon from "../assets/icons/settings.svg";
 import LogoutIcon from "../assets/icons/logout.svg";
 import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
@@ -50,7 +49,6 @@ const userInitial = computed(() => {
 });
 
 const emit = defineEmits<{
-    (e: "open-config"): void;
     (e: "logout"): void;
     (e: "refresh-items"): void;
     (e: "retry-upload", id: string): void;
@@ -65,10 +63,6 @@ const emit = defineEmits<{
 }>(); 
 
 const activeMobileTab = ref<MobileTab>("send");
-
-function openConfig(): void {
-    emit("open-config");
-}
 
 function logout(): void {
     emit("logout");
@@ -95,10 +89,6 @@ function refreshItems(): void {
 }
 
 function switchMobileTab(tab: MobileTab): void {
-    if (tab === "settings") {
-        openConfig();
-        return;
-    }
     activeMobileTab.value = tab;
 }
 
@@ -136,19 +126,6 @@ function selectTopic(topic: string): void {
 
                 <div class="host-header-actions">
                     <ThemeToggle class="mr-2" />
-                    <button
-                        id="open-config-btn"
-                        type="button"
-                        title="连接配置"
-                        aria-label="连接配置"
-                        class="host-icon-btn"
-                        @click="openConfig"
-                    >
-                        <SettingsIcon
-                            class="host-icon-btn-icon"
-                            aria-hidden="true"
-                        />
-                    </button>
 
                     <div class="host-user-wrap group">
                         <button
@@ -232,19 +209,6 @@ function selectTopic(topic: string): void {
                     </div>
                     <div class="host-mobile-actions">
                         <ThemeToggle class="mr-2 scale-90" />
-                        <button
-                            id="open-config-btn"
-                            type="button"
-                            title="连接配置"
-                            aria-label="连接配置"
-                            class="host-icon-btn"
-                            @click="openConfig"
-                        >
-                            <SettingsIcon
-                                class="host-icon-btn-icon"
-                                aria-hidden="true"
-                            />
-                        </button>
                         <div class="host-user-wrap group">
                             <button
                                 type="button"
@@ -362,7 +326,7 @@ function selectTopic(topic: string): void {
 
 .host-mobile-send {
     display: grid;
-    gap: 12px;
+    gap: 8px;
 }
 
 @media (max-width: 960px) {

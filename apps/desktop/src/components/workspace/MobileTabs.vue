@@ -2,9 +2,8 @@
 import SendIcon from "../../assets/icons/send.svg";
 import ClockIcon from "../../assets/icons/clock.svg";
 import StarIcon from "../../assets/icons/star.svg";
-import SettingsIcon from "../../assets/icons/settings.svg";
 
-export type MobileTab = "send" | "items" | "favorites" | "settings";
+export type MobileTab = "send" | "items" | "favorites";
 
 const props = withDefaults(defineProps<{ activeTab?: MobileTab }>(), {
   activeTab: "send",
@@ -32,10 +31,6 @@ function switchTab(tab: MobileTab): void {
     <button data-tab="favorites" class="mobile-tab-btn" :class="props.activeTab === 'favorites' ? 'mobile-tab-btn--active' : 'mobile-tab-btn--inactive'" @click="switchTab('favorites')">
       <StarIcon class="mobile-tab-icon" />
       <span class="mobile-tab-label">收藏</span>
-    </button>
-    <button data-tab="settings" class="mobile-tab-btn" :class="props.activeTab === 'settings' ? 'mobile-tab-btn--active' : 'mobile-tab-btn--inactive'" @click="switchTab('settings')">
-      <SettingsIcon class="mobile-tab-icon" />
-      <span class="mobile-tab-label">设置</span>
     </button>
   </nav>
 </template>

@@ -151,8 +151,8 @@ export default defineConfig({
     "host-mobile-header": "!h-auto min-h-18",
     "host-mobile-actions": "flex items-center gap-2",
     "host-mobile-main": "flex-1 overflow-y-auto relative pb-16 px-1.5",
-    "host-mobile-send": "h-full overflow-y-auto py-2 space-y-3",
-    "host-mobile-items": "h-full overflow-y-auto py-2",
+    "host-mobile-send": "py-2 space-y-2",
+    "host-mobile-items": "py-2",
     "host-mobile-card":
       "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl py-0 px-2 pb-2 shadow-[var(--shadow-sm)]",
 
@@ -231,7 +231,7 @@ export default defineConfig({
     "filter-tab--favorite-inactive": "text-[var(--text-muted)] hover:text-amber-500",
     "list-container": "relative flex-1 min-h-0",
     "loading-text": "text-sm font-medium text-[var(--text-muted)] animate-pulse",
-    "items-list": "h-full overflow-y-auto space-y-3 md:space-y-3 pr-1 md:pr-2 custom-scrollbar",
+    "items-list": "h-full overflow-y-auto overflow-x-hidden custom-scrollbar",
     "item-card":
       "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl p-2.5 md:p-5 hover:border-[var(--text-accent)] hover:shadow-[var(--shadow-md)] transition-all",
     "item-layout": "flex gap-3 md:gap-4",

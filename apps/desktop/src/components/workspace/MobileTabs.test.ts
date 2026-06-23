@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import MobileTabs from "./MobileTabs.vue";
 
 describe("MobileTabs", () => {
-  it("renders send, history, favorites and settings tabs", async () => {
+  it("renders send, history and favorites tabs", async () => {
     const wrapper = mount(MobileTabs, { props: { activeTab: "send" } });
 
     expect(wrapper.text()).toContain("发送");
     expect(wrapper.text()).toContain("历史");
     expect(wrapper.text()).toContain("收藏");
-    expect(wrapper.text()).toContain("设置");
+    expect(wrapper.text()).not.toContain("设置");
 
-    await wrapper.get('[data-tab="settings"]').trigger("click");
-    expect(wrapper.emitted("switch")?.[0]).toEqual(["settings"]);
+    await wrapper.get('[data-tab="favorites"]').trigger("click");
+    expect(wrapper.emitted("switch")?.[0]).toEqual(["favorites"]);
   });
 });

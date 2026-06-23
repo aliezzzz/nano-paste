@@ -7,18 +7,14 @@ describe("runtime store", () => {
     setActivePinia(createPinia());
   });
 
-  it("normalizes and validates backend urls", () => {
+  it("uses the configured default backend url", () => {
     const store = useRuntimeStore();
-    store.setApiBaseUrl("http://localhost:8080///");
     expect(store.apiBaseUrl).toBe("http://localhost:8080");
-    expect(() => store.setApiBaseUrl("ftp://localhost")).toThrow("后端地址必须是合法的 http/https URL");
   });
 
-  it("resolves relative api paths against runtime base url", () => {
-    const store = useRuntimeStore();
-    store.setApiBaseUrl("https://nano.example/api");
-    expect(resolveApiUrl("/v1/items")).toBe("https://nano.example/api/v1/items");
-    expect(resolveApiUrl("v1/items")).toBe("https://nano.example/api/v1/items");
+  it("resolves relative api paths against the configured base url", () => {
+    expect(resolveApiUrl("/v1/items")).toBe("http://localhost:8080/v1/items");
+    expect(resolveApiUrl("v1/items")).toBe("http://localhost:8080/v1/items");
     expect(resolveApiUrl("https://other.example/v1/items")).toBe("https://other.example/v1/items");
   });
 });

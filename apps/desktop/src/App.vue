@@ -3,16 +3,13 @@ import { computed } from "vue";
 import LoginPage from "./pages/LoginPage.vue";
 import WorkspacePage from "./pages/WorkspacePage.vue";
 import ToastStack from "./components/feedback/ToastStack.vue";
-import ConfigModal from "./components/modals/ConfigModal.vue";
 import { useAuthActions } from "./composables/useAuthActions";
-import { useRuntimeConfigModal } from "./composables/useRuntimeConfigModal";
 import { useAuthStore } from "./stores/auth";
 import { useThemeStore } from "./stores/theme";
 
 const auth = useAuthActions();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
-const config = useRuntimeConfigModal(computed(() => Boolean(authStore.accessToken)));
 
 const isAuthenticated = computed(() => Boolean(authStore.accessToken));
 
@@ -24,9 +21,6 @@ function updateAuthPassword(value: string): void {
   auth.loginPassword.value = value;
 }
 
-function updateConfigApiUrl(value: string): void {
-  config.configApiBaseUrl.value = value;
-}
 </script>
 
 <template>
@@ -40,29 +34,12 @@ function updateConfigApiUrl(value: string): void {
       @update:username="updateUsername"
       @update:login-password="updateAuthPassword"
       @submit="auth.handleLoginSubmit"
-      @open-config="config.openConfig"
     />
 
     <WorkspacePage
       v-else
       :is-authenticated="isAuthenticated"
       @logged-out="auth.onLoggedOut"
-      @open-config="config.openConfig"
-    />
-
-    <ConfigModal
-      v-if="config.configOpen.value"
-      :submitting="config.configSubmitting.value"
-      :testing="config.configTesting.value"
-      :api-base-url="config.configApiBaseUrl.value"
-      :current-api-base-url="config.currentApiBaseUrl.value"
-      :error="config.configError.value"
-      :test-status="config.configTestStatus.value"
-      @update:api-base-url="updateConfigApiUrl"
-      @save="config.saveConfig"
-      @test-connection="config.testConfigConnection"
-      @restore-default="config.restoreDefaultConfig"
-      @close="config.closeConfig"
     />
 
     <ToastStack />

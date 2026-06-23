@@ -149,7 +149,7 @@ defineExpose({ clear });
 .send-panel-head {
   display: grid;
   gap: 4px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .send-panel-subtitle {
@@ -161,7 +161,7 @@ defineExpose({ clear });
 
 .send-panel-form {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .send-field {
@@ -171,9 +171,9 @@ defineExpose({ clear });
 
 .send-label {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
 }
 
 .send-topic-grid {
@@ -265,16 +265,12 @@ defineExpose({ clear });
     padding: 16px;
   }
 
-  .send-topic-grid {
-    grid-template-columns: 1fr;
-  }
-
   .send-kind-row {
-    align-items: stretch;
-    flex-direction: column;
+    flex-wrap: nowrap;
   }
 
   .send-language-select {
+    flex: 1 1 auto;
     max-width: none;
   }
 }

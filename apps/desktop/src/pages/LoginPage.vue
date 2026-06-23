@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import TrayTemplateIcon from "../assets/icons/tray-template.svg";
-import SettingsIcon from "../assets/icons/settings.svg";
 
 const props = defineProps<{
   username: string;
@@ -10,7 +9,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "open-config"): void;
   (e: "update:username", value: string): void;
   (e: "update:loginPassword", value: string): void;
   (e: "submit", event: Event): void;
@@ -22,17 +20,6 @@ const emit = defineEmits<{
     <div class="app-login-bg">
       <div class="app-login-bg-radial"></div>
     </div>
-
-    <button
-      id="open-config-btn"
-      type="button"
-      title="连接配置"
-      aria-label="连接配置"
-      class="app-login-config-btn safe-top-offset"
-      @click="emit('open-config')"
-    >
-      <SettingsIcon class="app-login-config-btn-icon" aria-hidden="true" />
-    </button>
 
     <div class="app-login-shell safe-top safe-bottom">
       <div class="app-login-grid">

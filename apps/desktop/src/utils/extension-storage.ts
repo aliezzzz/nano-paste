@@ -1,4 +1,4 @@
-import { DEFAULT_API_BASE_URL, EXT_STORAGE_KEYS } from "../constants/extension-storage";
+import { EXT_STORAGE_KEYS } from "../constants/extension-storage";
 
 type ExtensionStorageArea = "local" | "sync" | "session";
 
@@ -82,32 +82,6 @@ export async function clearAuthStorage(): Promise<void> {
       EXT_STORAGE_KEYS.authUsername,
     ]),
   ]);
-}
-
-export async function readRuntimeApiBaseUrl(): Promise<string> {
-  if (!isChromeExtensionRuntime()) {
-    return DEFAULT_API_BASE_URL;
-  }
-
-  const data = await getChromeStorageValues("sync", [EXT_STORAGE_KEYS.runtimeApiBaseUrl]);
-  const fromStorage = readStringValue(data[EXT_STORAGE_KEYS.runtimeApiBaseUrl]);
-  return fromStorage || DEFAULT_API_BASE_URL;
-}
-
-export async function writeRuntimeApiBaseUrl(value: string): Promise<void> {
-  if (!isChromeExtensionRuntime()) {
-    return;
-  }
-
-  const normalized = value.trim().replace(/\/+$/, "");
-  if (!normalized) {
-    await removeChromeStorageValues("sync", [EXT_STORAGE_KEYS.runtimeApiBaseUrl]);
-    return;
-  }
-
-  await setChromeStorageValues("sync", {
-    [EXT_STORAGE_KEYS.runtimeApiBaseUrl]: normalized,
-  });
 }
 
 function getChromeStorageArea(area: ExtensionStorageArea): chrome.storage.StorageArea | null {

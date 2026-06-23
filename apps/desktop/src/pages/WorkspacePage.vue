@@ -8,7 +8,6 @@ import type { ItemActionPayload } from "../types/workspace";
 
 const emit = defineEmits<{
   (e: "logged-out"): void;
-  (e: "open-config"): void;
 }>();
 
 const props = defineProps<{ isAuthenticated: boolean }>();
@@ -48,7 +47,6 @@ async function handleItemActionWrapper(payload: ItemActionPayload): Promise<void
       :code-preview="bridge.codePreview.value"
       :topics="bridge.topics.value"
       :active-topic="bridge.activeTopic.value"
-      @open-config="emit('open-config')"
       @logout="bridge.logout"
       @send-text="bridge.sendTextItem"
       @upload-files="bridge.uploadFiles"

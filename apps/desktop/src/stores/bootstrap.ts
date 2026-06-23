@@ -1,9 +1,7 @@
 import { useAuthStore } from "./auth";
-import { useRuntimeStore } from "./runtime";
 import {
   isChromeExtensionRuntime,
   readAuthStorage,
-  readRuntimeApiBaseUrl,
 } from "../utils/extension-storage";
 
 export async function bootstrapStoresFromExtensionStorage(): Promise<void> {
@@ -12,13 +10,7 @@ export async function bootstrapStoresFromExtensionStorage(): Promise<void> {
   }
 
   const authStore = useAuthStore();
-  const runtimeStore = useRuntimeStore();
 
-  const [authSnapshot, runtimeApiBaseUrl] = await Promise.all([
-    readAuthStorage(),
-    readRuntimeApiBaseUrl(),
-  ]);
-
+  const authSnapshot = await readAuthStorage();
   authStore.applyPersistedState(authSnapshot);
-  runtimeStore.applyPersistedState({ apiBaseUrl: runtimeApiBaseUrl });
 }

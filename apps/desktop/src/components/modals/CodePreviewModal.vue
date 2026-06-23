@@ -17,16 +17,16 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
 </script>
 
 <template>
-  <div class="code-modal-backdrop" tabindex="-1" @click.self="emit('close')" @keydown.escape="emit('close')">
-    <section class="code-modal" role="dialog" aria-modal="true" aria-label="代码预览">
+  <div class="code-modal-backdrop" @click="emit('close')">
+    <section class="code-modal" role="dialog" aria-modal="true" aria-label="代码预览" @click.stop>
+      <button type="button" class="code-modal-close" aria-label="关闭" @click="emit('close')">✕</button>
       <header class="code-modal-head">
         <div>
           <h2 class="code-modal-title">{{ props.title || '代码预览' }}</h2>
           <p class="code-modal-subtitle">{{ displayLanguage }}</p>
         </div>
-        <button type="button" class="code-modal-close" @click="emit('close')">关闭</button>
       </header>
-      <pre class="code-block" tabindex="0"><code v-html="highlighted.html"></code></pre>
+      <pre class="code-block"><code v-html="highlighted.html"></code></pre>
     </section>
   </div>
 </template>
@@ -43,6 +43,7 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
 }
 
 .code-modal {
+  position: relative;
   width: min(920px, 100%);
   height: min(720px, calc(100dvh - 48px));
   min-height: 0;
@@ -60,10 +61,10 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding: 14px 16px;
+  padding-right: 48px;
 }
 
 .code-modal-title {
@@ -78,12 +79,24 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
 }
 
 .code-modal-close {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
   color: #c9d1d9;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 700;
-  padding: 7px 12px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.code-modal-close:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .code-block {
@@ -98,11 +111,6 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
   line-height: 1.6;
   tab-size: 2;
   -webkit-overflow-scrolling: touch;
-}
-
-.code-block:focus {
-  outline: none;
-  box-shadow: inset 0 0 0 1px rgba(121, 192, 255, 0.32);
 }
 
 .code-block :deep(.hljs-keyword),
@@ -135,17 +143,23 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
 
 @media (max-width: 720px) {
   .code-modal-backdrop {
-    padding: 12px;
+    padding: 8px;
   }
 
   .code-modal {
     width: 100%;
-    height: calc(100dvh - 24px);
-    border-radius: 18px;
+    height: calc(100dvh - 16px);
+    border-radius: 16px;
   }
 
   .code-modal-head {
     padding: 12px;
+    padding-right: 44px;
+  }
+
+  .code-modal-close {
+    top: 8px;
+    right: 8px;
   }
 
   .code-block {
