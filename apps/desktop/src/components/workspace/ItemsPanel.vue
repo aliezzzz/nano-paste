@@ -620,7 +620,8 @@ onBeforeUnmount(() => {
 }
 
 .item-card--favorite {
-  border-color: color-mix(in srgb, var(--accent) 36%, var(--border-subtle));
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), 0.08), var(--bg-card) 42%);
+  box-shadow: inset 3px 0 0 var(--text-accent);
 }
 
 .item-text-content {

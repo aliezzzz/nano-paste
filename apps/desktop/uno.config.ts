@@ -157,7 +157,7 @@ export default defineConfig({
       "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl py-0 px-2 pb-2 shadow-[var(--shadow-sm)]",
 
     // SendPanel.vue
-    "send-panel": "p-2 md:p-4 md:border-b md:border-[var(--border-soft)]",
+    "send-panel": "p-2 md:p-4",
     "send-panel-title":
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
     "send-panel-title-icon": "w-4 h-4 text-[var(--text-accent)]",
@@ -200,10 +200,10 @@ export default defineConfig({
 
     // MobileTabs.vue
     "mobile-tabs-nav":
-      "fixed bottom-0 left-0 right-0 h-18 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50 pb-safe",
+      "fixed bottom-0 left-0 right-0 h-16 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50 pb-safe",
     "mobile-tab-btn":
       "flex flex-col items-center gap-1.5 py-2 px-8 transition-all",
-    "mobile-tab-btn--active": "text-[var(--text-accent)] scale-110",
+    "mobile-tab-btn--active": "text-[var(--text-accent)] scale-105",
     "mobile-tab-btn--inactive": "text-[var(--text-muted)] opacity-60",
     "mobile-tab-icon": "w-6 h-6",
     "mobile-tab-label": "text-[10px] font-bold uppercase tracking-tighter",
@@ -246,9 +246,9 @@ export default defineConfig({
     "favorite-btn":
       "w-7 h-7 md:w-8 md:h-8 rounded-xl transition-all flex items-center justify-center",
     "favorite-btn--active":
-      "text-amber-500 bg-amber-500/10 hover:bg-amber-500/20",
+      "text-[var(--text-accent)] bg-[rgba(var(--accent-rgb),0.1)] hover:bg-[rgba(var(--accent-rgb),0.18)]",
     "favorite-btn--inactive":
-      "text-[var(--text-muted)] hover:text-amber-500 hover:bg-amber-500/5",
+      "text-[var(--text-muted)] hover:text-[var(--text-accent)] hover:bg-[rgba(var(--accent-rgb),0.05)]",
     "item-body": "mb-3 md:mb-4",
     "item-text-content":
       "text-xs md:text-base text-[var(--text-main)] opacity-85 whitespace-pre-wrap leading-relaxed font-normal",
@@ -262,15 +262,15 @@ export default defineConfig({
     "action-btn--file": "text-amber-600 bg-amber-500/10 hover:bg-amber-500/20",
     "action-btn-icon": "w-3.5 h-3.5 md:w-4 md:h-4",
     "footer-meta": "flex items-center gap-1.5 md:gap-4 shrink-0",
-    "file-sz": "text-xs font-medium opacity-50 whitespace-nowrap uppercase tracking-wider",
+    "file-sz": "text-xs font-medium opacity-70 whitespace-nowrap uppercase tracking-wider",
 
     timestamp:
-      "text-xs text-[var(--text-muted)] opacity-50 whitespace-nowrap",
+      "text-xs text-[var(--text-muted)] opacity-70 whitespace-nowrap",
     "delete-btn":
       "flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold text-red-500 hover:bg-red-500/5 transition-all whitespace-nowrap shrink-0",
     "delete-btn-icon": "w-3 h-3 md:w-3.5 md:h-3.5",
     "items-empty-state":
-      "pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] opacity-40",
+      "pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] opacity-60",
     "items-empty-icon": "w-14 h-14 md:w-16 md:h-16 mb-4",
   },
   content: {
