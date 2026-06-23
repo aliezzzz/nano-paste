@@ -67,15 +67,17 @@ describe("ItemsPanel", () => {
     expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
   });
 
-  it("emits selected topic from topic filter", async () => {
+  it("emits selected topic from topic filter dropdown", async () => {
     const wrapper = mount(ItemsPanel, {
       props: {
         items,
         topics: [{ name: "工作", count: 2 }],
       },
+      attachTo: document.body,
     });
 
-    await wrapper.get('[data-testid="topic-filter"]').findAll("button")[1].trigger("click");
+    await wrapper.get('[data-testid="topic-filter-toggle"]').trigger("click");
+    await wrapper.get('[data-testid="topic-filter-menu"]').findAll("button")[1].trigger("click");
 
     expect(wrapper.emitted("select-topic")?.[0]?.[0]).toBe("工作");
   });

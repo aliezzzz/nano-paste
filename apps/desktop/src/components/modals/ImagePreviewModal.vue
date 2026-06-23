@@ -96,12 +96,16 @@ onUnmounted(() => {
 
 .image-preview-title {
   margin: 0;
-  color: var(--text-main);
+  color: #111;
   font-size: 14px;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+:global(.dark) .image-preview-title {
+  color: #fff;
 }
 
 .image-preview-size {

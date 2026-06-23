@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from "vue";
 import { formatBytes } from "../../utils/format";
 import { isImageFile } from "../../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
@@ -37,6 +37,8 @@ const emit = defineEmits<{
 
 const searchQuery = ref("");
 const rotating = ref(false);
+const topicFilterOpen = ref(false);
+const topicFilterRef = ref<HTMLElement | null>(null);
 let rotateTimer: number | null = null;
 
 const filteredItems = computed(() => {
@@ -57,6 +59,8 @@ const filteredItems = computed(() => {
 const favoriteItems = computed(() => filteredItems.value.filter((item) => item.isFavorite));
 const hasVisibleItems = computed(() => filteredItems.value.length > 0);
 const isFavoritesMode = computed(() => props.mode === "favorites");
+const activeTopicLabel = computed(() => props.activeTopic || "全部");
+const hasTopics = computed(() => props.topics.length > 0);
 
 function refreshItems(): void {
   if (props.loading) return;
@@ -75,6 +79,17 @@ function refreshItems(): void {
 
 function selectTopic(topic: string): void {
   emit("select-topic", topic);
+  topicFilterOpen.value = false;
+}
+
+function toggleTopicFilter(): void {
+  topicFilterOpen.value = !topicFilterOpen.value;
+}
+
+function closeTopicFilter(event: MouseEvent): void {
+  if (topicFilterRef.value && !topicFilterRef.value.contains(event.target as Node)) {
+    topicFilterOpen.value = false;
+  }
 }
 
 function formatItemTime(value: string): string {
@@ -144,6 +159,14 @@ function updateItemTopic(item: ItemView, topic: string): void {
   });
 }
 
+onMounted(() => {
+  document.addEventListener("click", closeTopicFilter);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", closeTopicFilter);
+});
+
 onBeforeUnmount(() => {
   if (rotateTimer !== null) {
     window.clearTimeout(rotateTimer);
@@ -154,57 +177,68 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="items-panel">
-    <div class="panel-header items-panel-topline">
+    <div class="items-title-row">
       <h2 class="panel-title">
         <ClockIcon class="panel-title-icon" />
         {{ isFavoritesMode ? '我的收藏' : '内容中转台' }}
       </h2>
-      <div class="panel-actions">
-        <label class="items-search-wrap">
-          <input
-            v-model="searchQuery"
-            data-testid="items-search"
-            class="items-search"
-            type="search"
-            placeholder="搜索文本、文件名或标签"
-          >
-        </label>
+    </div>
+    <div class="items-toolbar-row">
+      <label class="items-search-wrap">
+        <input
+          v-model="searchQuery"
+          data-testid="items-search"
+          class="items-search"
+          type="search"
+          placeholder="搜索文本、文件名或标签"
+        >
+      </label>
+      <div v-if="hasTopics" ref="topicFilterRef" class="topic-filter-dropdown">
         <button
           type="button"
-          class="refresh-btn"
-          :class="props.loading ? 'refresh-btn--loading' : 'refresh-btn--idle'"
-          :disabled="props.loading"
-          title="刷新条目"
-          @click="refreshItems"
+          data-testid="topic-filter-toggle"
+          class="topic-filter-btn"
+          :class="topicFilterOpen ? 'topic-filter-btn--open' : ''"
+          @click="toggleTopicFilter"
         >
-          <RefreshIcon
-            class="refresh-icon"
-            :class="rotating ? 'refresh-icon--rotating' : ''"
-            aria-hidden="true"
-          />
+          <span>{{ activeTopicLabel }}</span>
+          <span class="topic-filter-arrow">{{ topicFilterOpen ? '▴' : '▾' }}</span>
         </button>
+        <div v-if="topicFilterOpen" data-testid="topic-filter-menu" class="topic-filter-menu custom-scrollbar">
+          <button
+            type="button"
+            class="topic-chip"
+            :class="props.activeTopic === '' ? 'topic-chip--active' : ''"
+            @click="selectTopic('')"
+          >
+            全部
+          </button>
+          <button
+            v-for="topic in props.topics"
+            :key="topic.name"
+            type="button"
+            class="topic-chip"
+            :class="props.activeTopic === topic.name ? 'topic-chip--active' : ''"
+            @click="selectTopic(topic.name)"
+          >
+            <span>{{ topic.name }}</span>
+            <span class="topic-chip-count">{{ topic.count }}</span>
+          </button>
+        </div>
       </div>
-    </div>
-
-    <div class="items-topic-filter" data-testid="topic-filter">
       <button
         type="button"
-        class="topic-chip"
-        :class="props.activeTopic === '' ? 'topic-chip--active' : ''"
-        @click="selectTopic('')"
+        class="refresh-btn"
+        :class="props.loading ? 'refresh-btn--loading' : 'refresh-btn--idle'"
+        :disabled="props.loading"
+        title="刷新条目"
+        @click="refreshItems"
       >
-        全部
-      </button>
-      <button
-        v-for="topic in props.topics"
-        :key="topic.name"
-        type="button"
-        class="topic-chip"
-        :class="props.activeTopic === topic.name ? 'topic-chip--active' : ''"
-        @click="selectTopic(topic.name)"
-      >
-        <span>{{ topic.name }}</span>
-        <span class="topic-chip-count">{{ topic.count }}</span>
+        <RefreshIcon
+          class="refresh-icon"
+          :class="rotating ? 'refresh-icon--rotating' : ''"
+          aria-hidden="true"
+        />
       </button>
     </div>
 
@@ -213,17 +247,11 @@ onBeforeUnmount(() => {
     <div class="list-container">
       <div v-if="hasVisibleItems" id="items-list" class="items-list custom-scrollbar">
         <section v-if="isFavoritesMode" data-testid="mobile-favorites-section" class="items-section">
-          <div class="items-section-head">
-            <div>
-              <h3 class="items-section-title">我的收藏</h3>
-            </div>
-            <span class="items-section-count">{{ favoriteItems.length }}</span>
-          </div>
           <div v-if="favoriteItems.length === 0" class="items-section-empty">还没有收藏内容</div>
           <article v-for="item in favoriteItems" :key="item.id" class="item-card group item-card--favorite">
-            <div class="item-layout">
+            <div class="item-main">
               <div class="item-icon" v-html="item.iconSvg"></div>
-              <div class="item-content">
+              <div class="item-body">
                 <div class="item-header">
                   <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
                   <button class="favorite-btn favorite-btn--active" title="取消收藏" @click="emit('item-action', itemPayload(item, 'favorite'))">
@@ -231,33 +259,31 @@ onBeforeUnmount(() => {
                   </button>
                 </div>
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
-                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
-                <div class="item-footer">
-                  <div class="item-actions-left">
-                    <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
-                      <component :is="actionIcon(item)" class="action-btn-icon" />
-                      {{ actionLabel(item) }}
-                    </button>
-                    <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
-                  </div>
-                  <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
-                </div>
               </div>
+            </div>
+            <div class="item-footer">
+              <div class="item-actions-left">
+                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
+                <button v-if="isCodeItem(item)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                  <CopyIcon class="action-btn-icon" />
+                  复制
+                </button>
+                <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                  <component :is="actionIcon(item)" class="action-btn-icon" />
+                  {{ actionLabel(item) }}
+                </button>
+                <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+              </div>
+              <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
             </div>
           </article>
         </section>
 
         <section v-if="!isFavoritesMode" data-testid="all-section" class="items-section">
-          <div class="items-section-head">
-            <div>
-              <h3 class="items-section-title">全部内容</h3>
-            </div>
-            <span class="items-section-count">{{ filteredItems.length }}</span>
-          </div>
           <article v-for="item in filteredItems" :key="item.id" class="item-card group" :class="item.isFavorite ? 'item-card--favorite' : ''">
-            <div class="item-layout">
+            <div class="item-main">
               <div class="item-icon" v-html="item.iconSvg"></div>
-              <div class="item-content">
+              <div class="item-body">
                 <div class="item-header">
                   <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
                   <button class="favorite-btn" :class="item.isFavorite ? 'favorite-btn--active' : 'favorite-btn--inactive'" :title="item.isFavorite ? '取消收藏' : '收藏'" @click="emit('item-action', itemPayload(item, 'favorite'))">
@@ -265,23 +291,27 @@ onBeforeUnmount(() => {
                   </button>
                 </div>
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
+              </div>
+            </div>
+            <div class="item-footer">
+              <div class="item-actions-left">
                 <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
-                <div class="item-footer">
-                  <div class="item-actions-left">
-                    <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
-                      <component :is="actionIcon(item)" class="action-btn-icon" />
-                      {{ actionLabel(item) }}
-                    </button>
-                    <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
-                  </div>
-                  <div class="footer-meta">
-                    <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
-                    <button class="delete-btn" title="删除" @click="emit('item-action', itemPayload(item, 'delete'))">
-                      <DeleteIcon class="delete-btn-icon" />
-                      删除
-                    </button>
-                  </div>
-                </div>
+                <button v-if="isCodeItem(item)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                  <CopyIcon class="action-btn-icon" />
+                  复制
+                </button>
+                <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                  <component :is="actionIcon(item)" class="action-btn-icon" />
+                  {{ actionLabel(item) }}
+                </button>
+                <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+              </div>
+              <div class="footer-meta">
+                <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
+                <button class="delete-btn" title="删除" @click="emit('item-action', itemPayload(item, 'delete'))">
+                  <DeleteIcon class="delete-btn-icon" />
+                  删除
+                </button>
               </div>
             </div>
           </article>
@@ -306,14 +336,23 @@ onBeforeUnmount(() => {
   padding: 0;
 }
 
-.refresh-icon--rotating {
-  animation: refresh-spin-once 620ms ease-in-out 1;
+.items-title-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.items-panel-topline {
-  flex: 0 0 44px;
-  min-height: 44px;
-  margin: 0;
+.items-toolbar-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.refresh-icon--rotating {
+  animation: refresh-spin-once 620ms ease-in-out 1;
 }
 
 .loading-text {
@@ -330,56 +369,65 @@ onBeforeUnmount(() => {
   to { transform: rotate(360deg); }
 }
 
-.items-topic-filter {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 0 0 36px;
-  height: 36px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 3px 0;
-  scrollbar-width: none;
+.topic-filter-dropdown {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.items-topic-filter::-webkit-scrollbar {
-  display: none;
-}
-
-.topic-chip {
+.topic-filter-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex: 0 0 auto;
-  height: 28px;
+  height: 36px;
+  max-width: 140px;
   border: 1px solid var(--border-soft);
-  border-radius: 999px;
+  border-radius: 12px;
   background: var(--bg-card);
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   padding: 0 10px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.topic-chip:hover {
+.topic-filter-btn span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topic-filter-btn:hover {
   border-color: var(--border-strong);
   color: var(--text-main);
 }
 
-.topic-chip--active {
+.topic-filter-btn--open {
   border-color: rgba(var(--accent-rgb), 0.35);
-  background: rgba(var(--accent-rgb), 0.1);
   color: var(--text-accent);
 }
 
-.topic-chip-count {
-  min-width: 18px;
-  border-radius: 999px;
-  background: var(--border-soft);
-  color: inherit;
+.topic-filter-arrow {
+  flex: 0 0 auto;
   font-size: 10px;
-  line-height: 1;
-  padding: 3px 5px;
+  opacity: 0.7;
+}
+
+.topic-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 280px;
+  padding: 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-md);
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 .items-search-wrap {
@@ -407,39 +455,16 @@ onBeforeUnmount(() => {
 
 .items-section {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
 }
 
 .items-section + .items-section {
-  margin-top: 12px;
-}
-
-.items-section-head {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2px 0;
-}
-
-.items-section-title {
-  margin: 0;
-  color: var(--text-primary);
-  font-size: 14px;
-}
-
-.items-section-count {
-  min-width: 28px;
-  border-radius: 999px;
-  background: var(--surface-raised);
-  color: var(--text-muted);
-  text-align: center;
-  font-size: 12px;
-  padding: 4px 8px;
+  margin-top: 16px;
 }
 
 .items-section-empty {
+  grid-column: 1 / -1;
   border: 1px dashed var(--border-subtle);
   border-radius: 18px;
   color: var(--text-muted);
@@ -448,14 +473,14 @@ onBeforeUnmount(() => {
 }
 
 .item-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 130px;
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   background: var(--bg-card);
   padding: 12px;
   box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
@@ -464,10 +489,12 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-md);
 }
 
-.item-layout {
+.item-main {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .item-icon {
@@ -486,43 +513,30 @@ onBeforeUnmount(() => {
   height: 20px;
 }
 
-.item-content {
+.item-body {
   min-width: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 
-.item-content :deep(.meta-tags) {
+.item-body :deep(.meta-tags) {
   margin-top: 0;
   gap: 4px;
 }
 
-.item-content :deep(.meta-topic),
-.item-content :deep(.meta-tag) {
+.item-body :deep(.meta-topic),
+.item-body :deep(.meta-tag) {
   font-size: 10px;
   padding: 2px 7px;
 }
 
-.item-header,
-.item-header,
-.item-footer,
-.footer-meta,
-.item-actions-left {
+.item-header {
   display: flex;
   align-items: center;
-}
-
-.item-header {
   justify-content: space-between;
   gap: 8px;
-}
-
-.item-footer {
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: auto;
 }
 
 .item-title {
@@ -532,15 +546,29 @@ onBeforeUnmount(() => {
   font-size: 14px;
   font-weight: 700;
   line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  word-break: break-word;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-title--file {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
+}
+
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-top: 8px;
+}
+
+.footer-meta,
+.item-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .favorite-btn {
@@ -610,7 +638,7 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.5;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
@@ -638,9 +666,36 @@ onBeforeUnmount(() => {
   font-size: 10px;
   font-weight: 500;
   color: var(--text-muted);
-  opacity: 0.5;
+  opacity: 0.7;
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+  .items-panel {
+    padding: 0 10px;
+  }
+
+  .items-section {
+    grid-template-columns: 1fr;
+  }
+
+  .item-title {
+    white-space: normal;
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .topic-filter-btn {
+    max-width: 100px;
+  }
+
+  .items-toolbar-row {
+    flex-wrap: wrap;
+  }
 }
 </style>

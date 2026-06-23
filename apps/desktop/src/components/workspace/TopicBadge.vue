@@ -105,8 +105,9 @@ function save(): void {
 .meta-tags {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin: 0;
 }
 
 .meta-topic {
@@ -128,11 +129,11 @@ function save(): void {
   background: var(--border-soft);
   color: var(--text-muted);
   font-weight: 500;
-  opacity: 0;
+  opacity: 0.6;
   transition: opacity 0.15s ease;
 }
 
-.group:hover .meta-topic--empty {
+.meta-topic--empty:hover {
   opacity: 1;
 }
 
