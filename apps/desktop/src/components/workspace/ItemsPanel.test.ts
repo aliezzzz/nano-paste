@@ -30,6 +30,7 @@ const items: ItemView[] = [
     content: "const answer = 42;",
     contentKind: "code",
     language: "typescript",
+    topic: "代码",
     isFavorite: false,
     createdAt: "2026-06-08T12:00:00Z",
     iconSvg: "<svg></svg>",
@@ -100,8 +101,9 @@ describe("ItemsPanel", () => {
   it("emits code preview action for code items", async () => {
     const wrapper = mount(ItemsPanel, { props: { items } });
 
-    const buttons = wrapper.findAll("button").filter((button) => button.text().includes("预览代码"));
-    await buttons[0].trigger("click");
+    const codeCard = wrapper.findAll("article").find((card) => card.text().includes("const answer = 42;"));
+    const previewButton = codeCard?.findAll("button").find((button) => button.text().trim() === "预览");
+    await previewButton?.trigger("click");
 
     const emitted = wrapper.emitted("item-action") ?? [];
     expect(emitted[emitted.length - 1]?.[0]).toEqual(expect.objectContaining({
@@ -109,5 +111,18 @@ describe("ItemsPanel", () => {
       action: "preview-code",
       language: "typescript",
     }));
+  });
+
+  it("hides sibling footer actions while editing topic", async () => {
+    const wrapper = mount(ItemsPanel, { props: { items } });
+    const codeCard = wrapper.findAll("article").find((card) => card.text().includes("const answer = 42;"));
+
+    await codeCard?.find(".meta-topic").trigger("click");
+
+    expect(codeCard?.find(".topic-edit").exists()).toBe(true);
+    expect(codeCard?.text()).not.toContain("复制");
+    expect(codeCard?.text()).not.toContain("预览");
+    expect(codeCard?.find(".timestamp").exists()).toBe(false);
+    expect(codeCard?.find(".delete-btn").exists()).toBe(false);
   });
 });

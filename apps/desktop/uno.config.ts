@@ -200,7 +200,7 @@ export default defineConfig({
 
     // MobileTabs.vue
     "mobile-tabs-nav":
-      "fixed bottom-0 left-0 right-0 h-16 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50 pb-safe",
+      "fixed bottom-0 left-0 right-0 h-16 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50",
     "mobile-tab-btn":
       "flex flex-col items-center gap-1.5 py-2 px-8 transition-all",
     "mobile-tab-btn--active": "text-[var(--text-accent)] scale-105",

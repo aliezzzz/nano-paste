@@ -8,6 +8,7 @@ import RefreshIcon from "../../assets/icons/refresh.svg";
 import StarIcon from "../../assets/icons/star.svg";
 import CopyIcon from "../../assets/icons/copy.svg";
 import DownloadIcon from "../../assets/icons/download.svg";
+import CodeIcon from "../../assets/icons/code.svg";
 import DeleteIcon from "../../assets/icons/delete.svg";
 import InboxEmptyIcon from "../../assets/icons/inbox-empty.svg";
 import TopicBadge from "./TopicBadge.vue";
@@ -39,6 +40,7 @@ const searchQuery = ref("");
 const rotating = ref(false);
 const topicFilterOpen = ref(false);
 const topicFilterRef = ref<HTMLElement | null>(null);
+const editingTopicItemId = ref<string | null>(null);
 let rotateTimer: number | null = null;
 
 const filteredItems = computed(() => {
@@ -135,7 +137,7 @@ function primaryAction(item: ItemView): ItemActionPayload["action"] {
 function actionLabel(item: ItemView): string {
   const action = primaryAction(item);
   if (action === "copy") return "复制";
-  if (action === "preview-code") return "预览代码";
+  if (action === "preview-code") return "预览";
   if (action === "preview") return "预览";
   return "下载";
 }
@@ -143,6 +145,7 @@ function actionLabel(item: ItemView): string {
 function actionIcon(item: ItemView) {
   const action = primaryAction(item);
   if (action === "download" || action === "preview") return DownloadIcon;
+  if (action === "preview-code") return CodeIcon;
   return CopyIcon;
 }
 
@@ -157,6 +160,20 @@ function updateItemTopic(item: ItemView, topic: string): void {
     isFavorite: item.isFavorite,
     topic,
   });
+}
+
+function startTopicEdit(itemId: string): void {
+  editingTopicItemId.value = itemId;
+}
+
+function endTopicEdit(itemId: string): void {
+  if (editingTopicItemId.value === itemId) {
+    editingTopicItemId.value = null;
+  }
+}
+
+function isTopicEditing(itemId: string): boolean {
+  return editingTopicItemId.value === itemId;
 }
 
 onMounted(() => {
@@ -261,20 +278,20 @@ onBeforeUnmount(() => {
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
               </div>
             </div>
-            <div class="item-footer">
+            <div class="item-footer" :class="isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''">
               <div class="item-actions-left">
-                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
-                <button v-if="isCodeItem(item)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                <TopicBadge :topic="item.topic" :tags="item.tags" @edit-start="startTopicEdit(item.id)" @edit-end="endTopicEdit(item.id)" @update-topic="updateItemTopic(item, $event)" />
+                <button v-if="isCodeItem(item) && !isTopicEditing(item.id)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
                   <CopyIcon class="action-btn-icon" />
                   复制
                 </button>
-                <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                <button v-if="!isTopicEditing(item.id)" class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
                   <component :is="actionIcon(item)" class="action-btn-icon" />
                   {{ actionLabel(item) }}
                 </button>
-                <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+                <span v-if="item.type === 'file' && item.fileSize && !isTopicEditing(item.id)" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
               </div>
-              <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
+              <span v-if="!isTopicEditing(item.id)" class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
             </div>
           </article>
         </section>
@@ -293,20 +310,20 @@ onBeforeUnmount(() => {
                 <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
               </div>
             </div>
-            <div class="item-footer">
+            <div class="item-footer" :class="isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''">
               <div class="item-actions-left">
-                <TopicBadge :topic="item.topic" :tags="item.tags" @update-topic="updateItemTopic(item, $event)" />
-                <button v-if="isCodeItem(item)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                <TopicBadge :topic="item.topic" :tags="item.tags" @edit-start="startTopicEdit(item.id)" @edit-end="endTopicEdit(item.id)" @update-topic="updateItemTopic(item, $event)" />
+                <button v-if="isCodeItem(item) && !isTopicEditing(item.id)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
                   <CopyIcon class="action-btn-icon" />
                   复制
                 </button>
-                <button class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                <button v-if="!isTopicEditing(item.id)" class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
                   <component :is="actionIcon(item)" class="action-btn-icon" />
                   {{ actionLabel(item) }}
                 </button>
-                <span v-if="item.type === 'file' && item.fileSize" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+                <span v-if="item.type === 'file' && item.fileSize && !isTopicEditing(item.id)" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
               </div>
-              <div class="footer-meta">
+              <div v-if="!isTopicEditing(item.id)" class="footer-meta">
                 <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
                 <button class="delete-btn" title="删除" @click="emit('item-action', itemPayload(item, 'delete'))">
                   <DeleteIcon class="delete-btn-icon" />
@@ -334,6 +351,12 @@ onBeforeUnmount(() => {
   height: 100%;
   min-height: 0;
   padding: 0;
+}
+
+@media (min-width: 721px) {
+  .items-panel {
+    padding-right: 12px;
+  }
 }
 
 .items-title-row {
@@ -379,7 +402,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   height: 36px;
-  max-width: 140px;
+  max-width: 180px;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--bg-card);
@@ -465,7 +488,7 @@ onBeforeUnmount(() => {
 
 .items-section-empty {
   grid-column: 1 / -1;
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed var(--border-soft);
   border-radius: 18px;
   color: var(--text-muted);
   font-size: 12px;
@@ -475,6 +498,7 @@ onBeforeUnmount(() => {
 .item-card {
   display: flex;
   flex-direction: column;
+  gap: 8px;
   min-height: 130px;
   border: 1px solid var(--border-soft);
   border-radius: 16px;
@@ -521,17 +545,6 @@ onBeforeUnmount(() => {
   gap: 6px;
 }
 
-.item-body :deep(.meta-tags) {
-  margin-top: 0;
-  gap: 4px;
-}
-
-.item-body :deep(.meta-topic),
-.item-body :deep(.meta-tag) {
-  font-size: 10px;
-  padding: 2px 7px;
-}
-
 .item-header {
   display: flex;
   align-items: center;
@@ -561,7 +574,12 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 8px;
   flex: 0 0 auto;
-  margin-top: 8px;
+  min-height: 28px;
+  min-width: 0;
+}
+
+.item-footer--topic-editing .item-actions-left {
+  flex: 1 1 auto;
 }
 
 .footer-meta,
@@ -569,6 +587,19 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+
+.item-actions-left :deep(.topic-edit) {
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 0;
+}
+
+.item-actions-left :deep(.meta-tags) {
+  min-width: 0;
 }
 
 .favorite-btn {
@@ -648,7 +679,7 @@ onBeforeUnmount(() => {
   display: grid;
   justify-items: center;
   gap: 8px;
-  border: 1px dashed var(--border-subtle);
+  border: 1px dashed var(--border-soft);
   border-radius: 24px;
   color: var(--text-muted);
   padding: 22px 16px;
@@ -658,7 +689,7 @@ onBeforeUnmount(() => {
 }
 
 .items-empty-state strong {
-  color: var(--text-primary);
+  color: var(--text-main);
   font-size: 16px;
 }
 
@@ -673,10 +704,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 720px) {
-  .items-panel {
-    padding: 0 10px;
-  }
-
   .items-section {
     grid-template-columns: 1fr;
   }
@@ -691,7 +718,7 @@ onBeforeUnmount(() => {
   }
 
   .topic-filter-btn {
-    max-width: 100px;
+    max-width: 132px;
   }
 
   .items-toolbar-row {

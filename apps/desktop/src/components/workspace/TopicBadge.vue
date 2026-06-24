@@ -8,6 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update-topic", topic: string): void;
+  (e: "edit-start"): void;
+  (e: "edit-end"): void;
 }>();
 
 const editing = ref(false);
@@ -16,17 +18,20 @@ const editValue = ref("");
 function startEdit(): void {
   editing.value = true;
   editValue.value = props.topic || "";
+  emit("edit-start");
 }
 
 function cancelEdit(): void {
   editing.value = false;
   editValue.value = "";
+  emit("edit-end");
 }
 
 function save(): void {
   emit("update-topic", editValue.value.trim());
   editing.value = false;
   editValue.value = "";
+  emit("edit-end");
 }
 </script>
 
@@ -59,24 +64,28 @@ function save(): void {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  height: 28px;
+  margin: 0;
 }
 
 .topic-edit-input {
   flex: 1;
   min-width: 0;
-  padding: 4px 10px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px;
   border: 1.5px solid var(--text-accent);
   border-radius: 999px;
   background: var(--bg-card);
   color: var(--text-main);
   font-size: 12px;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
 }
 
 .topic-edit-btn {
-  padding: 4px 10px;
+  height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -139,8 +148,8 @@ function save(): void {
 
 .meta-tag {
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--text-accent);
   font-size: 11px;
   padding: 3px 8px;
 }

@@ -74,7 +74,7 @@ onUnmounted(() => {
   max-width: 90vw;
   max-height: 90vh;
   border-radius: 18px;
-  background: var(--surface-card, #fff);
+  background: var(--bg-card);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
@@ -84,7 +84,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .image-preview-info {

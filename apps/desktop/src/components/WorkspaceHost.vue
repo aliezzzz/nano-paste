@@ -251,7 +251,7 @@ function selectTopic(topic: string): void {
                 </header>
             </div>
 
-            <main class="host-mobile-main safe-bottom-tabs" id="mobile-content">
+            <main class="host-mobile-main" id="mobile-content">
                 <div
                     v-if="activeMobileTab === 'send'"
                     class="host-mobile-send custom-scrollbar"

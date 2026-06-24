@@ -145,6 +145,63 @@
 - 网络错误统一由 `ApiClient` / `ApiRequestError` 承接。
 - 不要静默吞错；若有意忽略，需体现明确意图。
 
+### 6.5 Desktop UI 样式阅读顺序（UnoCSS + scoped）
+
+`apps/desktop/uno.config.ts` 中的 UnoCSS shortcuts 已经承担组件级设计系统职责，不是简单 class alias。修改 UI 前必须把 shortcut 当作设计系统入口阅读。
+
+#### 6.5.1 必读顺序
+
+修改任意 `apps/desktop` UI 样式前，按顺序确认：
+
+1. 组件模板中的 class 名。
+2. `apps/desktop/uno.config.ts` 中对应 shortcut 的完整定义，特别是 `md:` / `lg:` / `max-*` 响应式前缀。
+3. `apps/desktop/src/assets/css/global.css` 中相关 CSS variable 在 light/dark 下的实际值，如 `--bg-card`、`--text-main`、`--border-soft`、`--accent-glow`。
+4. 当前组件 `<style scoped>` 是否定义了同名 class 或同一属性。
+5. 父级容器是否已经提供 padding / gap / overflow / height，不要只看当前组件。
+
+#### 6.5.2 scoped 与 shortcut 的关系
+
+- scoped 样式会编译为带 `[data-v-xxx]` 的选择器，通常会覆盖同名 UnoCSS 原子类。
+- UnoCSS shortcut 里带 `md:` / `lg:` 的规则会生成媒体查询；如果 scoped 样式没有对应 `@media` 覆盖，断点内的 shortcut 规则仍可能生效。
+- 如果一个 class 同时存在于 `uno.config.ts` shortcut 和组件 `<style scoped>`，必须明确谁负责布局、谁负责局部变体，避免两边同时改同一属性。
+
+#### 6.5.3 间距与滚动容器检查
+
+禁止在未检查父容器和 shortcut 的情况下，直接给当前组件添加 `padding`、`margin`、`height`、`overflow`。
+
+当前常见布局层级：
+
+```txt
+桌面端：
+  host-content
+    items-panel
+      items-list
+        item-card grid
+
+手机端：
+  host-mobile-items
+    items-panel
+      items-list
+        item-card grid
+```
+
+- 桌面端内容面板的间距通常来自 `items-panel` shortcut。
+- 手机端内容页外层间距通常来自 `WorkspaceHost.vue` 里的 `host-mobile-items` scoped 样式。
+- `items-list` 应是滚动容器；卡片网格间距应由 grid `gap` 控制，不要额外叠加右 padding 制造横向滚动条。
+
+#### 6.5.4 修改 UI 前 checklist
+
+开始改样式前先回答：
+
+- 当前 class 是否来自 `uno.config.ts` shortcut？
+- shortcut 是否有响应式前缀？
+- scoped 是否覆盖了同名 class 或同一属性？
+- 父容器是否已有 padding / gap / overflow？
+- CSS variable 在 light/dark 下实际颜色是什么？
+- 这次改动属于设计系统通用规则，还是组件局部变体？
+
+补充索引：修改桌面端 UI 前优先阅读 `docs/design-system.md`。
+
 ## 7. API 与数据约定
 
 - HTTP API 响应统一结构：`{ ok, data?, error? }`。
