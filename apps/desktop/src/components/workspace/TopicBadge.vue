@@ -63,31 +63,31 @@ function save(): void {
 .topic-edit {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
+  gap: 4px;
+  height: 26px;
   margin: 0;
 }
 
 .topic-edit-input {
   flex: 1;
   min-width: 0;
-  height: 28px;
+  height: 26px;
   box-sizing: border-box;
-  padding: 0 10px;
-  border: 1.5px solid var(--text-accent);
-  border-radius: 999px;
+  padding: 0 8px;
+  border: 1px solid var(--text-accent);
+  border-radius: 6px;
   background: var(--bg-card);
   color: var(--text-main);
-  font-size: 12px;
+  font-size: 11px;
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .topic-edit-btn {
-  height: 28px;
-  padding: 0 10px;
-  border-radius: 999px;
-  font-size: 11px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
   transition: all 0.15s ease;
@@ -115,17 +115,17 @@ function save(): void {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin: 0;
 }
 
 .meta-topic {
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--accent-soft);
   color: var(--text-accent);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 3px 10px;
+  padding: 2px 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -135,22 +135,23 @@ function save(): void {
 }
 
 .meta-topic--empty {
-  background: var(--border-soft);
-  color: var(--text-muted);
+  background: transparent;
+  color: var(--text-subtle);
   font-weight: 500;
-  opacity: 0.6;
+  opacity: 0.7;
   transition: opacity 0.15s ease;
 }
 
 .meta-topic--empty:hover {
   opacity: 1;
+  color: var(--text-accent);
 }
 
 .meta-tag {
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--text-accent);
-  font-size: 11px;
-  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font-size: 10px;
+  padding: 2px 5px;
 }
 </style>

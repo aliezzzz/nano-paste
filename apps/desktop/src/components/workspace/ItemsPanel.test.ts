@@ -38,11 +38,8 @@ const items: ItemView[] = [
 ];
 
 describe("ItemsPanel", () => {
-  it("renders a search box and filters by text content", async () => {
-    const wrapper = mount(ItemsPanel, { props: { items } });
-
-    const search = wrapper.get('[data-testid="items-search"]');
-    await search.setValue("设计");
+  it("filters by external search query", () => {
+    const wrapper = mount(ItemsPanel, { props: { items, searchQuery: "设计" } });
 
     expect(wrapper.text()).toContain("design.png");
     expect(wrapper.text()).not.toContain("会议纪要");
@@ -61,7 +58,6 @@ describe("ItemsPanel", () => {
   it("shows only favorite items in favorites mode", () => {
     const wrapper = mount(ItemsPanel, { props: { items, mode: "favorites" } });
 
-    expect(wrapper.text()).toContain("我的收藏");
     expect(wrapper.get('[data-testid="mobile-favorites-section"]').text()).toContain("会议纪要");
     expect(wrapper.text()).not.toContain("design.png");
     expect(wrapper.find('[data-testid="all-section"]').exists()).toBe(false);

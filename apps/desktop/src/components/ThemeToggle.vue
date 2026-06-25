@@ -62,42 +62,37 @@ function toggle() {
 
 <style scoped>
 .theme-toggle {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--bg-card);
-  border: 1.5px solid var(--border-soft);
-  color: var(--text-main);
-  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
   overflow: hidden;
   position: relative;
 }
 
 .theme-toggle:hover {
-  border-color: var(--text-accent);
-  transform: translateY(-1px);
-}
-
-.theme-toggle:active {
-  transform: translateY(0);
+  border-color: var(--border-strong);
+  color: var(--text-main);
 }
 
 .icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .icon-wrapper.light {
-  animation: rotate-in 0.5s ease-out;
+  animation: rotate-in 0.4s ease-out;
 }
 
 .icon-wrapper.dark {
-  animation: scale-in 0.5s ease-out;
+  animation: scale-in 0.4s ease-out;
 }
 
 @keyframes rotate-in {
@@ -123,10 +118,10 @@ function toggle() {
 }
 
 .sun-icon {
-  color: #d4a017; /* Amber sun */
+  color: #c89420;
 }
 
 .moon-icon {
-  color: #7c89ff; /* Soft violet moon */
+  color: var(--text-accent);
 }
 </style>

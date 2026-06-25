@@ -63,6 +63,7 @@ const emit = defineEmits<{
 }>(); 
 
 const activeMobileTab = ref<MobileTab>("send");
+const workspaceSearch = ref("");
 
 function logout(): void {
     emit("logout");
@@ -121,8 +122,22 @@ function selectTopic(topic: string): void {
                     <div class="host-brand-icon-wrap">
                         <TrayTemplateIcon class="host-brand-icon" />
                     </div>
-                    <span class="host-brand-text">NanoPaste</span>
+                    <div class="host-brand-copy">
+                        <span class="host-brand-text">NanoPaste</span>
+                        <span class="host-brand-subtitle">快速投递，随处粘贴</span>
+                    </div>
                 </div>
+
+                <label class="host-search" aria-label="搜索剪贴板内容">
+                    <span class="host-search-icon" aria-hidden="true"></span>
+                    <input
+                        v-model="workspaceSearch"
+                        class="host-search-input"
+                        type="search"
+                        placeholder="搜索剪贴板内容..."
+                    />
+                    <span class="host-search-kbd">Ctrl K</span>
+                </label>
 
                 <div class="host-header-actions">
                     <ThemeToggle class="mr-2" />
@@ -190,9 +205,11 @@ function selectTopic(topic: string): void {
                         :loading="props.itemsLoading"
                         :topics="props.topics"
                         :active-topic="props.activeTopic"
+                        :search-query="workspaceSearch"
                         @item-action="itemAction"
                         @refresh-items="refreshItems"
                         @select-topic="selectTopic"
+                        @update:search-query="workspaceSearch = $event"
                     />
                 </section>
             </main>
@@ -254,7 +271,7 @@ function selectTopic(topic: string): void {
             <main class="host-mobile-main" id="mobile-content">
                 <div
                     v-if="activeMobileTab === 'send'"
-                    class="host-mobile-send custom-scrollbar"
+                    class="host-mobile-send"
                 >
                     <SendPanel
                         :submitting="props.sendingText"
@@ -271,16 +288,18 @@ function selectTopic(topic: string): void {
                         @files-selected="uploadFiles"
                     />
                 </div>
-                <div v-else class="host-mobile-items custom-scrollbar">
+                <div v-else class="host-mobile-items">
                     <ItemsPanel
                         :items="props.items"
                         :loading="props.itemsLoading"
                         :topics="props.topics"
                         :active-topic="props.activeTopic"
                         :mode="activeMobileTab === 'favorites' ? 'favorites' : 'all'"
+                        :search-query="workspaceSearch"
                         @item-action="itemAction"
                         @refresh-items="refreshItems"
                         @select-topic="selectTopic"
+                        @update:search-query="workspaceSearch = $event"
                     />
                 </div>
             </main>
@@ -310,11 +329,95 @@ function selectTopic(topic: string): void {
 
 <style scoped>
 .host-sidebar {
-    gap: 14px;
+    gap: 10px;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 14px;
+    padding: 12px;
+}
+
+.host-brand-copy {
+    display: grid;
+    gap: 2px;
+}
+
+.host-brand-subtitle {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.host-search {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: flex;
+    width: min(440px, 38vw);
+    height: 40px;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-control);
+    background: var(--input-bg);
+    padding: 0 12px 0 16px;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.host-search:focus-within {
+    border-color: rgba(var(--accent-rgb), 0.38);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+.host-search-icon {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+    border: 2px solid var(--text-muted);
+    border-radius: 999px;
+    opacity: 0.72;
+}
+
+.host-search-icon::after {
+    content: "";
+    position: absolute;
+    right: -5px;
+    bottom: -4px;
+    width: 6px;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--text-muted);
+    transform: rotate(45deg);
+}
+
+.host-search-input {
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--text-main);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.host-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.host-search-kbd {
+    flex: 0 0 auto;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-control);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 4px 6px;
 }
 
 .host-content {
@@ -324,7 +427,7 @@ function selectTopic(topic: string): void {
 
 .host-mobile-send,
 .host-mobile-items {
-    padding: 12px;
+    padding: 10px;
 }
 
 .host-mobile-send {
@@ -334,7 +437,11 @@ function selectTopic(topic: string): void {
 
 @media (max-width: 960px) {
     .host-sidebar {
-        padding: 12px;
+        padding: 10px;
+    }
+
+    .host-search {
+        display: none;
     }
 }
 </style>

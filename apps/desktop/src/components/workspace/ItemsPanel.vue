@@ -1,20 +1,41 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, onUnmounted, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch, type Component } from "vue";
 import { formatBytes } from "../../utils/format";
 import { isImageFile } from "../../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
-import ClockIcon from "../../assets/icons/clock.svg";
 import RefreshIcon from "../../assets/icons/refresh.svg";
-import StarIcon from "../../assets/icons/star.svg";
+import HeartIcon from "../../assets/icons/heart.svg";
 import CopyIcon from "../../assets/icons/copy.svg";
 import DownloadIcon from "../../assets/icons/download.svg";
 import CodeIcon from "../../assets/icons/code.svg";
 import DeleteIcon from "../../assets/icons/delete.svg";
 import InboxEmptyIcon from "../../assets/icons/inbox-empty.svg";
+import GridIcon from "../../assets/icons/grid.svg";
+import TextIcon from "../../assets/icons/text.svg";
+import FileIcon from "../../assets/icons/folder.svg";
+import ImageIcon from "../../assets/icons/image.svg";
 import TopicBadge from "./TopicBadge.vue";
+import DropdownSelect from "./DropdownSelect.vue";
 import type { TopicInfo } from "./TopicList.vue";
 
 export type { ItemView };
+
+type CategoryKey = "all" | "text" | "code" | "file" | "image" | "favorite";
+
+interface CategoryDef {
+  key: CategoryKey;
+  label: string;
+  icon: Component;
+}
+
+const categories: CategoryDef[] = [
+  { key: "all", label: "全部", icon: GridIcon },
+  { key: "text", label: "文本", icon: TextIcon },
+  { key: "code", label: "代码", icon: CodeIcon },
+  { key: "file", label: "文件", icon: FileIcon },
+  { key: "image", label: "图片", icon: ImageIcon },
+  { key: "favorite", label: "收藏", icon: HeartIcon },
+];
 
 const props = withDefaults(
   defineProps<{
@@ -23,6 +44,7 @@ const props = withDefaults(
     topics?: TopicInfo[];
     activeTopic?: string;
     mode?: "all" | "favorites";
+    searchQuery?: string;
   }>(),
   {
     items: () => [],
@@ -30,6 +52,7 @@ const props = withDefaults(
     topics: () => [],
     activeTopic: "",
     mode: "all",
+    searchQuery: "",
   },
 );
 
@@ -37,21 +60,35 @@ const emit = defineEmits<{
   (e: "item-action", payload: ItemActionPayload): void;
   (e: "refresh-items"): void;
   (e: "select-topic", topic: string): void;
+  (e: "update:search-query", value: string): void;
 }>();
 
-const searchQuery = ref("");
+const searchQuery = ref(props.searchQuery);
 const rotating = ref(false);
-const topicFilterOpen = ref(false);
-const topicFilterRef = ref<HTMLElement | null>(null);
 const editingTopicItemId = ref<string | null>(null);
+const activeCategory = ref<CategoryKey>("all");
 let rotateTimer: number | null = null;
+
+watch(
+  () => props.searchQuery,
+  (value) => {
+    if (value !== searchQuery.value) {
+      searchQuery.value = value;
+    }
+  },
+);
+
+watch(searchQuery, (value) => {
+  emit("update:search-query", value);
+});
 
 const filteredItems = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const shouldShowFavoritesOnly = props.mode === "favorites";
-  const source = shouldShowFavoritesOnly
+  const sourceByMode = shouldShowFavoritesOnly
     ? props.items.filter((item) => item.isFavorite)
     : props.items;
+  const source = sourceByMode.filter((item) => matchesCategory(item, activeCategory.value));
   if (!query) return source;
 
   return source.filter((item) => {
@@ -74,8 +111,56 @@ const favoriteItems = computed(() =>
 );
 const hasVisibleItems = computed(() => filteredItems.value.length > 0);
 const isFavoritesMode = computed(() => props.mode === "favorites");
-const activeTopicLabel = computed(() => props.activeTopic || "全部");
 const hasTopics = computed(() => props.topics.length > 0);
+const topicFilterOptions = computed(() => [
+  { label: "全部", value: "", count: props.items.length },
+  ...props.topics.map((t) => ({ label: t.name, value: t.name, count: t.count })),
+]);
+const categoryCounts = computed(() => {
+  const counts: Record<CategoryKey, number> = {
+    all: props.items.length,
+    text: 0,
+    code: 0,
+    file: 0,
+    image: 0,
+    favorite: 0,
+  };
+  for (const item of props.items) {
+    if (item.isFavorite) counts.favorite += 1;
+    if (isCodeItem(item)) {
+      counts.code += 1;
+    } else if (item.type === "text") {
+      counts.text += 1;
+    } else if (item.type === "file") {
+      counts.file += 1;
+      if (item.fileName && isImageFile(item.fileName)) counts.image += 1;
+    }
+  }
+  return counts;
+});
+
+const visibleCategories = computed<CategoryDef[]>(() =>
+  categories.filter((c) => c.key === "all" || categoryCounts.value[c.key] > 0),
+);
+
+watch(visibleCategories, (list) => {
+  if (!list.some((c) => c.key === activeCategory.value)) {
+    activeCategory.value = "all";
+  }
+});
+
+function matchesCategory(item: ItemView, category: CategoryKey): boolean {
+  if (category === "all") return true;
+  if (category === "favorite") return item.isFavorite;
+  if (category === "code") return isCodeItem(item);
+  if (category === "text") return item.type === "text" && !isCodeItem(item);
+  if (category === "image") return item.type === "file" && Boolean(item.fileName && isImageFile(item.fileName));
+  return item.type === "file";
+}
+
+function selectCategory(category: CategoryKey): void {
+  activeCategory.value = category;
+}
 
 function refreshItems(): void {
   if (props.loading) return;
@@ -94,30 +179,24 @@ function refreshItems(): void {
 
 function selectTopic(topic: string): void {
   emit("select-topic", topic);
-  topicFilterOpen.value = false;
-}
-
-function toggleTopicFilter(): void {
-  topicFilterOpen.value = !topicFilterOpen.value;
-}
-
-function closeTopicFilter(event: MouseEvent): void {
-  if (
-    topicFilterRef.value &&
-    !topicFilterRef.value.contains(event.target as Node)
-  ) {
-    topicFilterOpen.value = false;
-  }
 }
 
 function formatItemTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes} 分钟前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "昨天";
+  if (days < 7) return `${days} 天前`;
   const month = date.getMonth() + 1;
   const day = date.getDate();
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${month}/${day} ${hours}:${minutes}`;
+  return `${month}/${day}`;
 }
 
 function itemPayload(
@@ -139,11 +218,26 @@ function itemPayload(
 
 function displayTitle(item: ItemView): string {
   if (item.type === "file") return item.fileName || "无文件名";
+  if (isCodeItem(item)) return item.title?.trim() || "未命名代码片段";
   return item.title?.trim() || item.content?.trim() || "空文本";
 }
 
 function isCodeItem(item: ItemView): boolean {
   return item.type === "text" && item.contentKind === "code";
+}
+
+function typeIconClass(item: ItemView): string {
+  if (isCodeItem(item)) return "type-code";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "type-image";
+  if (item.type === "file") return "type-file";
+  return "type-text";
+}
+
+function itemKindLabel(item: ItemView): string {
+  if (isCodeItem(item)) return "代码";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "图片";
+  if (item.type === "file") return "文件";
+  return "文本";
 }
 
 function primaryAction(item: ItemView): ItemActionPayload["action"] {
@@ -182,6 +276,10 @@ function updateItemTopic(item: ItemView, topic: string): void {
   });
 }
 
+function onImageError(event: Event): void {
+  (event.target as HTMLImageElement).style.display = "none";
+}
+
 function startTopicEdit(itemId: string): void {
   editingTopicItemId.value = itemId;
 }
@@ -196,14 +294,6 @@ function isTopicEditing(itemId: string): boolean {
   return editingTopicItemId.value === itemId;
 }
 
-onMounted(() => {
-  document.addEventListener("click", closeTopicFilter);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", closeTopicFilter);
-});
-
 onBeforeUnmount(() => {
   if (rotateTimer !== null) {
     window.clearTimeout(rotateTimer);
@@ -214,86 +304,63 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="items-panel">
-    <div class="items-title-row">
-      <h2 class="panel-title">
-        <ClockIcon class="panel-title-icon" />
-        {{ isFavoritesMode ? "我的收藏" : "内容中转台" }}
-      </h2>
-    </div>
-    <div class="items-toolbar-row">
-      <label class="items-search-wrap">
-        <input
-          v-model="searchQuery"
-          data-testid="items-search"
-          class="items-search"
-          type="search"
-          placeholder="搜索文本、文件名或标签"
-        />
-      </label>
-      <div v-if="hasTopics" ref="topicFilterRef" class="topic-filter-dropdown">
-        <button
-          type="button"
-          data-testid="topic-filter-toggle"
-          class="topic-filter-btn"
-          :class="topicFilterOpen ? 'topic-filter-btn--open' : ''"
-          @click="toggleTopicFilter"
-        >
-          <span>{{ activeTopicLabel }}</span>
-          <span class="topic-filter-arrow">{{
-            topicFilterOpen ? "▴" : "▾"
-          }}</span>
-        </button>
-        <div
-          v-if="topicFilterOpen"
-          data-testid="topic-filter-menu"
-          class="topic-filter-menu custom-scrollbar"
-        >
+    <div class="items-shell-head">
+      <div class="items-toolbar-row">
+        <div class="category-tabs" aria-label="内容类型筛选">
           <button
+            v-for="category in visibleCategories"
+            :key="category.key"
             type="button"
-            class="topic-chip"
-            :class="props.activeTopic === '' ? 'topic-chip--active' : ''"
-            @click="selectTopic('')"
+            class="category-tab"
+            :class="activeCategory === category.key ? 'category-tab--active' : ''"
+            @click="selectCategory(category.key)"
           >
-            全部
-          </button>
-          <button
-            v-for="topic in props.topics"
-            :key="topic.name"
-            type="button"
-            class="topic-chip"
-            :class="
-              props.activeTopic === topic.name ? 'topic-chip--active' : ''
-            "
-            @click="selectTopic(topic.name)"
-          >
-            <span>{{ topic.name }}</span>
-            <span class="topic-chip-count">{{ topic.count }}</span>
+            <span class="category-tab-icon">
+              <component :is="category.icon" />
+            </span>
+            {{ category.label }}
+            <span v-if="categoryCounts[category.key] > 0" class="category-tab-count">
+              {{ categoryCounts[category.key] }}
+            </span>
           </button>
         </div>
-      </div>
-      <button
-        type="button"
-        class="refresh-btn"
-        :class="props.loading ? 'refresh-btn--loading' : 'refresh-btn--idle'"
-        :disabled="props.loading"
-        title="刷新条目"
-        @click="refreshItems"
-      >
-        <RefreshIcon
-          class="refresh-icon"
-          :class="rotating ? 'refresh-icon--rotating' : ''"
-          aria-hidden="true"
+
+        <DropdownSelect
+          v-if="hasTopics"
+          :model-value="props.activeTopic"
+          :options="topicFilterOptions"
+          compact
+          test-id="topic-filter-toggle"
+          menu-test-id="topic-filter-menu"
+          class="topic-filter-dropdown"
+          @update:model-value="selectTopic"
         />
-      </button>
+
+        <button
+          type="button"
+          class="refresh-btn"
+          :class="props.loading ? 'refresh-btn--loading' : 'refresh-btn--idle'"
+          :disabled="props.loading"
+          title="刷新条目"
+          @click="refreshItems"
+        >
+          <RefreshIcon
+            class="refresh-icon"
+            :class="rotating ? 'refresh-icon--rotating' : ''"
+            aria-hidden="true"
+          />
+        </button>
+      </div>
     </div>
 
-    <p
-      id="items-loading"
-      class="loading-text"
-      :class="props.loading ? '' : 'hidden'"
-    >
-      加载中...
-    </p>
+    <div v-if="props.loading" class="items-skeleton" aria-label="加载中">
+      <div v-for="n in 4" :key="n" class="skeleton-card">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-line skeleton-line--body"></div>
+        <div class="skeleton-line skeleton-line--body"></div>
+        <div class="skeleton-line skeleton-line--footer"></div>
+      </div>
+    </div>
 
     <div class="list-container">
       <div
@@ -312,37 +379,44 @@ onBeforeUnmount(() => {
           <article
             v-for="item in favoriteItems"
             :key="item.id"
-            class="item-card group item-card--favorite"
+            class="item-card item-card--favorite"
             :class="
               item.type === 'file' ? 'item-card--file' : 'item-card--text'
             "
           >
-            <div class="item-main">
-              <div class="item-icon" v-html="item.iconSvg"></div>
-              <div class="item-body">
-                <div class="item-header">
-                  <div
-                    :class="
-                      item.type === 'file'
-                        ? 'item-title item-title--file'
-                        : 'item-title'
-                    "
-                  >
-                    {{ displayTitle(item) }}
-                  </div>
-                  <button
-                    class="favorite-btn favorite-btn--active"
-                    title="取消收藏"
-                    @click="emit('item-action', itemPayload(item, 'favorite'))"
-                  >
-                    <StarIcon class="w-4 h-4" aria-hidden="true" />
-                  </button>
+            <div class="card-head">
+              <div class="card-ident">
+                <div class="item-icon" :class="typeIconClass(item)" v-html="item.iconSvg"></div>
+                <div class="card-titles">
+                  <div class="item-title">{{ displayTitle(item) }}</div>
+                  <div class="item-kind">{{ itemKindLabel(item) }}</div>
                 </div>
-                <p v-if="item.type === 'text'" class="item-text-content">
-                  {{ item.content || "无内容" }}
-                </p>
               </div>
+              <button
+                class="favorite-btn favorite-btn--active"
+                title="取消收藏"
+                @click="emit('item-action', itemPayload(item, 'favorite'))"
+              >
+                <HeartIcon class="w-4 h-4" aria-hidden="true" />
+              </button>
             </div>
+
+            <pre v-if="isCodeItem(item)" class="code-block">{{ item.content }}</pre>
+            <img
+              v-else-if="item.imageUrl"
+              class="image-preview"
+              :src="item.imageUrl"
+              :alt="item.fileName || ''"
+              loading="lazy"
+              @click="emit('item-action', itemPayload(item, 'preview'))"
+              @error="onImageError"
+            >
+            <div v-else-if="item.type === 'file'" class="file-line">
+              <span>{{ formatBytes(item.fileSize ?? 0) }}</span>
+              <span class="file-line-hint">可下载</span>
+            </div>
+            <div v-else-if="item.content" class="item-content-text">{{ item.content }}</div>
+
             <div
               class="item-footer"
               :class="
@@ -405,43 +479,50 @@ onBeforeUnmount(() => {
           <article
             v-for="item in filteredItems"
             :key="item.id"
-            class="item-card group"
+            class="item-card"
             :class="[
               item.isFavorite ? 'item-card--favorite' : '',
               item.type === 'file' ? 'item-card--file' : 'item-card--text',
             ]"
           >
-            <div class="item-main">
-              <div class="item-icon" v-html="item.iconSvg"></div>
-              <div class="item-body">
-                <div class="item-header">
-                  <div
-                    :class="
-                      item.type === 'file'
-                        ? 'item-title item-title--file'
-                        : 'item-title'
-                    "
-                  >
-                    {{ displayTitle(item) }}
-                  </div>
-                  <button
-                    class="favorite-btn"
-                    :class="
-                      item.isFavorite
-                        ? 'favorite-btn--active'
-                        : 'favorite-btn--inactive'
-                    "
-                    :title="item.isFavorite ? '取消收藏' : '收藏'"
-                    @click="emit('item-action', itemPayload(item, 'favorite'))"
-                  >
-                    <StarIcon class="w-4 h-4" aria-hidden="true" />
-                  </button>
+            <div class="card-head">
+              <div class="card-ident">
+                <div class="item-icon" :class="typeIconClass(item)" v-html="item.iconSvg"></div>
+                <div class="card-titles">
+                  <div class="item-title">{{ displayTitle(item) }}</div>
+                  <div class="item-kind">{{ itemKindLabel(item) }}</div>
                 </div>
-                <p v-if="item.type === 'text'" class="item-text-content">
-                  {{ item.content || "无内容" }}
-                </p>
               </div>
+              <button
+                class="favorite-btn"
+                :class="
+                  item.isFavorite
+                    ? 'favorite-btn--active'
+                    : 'favorite-btn--inactive'
+                "
+                :title="item.isFavorite ? '取消收藏' : '收藏'"
+                @click="emit('item-action', itemPayload(item, 'favorite'))"
+              >
+                <HeartIcon class="w-4 h-4" aria-hidden="true" />
+              </button>
             </div>
+
+            <pre v-if="isCodeItem(item)" class="code-block">{{ item.content }}</pre>
+            <img
+              v-else-if="item.imageUrl"
+              class="image-preview"
+              :src="item.imageUrl"
+              :alt="item.fileName || ''"
+              loading="lazy"
+              @click="emit('item-action', itemPayload(item, 'preview'))"
+              @error="onImageError"
+            >
+            <div v-else-if="item.type === 'file'" class="file-line">
+              <span>{{ formatBytes(item.fileSize ?? 0) }}</span>
+              <span class="file-line-hint">可下载</span>
+            </div>
+            <div v-else-if="item.content" class="item-content-text">{{ item.content }}</div>
+
             <div
               class="item-footer"
               :class="
@@ -479,15 +560,6 @@ onBeforeUnmount(() => {
                   <component :is="actionIcon(item)" class="action-btn-icon" />
                   {{ actionLabel(item) }}
                 </button>
-                <span
-                  v-if="
-                    item.type === 'file' &&
-                    item.fileSize &&
-                    !isTopicEditing(item.id)
-                  "
-                  class="file-sz"
-                  >{{ formatBytes(item.fileSize) }}</span
-                >
               </div>
               <div v-if="!isTopicEditing(item.id)" class="footer-meta">
                 <span class="timestamp">{{
@@ -537,36 +609,83 @@ onBeforeUnmount(() => {
 
 @media (min-width: 721px) {
   .items-panel {
-    padding: 0 12px;
+    padding: 12px;
   }
 }
 
-.items-title-row {
+.items-shell-head {
   flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--bg-glass);
+  padding: 10px 12px;
 }
 
 .items-toolbar-row {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
+}
+
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 12px;
+  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.category-tab:hover {
+  color: var(--text-main);
+  background: var(--input-bg);
+}
+
+.category-tab--active {
+  color: #fff;
+  background: var(--text-accent);
+  box-shadow: var(--accent-glow) 0 8px 24px;
+}
+
+.category-tab-icon {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.category-tab-icon :deep(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.category-tab:not(.category-tab--active) .category-tab-icon {
+  color: var(--text-accent);
+}
+
+.category-tab-count {
+  color: inherit;
+  opacity: 0.72;
 }
 
 .refresh-icon--rotating {
   animation: refresh-spin-once 620ms ease-in-out 1;
-}
-
-.loading-text {
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-.hidden {
-  display: none;
 }
 
 @keyframes refresh-spin-once {
@@ -579,93 +698,40 @@ onBeforeUnmount(() => {
 }
 
 .topic-filter-dropdown {
-  position: relative;
-  flex: 0 0 auto;
+  flex: 0 0 148px;
+  width: 148px;
 }
 
-.topic-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.refresh-btn {
+  flex: none;
+  width: 36px;
   height: 36px;
-  max-width: 180px;
+  border-radius: var(--radius-control);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
   background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 0 10px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.topic-filter-btn span:first-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.topic-filter-btn:hover {
-  border-color: var(--border-strong);
-  color: var(--text-main);
-}
-
-.topic-filter-btn--open {
-  border-color: rgba(var(--accent-rgb), 0.35);
+  display: grid;
+  place-items: center;
   color: var(--text-accent);
+  transition: border-color 0.16s ease, background-color 0.16s ease;
 }
 
-.topic-filter-arrow {
-  flex: 0 0 auto;
-  font-size: 10px;
-  opacity: 0.7;
+.refresh-btn:hover {
+  border-color: var(--border-strong);
 }
 
-.topic-filter-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 50;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-width: 280px;
-  padding: 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
-  background: var(--bg-card);
-  box-shadow: var(--shadow-md);
-  max-height: 280px;
-  overflow-y: auto;
+.refresh-btn--loading {
+  color: var(--text-muted);
+  cursor: not-allowed;
 }
 
-.items-search-wrap {
-  display: block;
-  flex: 1;
-  min-width: 0;
-}
-
-.items-search {
-  width: 100%;
-  height: 40px;
-  border: 1px solid var(--border-soft);
-  border-radius: 12px;
-  background: var(--input-bg);
-  color: var(--text-main);
-  padding: 0 12px;
-  outline: none;
-  font-size: 13px;
-}
-
-.items-search:focus {
-  border-color: var(--text-accent);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
+.refresh-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .items-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 12px;
+  columns: 3 280px;
+  column-gap: 12px;
 }
 
 .items-section + .items-section {
@@ -673,105 +739,145 @@ onBeforeUnmount(() => {
 }
 
 .items-section-empty {
-  grid-column: 1 / -1;
+  break-inside: avoid;
   border: 1px dashed var(--border-soft);
-  border-radius: 18px;
+  border-radius: var(--radius-card);
   color: var(--text-muted);
   font-size: 12px;
   padding: 10px 12px;
 }
 
+/* ── 卡片 ── */
 .item-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  break-inside: avoid;
+  display: block;
+  margin: 0 0 12px;
   border: 1px solid var(--border-soft);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   background: var(--bg-card);
-  padding: 14px 16px;
-  box-shadow: var(--shadow-sm);
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.item-card--text {
-  min-height: 124px;
-}
-
-.item-card--file {
-  min-height: 100px;
+  padding: 14px;
+  box-shadow: none;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
 }
 
 .item-card:hover {
-  background: var(--bg-card-hover);
   border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
 }
 
-.item-main {
+.item-card--favorite {
+  background: var(--accent-soft);
+  border-color: var(--border-soft);
+}
+
+/* ── 卡片头部 ── */
+.card-head {
   display: flex;
+  justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
-  flex: 1 1 auto;
-  min-height: 0;
+  margin-bottom: 11px;
 }
 
-.item-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  background: var(--accent-soft);
-  color: var(--text-accent);
-}
-
-.item-icon :deep(svg) {
-  width: 20px;
-  height: 20px;
-}
-
-.item-body {
+.card-ident {
+  display: flex;
+  gap: 10px;
   min-width: 0;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
-.item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+.card-titles {
+  min-width: 0;
 }
 
 .item-title {
-  min-width: 0;
-  overflow: hidden;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.42;
   color: var(--text-main);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-word;
 }
 
-.item-title--file {
+.item-kind {
+  margin-top: 3px;
+  color: var(--text-subtle);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+}
+
+/* ── type-icon ── */
+.item-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-icon);
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: var(--accent-soft);
+}
+
+.item-icon :deep(svg) {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── 卡片内容区 ── */
+.code-block {
+  background: var(--code-bg);
+  color: var(--code-text);
+  border-radius: 12px;
+  padding: 13px;
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 180px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.62;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0;
+}
+
+.image-preview {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+  margin: 0;
+  background: var(--input-bg);
+  cursor: pointer;
+}
+
+.file-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
   font-size: 13px;
 }
 
+.file-line-hint {
+  flex: none;
+  color: var(--text-subtle);
+  font-size: 11px;
+}
+
+.item-content-text {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── 卡片 footer ── */
 .item-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex: 0 0 auto;
-  min-height: 28px;
-  min-width: 0;
+  flex-wrap: wrap;
+  margin-top: 13px;
 }
 
 .item-footer--topic-editing .item-actions-left {
@@ -782,7 +888,8 @@ onBeforeUnmount(() => {
 .item-actions-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
@@ -798,39 +905,60 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
+/* ── 收藏按钮（金色） ── */
 .favorite-btn {
-  flex: 0 0 auto;
-  width: 26px;
-  height: 26px;
-  border-radius: 9px;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-control);
   display: grid;
   place-items: center;
   color: var(--text-subtle);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .favorite-btn--active {
-  color: var(--text-accent);
-  background: var(--accent-soft);
+  color: var(--warning);
+  background: var(--warning-soft);
 }
 
+.favorite-btn--inactive:hover {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+/* ── 操作按钮 ── */
 .action-btn,
 .delete-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   font-size: 11px;
-  font-weight: 700;
-  padding: 4px 8px;
+  font-weight: 750;
+  padding: 0 9px;
+  height: 29px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
-.action-btn {
-  background: var(--accent-soft);
+.action-btn:hover {
   color: var(--text-accent);
+  border-color: rgba(var(--accent-rgb), 0.35);
+  background: var(--accent-soft);
 }
 
 .delete-btn {
   color: var(--danger);
+  border-color: var(--border-soft);
+}
+
+.delete-btn:hover {
+  color: var(--danger);
+  border-color: rgba(229, 95, 95, 0.35);
+  background: rgba(229, 95, 95, 0.08);
 }
 
 .action-btn-icon,
@@ -845,6 +973,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
+/* ── 列表容器 ── */
 .list-container {
   flex: 1 1 auto;
   min-height: 0;
@@ -854,29 +983,13 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
-.item-card--favorite {
-  background: linear-gradient(135deg, var(--accent-soft), var(--bg-card) 46%);
-  border-left: 3px solid var(--text-accent);
-}
-
-.item-text-content {
-  display: -webkit-box;
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-}
-
+/* ── 空状态 ── */
 .items-empty-state {
   display: grid;
   justify-items: center;
   gap: 8px;
   border: 1px dashed var(--border-soft);
-  border-radius: 24px;
+  border-radius: var(--radius-card);
   color: var(--text-muted);
   padding: 22px 16px;
   text-align: center;
@@ -889,31 +1002,70 @@ onBeforeUnmount(() => {
   font-size: 16px;
 }
 
-.file-sz {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-subtle);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+/* ── 骨架屏 ── */
+.items-skeleton {
+  columns: 3 280px;
+  column-gap: 12px;
+}
+
+.skeleton-card {
+  break-inside: avoid;
+  margin: 0 0 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  padding: 14px;
+}
+
+.skeleton-line {
+  border-radius: 6px;
+  background: var(--input-bg);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-line--title {
+  height: 16px;
+  width: 60%;
+  margin-bottom: 11px;
+}
+
+.skeleton-line--body {
+  height: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.skeleton-line--footer {
+  height: 10px;
+  width: 40%;
+  margin-top: 13px;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.85; }
 }
 
 @media (max-width: 720px) {
+  .items-panel {
+    height: auto;
+  }
+
+  .list-container {
+    min-height: auto;
+  }
+
+  .items-list {
+    height: auto;
+    overflow: visible;
+  }
+
   .items-section {
-    grid-template-columns: 1fr;
+    columns: 1;
   }
 
-  .item-title {
-    white-space: normal;
-    word-break: break-all;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .topic-filter-btn {
-    max-width: 132px;
+  .items-skeleton {
+    columns: 1;
   }
 
   .items-toolbar-row {

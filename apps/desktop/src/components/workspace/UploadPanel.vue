@@ -67,3 +67,35 @@ function handleDragOver(e: DragEvent): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+.upload-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  padding: 12px;
+}
+
+.upload-panel-title {
+  margin-bottom: 12px;
+}
+
+.upload-dropzone {
+  margin-bottom: 0;
+  border-color: var(--border-soft);
+  background: var(--input-bg);
+}
+
+.upload-dropzone:hover {
+  border-color: rgba(var(--accent-rgb), 0.38);
+  background: var(--accent-soft);
+}
+
+.upload-dropzone-icon-wrap {
+  color: var(--text-accent);
+}
+
+.hidden {
+  display: none;
+}
+</style>

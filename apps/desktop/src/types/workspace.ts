@@ -6,6 +6,7 @@ export interface ItemView {
   fileId?: string;
   fileName?: string;
   fileSize?: number;
+  imageUrl?: string;
   isFavorite: boolean;
   createdAt: string;
   iconSvg: string;
