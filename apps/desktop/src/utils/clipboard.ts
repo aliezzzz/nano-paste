@@ -74,7 +74,6 @@ export async function handleGlobalPaste(event: ClipboardEvent, deps: PasteDeps):
   try {
     event.preventDefault();
     await deps.sendText({ content: text });
-    showToast("已粘贴并发送文本", "success");
   } catch (err) {
     const message = err instanceof Error ? err.message : "未知错误";
     showToast(`粘贴处理失败: ${message}`, "error");

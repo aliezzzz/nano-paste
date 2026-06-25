@@ -28,9 +28,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="app-modal-wrap app-modal-wrap--image-preview">
-    <div class="app-modal-backdrop" @click="emit('close')"></div>
-    <div class="image-preview-center">
+  <div class="app-modal-wrap app-modal-wrap--image-preview" @click="emit('close')">
+    <div class="image-preview-center" @click.stop>
       <div class="image-preview-card">
         <div class="image-preview-header">
           <div class="image-preview-info">

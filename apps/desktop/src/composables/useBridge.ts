@@ -169,7 +169,6 @@ export function useBridge(onLoggedOut: () => void) {
       sentTextVersion.value += 1;
       showToast("发送成功", "success");
     } catch (error) {
-      showToast(`发送失败: ${error instanceof Error ? error.message : "发送失败"}`, "error");
       throw error;
     } finally {
       sendingText.value = false;

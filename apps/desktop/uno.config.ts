@@ -153,10 +153,10 @@ export default defineConfig({
       "w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] transition-colors",
     "host-logout-btn-icon": "w-4 h-4",
     "host-main":
-      "relative z-0 flex-1 overflow-hidden flex mx-auto max-w-screen-2xl",
+      "relative z-0 flex-1 overflow-hidden flex w-full max-w-screen-2xl min-w-0 self-center",
     "host-sidebar":
       "w-[420px] border-r border-[var(--border-soft)] flex flex-col shrink-0",
-    "host-content": "flex-1 flex flex-col min-h-0 bg-[var(--bg-main)]",
+    "host-content": "flex-1 flex flex-col min-h-0 min-w-0 bg-[var(--bg-main)]",
     "host-mobile":
       "flex md:hidden flex-col h-screen overflow-hidden bg-[var(--bg-main)]",
     "host-mobile-top": "relative z-50",

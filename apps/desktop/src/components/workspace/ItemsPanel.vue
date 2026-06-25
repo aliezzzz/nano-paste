@@ -653,7 +653,6 @@ onBeforeUnmount(() => {
 
 .items-shell-head {
   flex: 0 0 auto;
-  margin-bottom: 12px;
   background: var(--bg-glass);
 }
 
@@ -772,6 +771,8 @@ onBeforeUnmount(() => {
 .items-section {
   columns: 3 280px;
   column-gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .items-section + .items-section {
@@ -1025,13 +1026,16 @@ onBeforeUnmount(() => {
 
 /* ── 列表容器 ── */
 .list-container {
+  padding-top: 12px;
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .items-list {
   height: 100%;
+  width: 100%;
 }
 
 /* ── 空状态 ── */
