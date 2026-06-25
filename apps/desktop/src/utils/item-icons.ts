@@ -1,5 +1,11 @@
 import type { ItemDetail } from "../../../../packages/contracts/v1";
 
+export interface ItemIconData {
+  svg: string;
+  background?: string;
+  darkBackground?: string;
+}
+
 type FileKind =
   | "text"
   | "word"
@@ -18,14 +24,20 @@ export function isImageFile(fileName: string): boolean {
   return resolveFileKind(ext) === "image";
 }
 
-export function getItemIconSvg(item: ItemDetail): string {
-  if (item.type === "text") {
-    return iconByKind.text;
-  }
+export function getItemIconData(item: ItemDetail): ItemIconData {
+  const svg =
+    item.type === "text"
+      ? iconByKind.text
+      : iconByKind[
+          resolveFileKind(getFileExtension(String(item.fileName || item.title || "")))
+        ] ?? iconByKind.other;
+  const primaryColor = extractPrimaryColor(svg);
 
-  const ext = getFileExtension(String(item.fileName || item.title || ""));
-  const kind = resolveFileKind(ext);
-  return iconByKind[kind] ?? iconByKind.other;
+  return {
+    svg,
+    background: primaryColor ? toAlphaColor(primaryColor, 0.12) : undefined,
+    darkBackground: primaryColor ? toAlphaColor(primaryColor, 0.2) : undefined,
+  };
 }
 
 export function getFileExtension(fileName: string): string {
@@ -48,6 +60,37 @@ export function resolveFileKind(ext: string): FileKind {
   if (["mp4", "mov", "mkv", "avi", "webm", "m4v"].includes(ext)) return "video";
   if (["js", "ts", "jsx", "tsx", "json", "yaml", "yml", "xml", "html", "css", "go", "py", "java", "c", "cpp", "rs", "sh"].includes(ext)) return "code";
   return "other";
+}
+
+function extractPrimaryColor(svg: string): string | null {
+  const fillMatch = svg.match(/fill="(#[0-9a-fA-F]{3,8})"/);
+  if (fillMatch) return normalizeHex(fillMatch[1]);
+
+  const strokeMatch = svg.match(/stroke="(#[0-9a-fA-F]{3,8})"/);
+  if (strokeMatch) return normalizeHex(strokeMatch[1]);
+
+  return null;
+}
+
+function normalizeHex(hex: string): string | null {
+  const value = hex.trim();
+  if (/^#[0-9a-fA-F]{3}$/.test(value)) {
+    return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+  }
+
+  if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+  return null;
+}
+
+function toAlphaColor(hex: string, alpha: number): string | undefined {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return undefined;
+
+  const red = Number.parseInt(normalized.slice(1, 3), 16);
+  const green = Number.parseInt(normalized.slice(3, 5), 16);
+  const blue = Number.parseInt(normalized.slice(5, 7), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
 const iconByKind: Record<FileKind, string> = {

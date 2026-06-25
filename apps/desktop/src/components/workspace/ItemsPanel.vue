@@ -293,6 +293,19 @@ function onImageError(event: Event): void {
   (event.target as HTMLImageElement).style.display = "none";
 }
 
+function itemIconStyle(item: ItemView): Record<string, string> | undefined {
+  if (!item.iconBackground && !item.iconDarkBackground) return undefined;
+
+  const style: Record<string, string> = {};
+  if (item.iconBackground) {
+    style["--item-icon-bg"] = item.iconBackground;
+  }
+  if (item.iconDarkBackground) {
+    style["--item-icon-bg-dark"] = item.iconDarkBackground;
+  }
+  return style;
+}
+
 function startTopicEdit(itemId: string): void {
   editingTopicItemId.value = itemId;
 }
@@ -407,6 +420,7 @@ onBeforeUnmount(() => {
                 <div
                   class="item-icon"
                   :class="typeIconClass(item)"
+                  :style="itemIconStyle(item)"
                   v-html="item.iconSvg"
                 ></div>
                 <div class="card-titles">
@@ -517,6 +531,7 @@ onBeforeUnmount(() => {
                 <div
                   class="item-icon"
                   :class="typeIconClass(item)"
+                  :style="itemIconStyle(item)"
                   v-html="item.iconSvg"
                 ></div>
                 <div class="card-titles">
@@ -859,12 +874,16 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   flex: none;
-  background: var(--accent-soft);
+  background: var(--item-icon-bg, var(--accent-soft));
 }
 
 .item-icon :deep(svg) {
   width: 18px;
   height: 18px;
+}
+
+:global(.dark) .item-icon {
+  background: var(--item-icon-bg-dark, var(--item-icon-bg, var(--accent-soft)));
 }
 
 /* ── 卡片内容区 ── */
@@ -963,6 +982,11 @@ onBeforeUnmount(() => {
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
+}
+
+.favorite-btn :deep(svg) {
+  width: 16px;
+  height: 16px;
 }
 
 .favorite-btn--active {

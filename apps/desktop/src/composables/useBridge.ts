@@ -12,7 +12,7 @@ import { createTextItem, deleteItem, prepareFileDownload, setItemFavorite, setIt
 import { copyTextToClipboard } from "../utils/clipboard";
 import { triggerFileDownload } from "../utils/download";
 import { handleGlobalPaste } from "../utils/clipboard";
-import { getItemIconSvg, isImageFile } from "../utils/item-icons";
+import { getItemIconData, isImageFile } from "../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
 import type { TopicInfo } from "../components/workspace/TopicList.vue";
 
@@ -55,25 +55,31 @@ export function useBridge(onLoggedOut: () => void) {
         sort: "favorite",
         topic: activeTopic.value || undefined,
       });
-      items.value = itemsData.map((item) => ({
-        id: String(item.id),
-        type: item.type,
-        title: item.title,
-        content: item.type === "text" ? item.content : undefined,
-        fileId: item.type === "file" ? item.fileId : undefined,
-        fileName: item.type === "file" ? item.fileName : undefined,
-        fileSize: item.type === "file" ? item.fileSize : undefined,
-        imageUrl:
-          item.type === "file" && item.fileId && item.fileName && isImageFile(item.fileName)
-            ? `${runtimeStore.apiBaseUrl}/v1/files/download/${encodeURIComponent(item.fileId)}?access_token=${encodeURIComponent(authStore.accessToken ?? "")}`
-            : undefined,
-        isFavorite: item.isFavorite,
-        createdAt: item.createdAt,
-        iconSvg: getItemIconSvg(item),
-        topic: item.topic,
-        contentKind: item.type === "text" ? item.contentKind : undefined,
-        language: item.type === "text" ? item.language : undefined,
-      }));
+      items.value = itemsData.map((item) => {
+        const icon = getItemIconData(item);
+
+        return {
+          id: String(item.id),
+          type: item.type,
+          title: item.title,
+          content: item.type === "text" ? item.content : undefined,
+          fileId: item.type === "file" ? item.fileId : undefined,
+          fileName: item.type === "file" ? item.fileName : undefined,
+          fileSize: item.type === "file" ? item.fileSize : undefined,
+          imageUrl:
+            item.type === "file" && item.fileId && item.fileName && isImageFile(item.fileName)
+              ? `${runtimeStore.apiBaseUrl}/v1/files/download/${encodeURIComponent(item.fileId)}?access_token=${encodeURIComponent(authStore.accessToken ?? "")}`
+              : undefined,
+          isFavorite: item.isFavorite,
+          createdAt: item.createdAt,
+          iconSvg: icon.svg,
+          iconBackground: icon.background,
+          iconDarkBackground: icon.darkBackground,
+          topic: item.topic,
+          contentKind: item.type === "text" ? item.contentKind : undefined,
+          language: item.type === "text" ? item.language : undefined,
+        };
+      });
     } catch (err) {
       console.error("加载条目失败:", err);
     } finally {

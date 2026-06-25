@@ -10,6 +10,8 @@ export interface ItemView {
   isFavorite: boolean;
   createdAt: string;
   iconSvg: string;
+  iconBackground?: string;
+  iconDarkBackground?: string;
   tags?: string[];
   topic?: string;
   contentKind?: "text" | "code";
