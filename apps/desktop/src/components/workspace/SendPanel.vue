@@ -142,7 +142,7 @@ defineExpose({ clear });
   padding: 14px;
   border: 1px solid var(--border-soft);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--bg-card) 84%, transparent);
+  background: var(--bg-card);
   box-shadow: none;
 }
 
@@ -191,6 +191,7 @@ defineExpose({ clear });
 .send-kind-toggle {
   display: inline-flex;
   flex: 0 0 auto;
+  height: 36px;
   padding: 3px;
   border: 1px solid var(--border-soft);
   border-radius: 999px;
@@ -202,11 +203,11 @@ defineExpose({ clear });
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 700;
-  padding: 6px 10px;
+  padding: 0 14px;
 }
 
 .send-kind-btn--active {
-  background: rgba(var(--accent-rgb), 0.14);
+  background: var(--accent-soft);
   color: var(--text-accent);
 }
 
@@ -219,9 +220,9 @@ defineExpose({ clear });
 
 .send-input {
   width: 100%;
-  min-height: 40px;
+  min-height: 42px;
   border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--input-bg);
   color: var(--text-main);
   font-size: 14px;
@@ -232,13 +233,13 @@ defineExpose({ clear });
 }
 
 .send-input::placeholder {
-  color: var(--text-muted);
+  color: var(--text-subtle);
 }
 
 .send-input:focus {
   border-color: rgba(var(--accent-rgb), 0.65);
   background: var(--bg-card);
-  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.12);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
 }
 
 .send-input:disabled {
@@ -256,7 +257,7 @@ defineExpose({ clear });
 }
 
 .send-textarea {
-  min-height: 132px;
+  min-height: 144px;
   resize: vertical;
 }
 

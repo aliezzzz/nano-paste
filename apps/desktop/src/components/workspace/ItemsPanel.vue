@@ -16,19 +16,22 @@ import type { TopicInfo } from "./TopicList.vue";
 
 export type { ItemView };
 
-const props = withDefaults(defineProps<{
-  items?: ItemView[];
-  loading?: boolean;
-  topics?: TopicInfo[];
-  activeTopic?: string;
-  mode?: "all" | "favorites";
-}>(), {
-  items: () => [],
-  loading: false,
-  topics: () => [],
-  activeTopic: "",
-  mode: "all",
-});
+const props = withDefaults(
+  defineProps<{
+    items?: ItemView[];
+    loading?: boolean;
+    topics?: TopicInfo[];
+    activeTopic?: string;
+    mode?: "all" | "favorites";
+  }>(),
+  {
+    items: () => [],
+    loading: false,
+    topics: () => [],
+    activeTopic: "",
+    mode: "all",
+  },
+);
 
 const emit = defineEmits<{
   (e: "item-action", payload: ItemActionPayload): void;
@@ -46,11 +49,19 @@ let rotateTimer: number | null = null;
 const filteredItems = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
   const shouldShowFavoritesOnly = props.mode === "favorites";
-  const source = shouldShowFavoritesOnly ? props.items.filter((item) => item.isFavorite) : props.items;
+  const source = shouldShowFavoritesOnly
+    ? props.items.filter((item) => item.isFavorite)
+    : props.items;
   if (!query) return source;
 
   return source.filter((item) => {
-    const searchable = [item.title, item.content, item.fileName, item.type, ...(item.tags ?? [])]
+    const searchable = [
+      item.title,
+      item.content,
+      item.fileName,
+      item.type,
+      ...(item.tags ?? []),
+    ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
@@ -58,7 +69,9 @@ const filteredItems = computed(() => {
   });
 });
 
-const favoriteItems = computed(() => filteredItems.value.filter((item) => item.isFavorite));
+const favoriteItems = computed(() =>
+  filteredItems.value.filter((item) => item.isFavorite),
+);
 const hasVisibleItems = computed(() => filteredItems.value.length > 0);
 const isFavoritesMode = computed(() => props.mode === "favorites");
 const activeTopicLabel = computed(() => props.activeTopic || "全部");
@@ -89,7 +102,10 @@ function toggleTopicFilter(): void {
 }
 
 function closeTopicFilter(event: MouseEvent): void {
-  if (topicFilterRef.value && !topicFilterRef.value.contains(event.target as Node)) {
+  if (
+    topicFilterRef.value &&
+    !topicFilterRef.value.contains(event.target as Node)
+  ) {
     topicFilterOpen.value = false;
   }
 }
@@ -104,7 +120,10 @@ function formatItemTime(value: string): string {
   return `${month}/${day} ${hours}:${minutes}`;
 }
 
-function itemPayload(item: ItemView, action: ItemActionPayload["action"]): ItemActionPayload {
+function itemPayload(
+  item: ItemView,
+  action: ItemActionPayload["action"],
+): ItemActionPayload {
   return {
     id: item.id,
     action,
@@ -130,7 +149,8 @@ function isCodeItem(item: ItemView): boolean {
 function primaryAction(item: ItemView): ItemActionPayload["action"] {
   if (isCodeItem(item)) return "preview-code";
   if (item.type === "text") return "copy";
-  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "preview";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName))
+    return "preview";
   return "download";
 }
 
@@ -197,7 +217,7 @@ onBeforeUnmount(() => {
     <div class="items-title-row">
       <h2 class="panel-title">
         <ClockIcon class="panel-title-icon" />
-        {{ isFavoritesMode ? '我的收藏' : '内容中转台' }}
+        {{ isFavoritesMode ? "我的收藏" : "内容中转台" }}
       </h2>
     </div>
     <div class="items-toolbar-row">
@@ -208,7 +228,7 @@ onBeforeUnmount(() => {
           class="items-search"
           type="search"
           placeholder="搜索文本、文件名或标签"
-        >
+        />
       </label>
       <div v-if="hasTopics" ref="topicFilterRef" class="topic-filter-dropdown">
         <button
@@ -219,9 +239,15 @@ onBeforeUnmount(() => {
           @click="toggleTopicFilter"
         >
           <span>{{ activeTopicLabel }}</span>
-          <span class="topic-filter-arrow">{{ topicFilterOpen ? '▴' : '▾' }}</span>
+          <span class="topic-filter-arrow">{{
+            topicFilterOpen ? "▴" : "▾"
+          }}</span>
         </button>
-        <div v-if="topicFilterOpen" data-testid="topic-filter-menu" class="topic-filter-menu custom-scrollbar">
+        <div
+          v-if="topicFilterOpen"
+          data-testid="topic-filter-menu"
+          class="topic-filter-menu custom-scrollbar"
+        >
           <button
             type="button"
             class="topic-chip"
@@ -235,7 +261,9 @@ onBeforeUnmount(() => {
             :key="topic.name"
             type="button"
             class="topic-chip"
-            :class="props.activeTopic === topic.name ? 'topic-chip--active' : ''"
+            :class="
+              props.activeTopic === topic.name ? 'topic-chip--active' : ''
+            "
             @click="selectTopic(topic.name)"
           >
             <span>{{ topic.name }}</span>
@@ -259,73 +287,217 @@ onBeforeUnmount(() => {
       </button>
     </div>
 
-    <p id="items-loading" class="loading-text" :class="props.loading ? '' : 'hidden'">加载中...</p>
+    <p
+      id="items-loading"
+      class="loading-text"
+      :class="props.loading ? '' : 'hidden'"
+    >
+      加载中...
+    </p>
 
     <div class="list-container">
-      <div v-if="hasVisibleItems" id="items-list" class="items-list custom-scrollbar">
-        <section v-if="isFavoritesMode" data-testid="mobile-favorites-section" class="items-section">
-          <div v-if="favoriteItems.length === 0" class="items-section-empty">还没有收藏内容</div>
-          <article v-for="item in favoriteItems" :key="item.id" class="item-card group item-card--favorite">
+      <div
+        v-if="hasVisibleItems"
+        id="items-list"
+        class="items-list custom-scrollbar"
+      >
+        <section
+          v-if="isFavoritesMode"
+          data-testid="mobile-favorites-section"
+          class="items-section"
+        >
+          <div v-if="favoriteItems.length === 0" class="items-section-empty">
+            还没有收藏内容
+          </div>
+          <article
+            v-for="item in favoriteItems"
+            :key="item.id"
+            class="item-card group item-card--favorite"
+            :class="
+              item.type === 'file' ? 'item-card--file' : 'item-card--text'
+            "
+          >
             <div class="item-main">
               <div class="item-icon" v-html="item.iconSvg"></div>
               <div class="item-body">
                 <div class="item-header">
-                  <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
-                  <button class="favorite-btn favorite-btn--active" title="取消收藏" @click="emit('item-action', itemPayload(item, 'favorite'))">
+                  <div
+                    :class="
+                      item.type === 'file'
+                        ? 'item-title item-title--file'
+                        : 'item-title'
+                    "
+                  >
+                    {{ displayTitle(item) }}
+                  </div>
+                  <button
+                    class="favorite-btn favorite-btn--active"
+                    title="取消收藏"
+                    @click="emit('item-action', itemPayload(item, 'favorite'))"
+                  >
                     <StarIcon class="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
-                <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
+                <p v-if="item.type === 'text'" class="item-text-content">
+                  {{ item.content || "无内容" }}
+                </p>
               </div>
             </div>
-            <div class="item-footer" :class="isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''">
+            <div
+              class="item-footer"
+              :class="
+                isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''
+              "
+            >
               <div class="item-actions-left">
-                <TopicBadge :topic="item.topic" :tags="item.tags" @edit-start="startTopicEdit(item.id)" @edit-end="endTopicEdit(item.id)" @update-topic="updateItemTopic(item, $event)" />
-                <button v-if="isCodeItem(item) && !isTopicEditing(item.id)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                <TopicBadge
+                  :topic="item.topic"
+                  :tags="item.tags"
+                  @edit-start="startTopicEdit(item.id)"
+                  @edit-end="endTopicEdit(item.id)"
+                  @update-topic="updateItemTopic(item, $event)"
+                />
+                <button
+                  v-if="isCodeItem(item) && !isTopicEditing(item.id)"
+                  class="action-btn action-btn--text"
+                  @click="emit('item-action', itemPayload(item, 'copy'))"
+                >
                   <CopyIcon class="action-btn-icon" />
                   复制
                 </button>
-                <button v-if="!isTopicEditing(item.id)" class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                <button
+                  v-if="!isTopicEditing(item.id)"
+                  class="action-btn"
+                  :class="
+                    item.type === 'text'
+                      ? 'action-btn--text'
+                      : 'action-btn--file'
+                  "
+                  @click="
+                    emit('item-action', itemPayload(item, primaryAction(item)))
+                  "
+                >
                   <component :is="actionIcon(item)" class="action-btn-icon" />
                   {{ actionLabel(item) }}
                 </button>
-                <span v-if="item.type === 'file' && item.fileSize && !isTopicEditing(item.id)" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+                <span
+                  v-if="
+                    item.type === 'file' &&
+                    item.fileSize &&
+                    !isTopicEditing(item.id)
+                  "
+                  class="file-sz"
+                  >{{ formatBytes(item.fileSize) }}</span
+                >
               </div>
-              <span v-if="!isTopicEditing(item.id)" class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
+              <span v-if="!isTopicEditing(item.id)" class="timestamp">{{
+                formatItemTime(item.createdAt)
+              }}</span>
             </div>
           </article>
         </section>
 
-        <section v-if="!isFavoritesMode" data-testid="all-section" class="items-section">
-          <article v-for="item in filteredItems" :key="item.id" class="item-card group" :class="item.isFavorite ? 'item-card--favorite' : ''">
+        <section
+          v-if="!isFavoritesMode"
+          data-testid="all-section"
+          class="items-section"
+        >
+          <article
+            v-for="item in filteredItems"
+            :key="item.id"
+            class="item-card group"
+            :class="[
+              item.isFavorite ? 'item-card--favorite' : '',
+              item.type === 'file' ? 'item-card--file' : 'item-card--text',
+            ]"
+          >
             <div class="item-main">
               <div class="item-icon" v-html="item.iconSvg"></div>
               <div class="item-body">
                 <div class="item-header">
-                  <div :class="item.type === 'file' ? 'item-title item-title--file' : 'item-title'">{{ displayTitle(item) }}</div>
-                  <button class="favorite-btn" :class="item.isFavorite ? 'favorite-btn--active' : 'favorite-btn--inactive'" :title="item.isFavorite ? '取消收藏' : '收藏'" @click="emit('item-action', itemPayload(item, 'favorite'))">
+                  <div
+                    :class="
+                      item.type === 'file'
+                        ? 'item-title item-title--file'
+                        : 'item-title'
+                    "
+                  >
+                    {{ displayTitle(item) }}
+                  </div>
+                  <button
+                    class="favorite-btn"
+                    :class="
+                      item.isFavorite
+                        ? 'favorite-btn--active'
+                        : 'favorite-btn--inactive'
+                    "
+                    :title="item.isFavorite ? '取消收藏' : '收藏'"
+                    @click="emit('item-action', itemPayload(item, 'favorite'))"
+                  >
                     <StarIcon class="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
-                <p v-if="item.type === 'text'" class="item-text-content">{{ item.content || '无内容' }}</p>
+                <p v-if="item.type === 'text'" class="item-text-content">
+                  {{ item.content || "无内容" }}
+                </p>
               </div>
             </div>
-            <div class="item-footer" :class="isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''">
+            <div
+              class="item-footer"
+              :class="
+                isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''
+              "
+            >
               <div class="item-actions-left">
-                <TopicBadge :topic="item.topic" :tags="item.tags" @edit-start="startTopicEdit(item.id)" @edit-end="endTopicEdit(item.id)" @update-topic="updateItemTopic(item, $event)" />
-                <button v-if="isCodeItem(item) && !isTopicEditing(item.id)" class="action-btn action-btn--text" @click="emit('item-action', itemPayload(item, 'copy'))">
+                <TopicBadge
+                  :topic="item.topic"
+                  :tags="item.tags"
+                  @edit-start="startTopicEdit(item.id)"
+                  @edit-end="endTopicEdit(item.id)"
+                  @update-topic="updateItemTopic(item, $event)"
+                />
+                <button
+                  v-if="isCodeItem(item) && !isTopicEditing(item.id)"
+                  class="action-btn action-btn--text"
+                  @click="emit('item-action', itemPayload(item, 'copy'))"
+                >
                   <CopyIcon class="action-btn-icon" />
                   复制
                 </button>
-                <button v-if="!isTopicEditing(item.id)" class="action-btn" :class="item.type === 'text' ? 'action-btn--text' : 'action-btn--file'" @click="emit('item-action', itemPayload(item, primaryAction(item)))">
+                <button
+                  v-if="!isTopicEditing(item.id)"
+                  class="action-btn"
+                  :class="
+                    item.type === 'text'
+                      ? 'action-btn--text'
+                      : 'action-btn--file'
+                  "
+                  @click="
+                    emit('item-action', itemPayload(item, primaryAction(item)))
+                  "
+                >
                   <component :is="actionIcon(item)" class="action-btn-icon" />
                   {{ actionLabel(item) }}
                 </button>
-                <span v-if="item.type === 'file' && item.fileSize && !isTopicEditing(item.id)" class="file-sz">{{ formatBytes(item.fileSize) }}</span>
+                <span
+                  v-if="
+                    item.type === 'file' &&
+                    item.fileSize &&
+                    !isTopicEditing(item.id)
+                  "
+                  class="file-sz"
+                  >{{ formatBytes(item.fileSize) }}</span
+                >
               </div>
               <div v-if="!isTopicEditing(item.id)" class="footer-meta">
-                <span class="timestamp">{{ formatItemTime(item.createdAt) }}</span>
-                <button class="delete-btn" title="删除" @click="emit('item-action', itemPayload(item, 'delete'))">
+                <span class="timestamp">{{
+                  formatItemTime(item.createdAt)
+                }}</span>
+                <button
+                  class="delete-btn"
+                  title="删除"
+                  @click="emit('item-action', itemPayload(item, 'delete'))"
+                >
                   <DeleteIcon class="delete-btn-icon" />
                   删除
                 </button>
@@ -335,10 +507,20 @@ onBeforeUnmount(() => {
         </section>
       </div>
 
-      <div v-if="!props.loading && !hasVisibleItems" id="items-empty" class="items-empty-state">
+      <div
+        v-if="!props.loading && !hasVisibleItems"
+        id="items-empty"
+        class="items-empty-state"
+      >
         <InboxEmptyIcon class="items-empty-icon" />
         <strong>从这里开始</strong>
-        <span>{{ searchQuery ? '没有匹配的内容，换个关键词试试' : (isFavoritesMode ? '收藏常用内容后会出现在这里' : '粘贴文本、拖拽文件，或用浏览器右键菜单发送到 NanoPaste') }}</span>
+        <span>{{
+          searchQuery
+            ? "没有匹配的内容，换个关键词试试"
+            : isFavoritesMode
+              ? "收藏常用内容后会出现在这里"
+              : "粘贴文本、拖拽文件，或用浏览器右键菜单发送到 NanoPaste"
+        }}</span>
       </div>
     </div>
   </div>
@@ -355,7 +537,7 @@ onBeforeUnmount(() => {
 
 @media (min-width: 721px) {
   .items-panel {
-    padding-right: 12px;
+    padding: 0 12px;
   }
 }
 
@@ -371,7 +553,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .refresh-icon--rotating {
@@ -388,8 +570,12 @@ onBeforeUnmount(() => {
 }
 
 @keyframes refresh-spin-once {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .topic-filter-dropdown {
@@ -461,7 +647,7 @@ onBeforeUnmount(() => {
 
 .items-search {
   width: 100%;
-  height: 36px;
+  height: 40px;
   border: 1px solid var(--border-soft);
   border-radius: 12px;
   background: var(--input-bg);
@@ -473,17 +659,17 @@ onBeforeUnmount(() => {
 
 .items-search:focus {
   border-color: var(--text-accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.14);
 }
 
 .items-section {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .items-section + .items-section {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .items-section-empty {
@@ -499,16 +685,27 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 130px;
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   background: var(--bg-card);
-  padding: 12px;
+  padding: 14px 16px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.item-card--text {
+  min-height: 124px;
+}
+
+.item-card--file {
+  min-height: 100px;
 }
 
 .item-card:hover {
+  background: var(--bg-card-hover);
   border-color: var(--border-strong);
   box-shadow: var(--shadow-md);
 }
@@ -528,7 +725,7 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  background: rgba(var(--accent-rgb), 0.08);
+  background: var(--accent-soft);
   color: var(--text-accent);
 }
 
@@ -564,7 +761,6 @@ onBeforeUnmount(() => {
 }
 
 .item-title--file {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
 }
 
@@ -609,12 +805,12 @@ onBeforeUnmount(() => {
   border-radius: 9px;
   display: grid;
   place-items: center;
-  color: var(--text-muted);
+  color: var(--text-subtle);
 }
 
 .favorite-btn--active {
   color: var(--text-accent);
-  background: rgba(var(--accent-rgb), 0.1);
+  background: var(--accent-soft);
 }
 
 .action-btn,
@@ -629,12 +825,12 @@ onBeforeUnmount(() => {
 }
 
 .action-btn {
-  background: rgba(var(--accent-rgb), 0.1);
+  background: var(--accent-soft);
   color: var(--text-accent);
 }
 
 .delete-btn {
-  color: var(--text-muted);
+  color: var(--danger);
 }
 
 .action-btn-icon,
@@ -644,7 +840,7 @@ onBeforeUnmount(() => {
 }
 
 .timestamp {
-  color: var(--text-muted);
+  color: var(--text-subtle);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -659,7 +855,7 @@ onBeforeUnmount(() => {
 }
 
 .item-card--favorite {
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.08), var(--bg-card) 50%);
+  background: linear-gradient(135deg, var(--accent-soft), var(--bg-card) 46%);
   border-left: 3px solid var(--text-accent);
 }
 
@@ -669,7 +865,7 @@ onBeforeUnmount(() => {
   color: var(--text-muted);
   font-size: 12px;
   line-height: 1.5;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
@@ -696,8 +892,7 @@ onBeforeUnmount(() => {
 .file-sz {
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-muted);
-  opacity: 0.7;
+  color: var(--text-subtle);
   white-space: nowrap;
   text-transform: uppercase;
   letter-spacing: 0.04em;

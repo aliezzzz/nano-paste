@@ -80,7 +80,7 @@ function save(): void {
   color: var(--text-main);
   font-size: 12px;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
+  box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
 .topic-edit-btn {
@@ -94,12 +94,12 @@ function save(): void {
 }
 
 .topic-edit-btn--save {
-  background: rgba(var(--accent-rgb), 0.15);
+  background: var(--accent-soft);
   color: var(--text-accent);
 }
 
 .topic-edit-btn--save:hover {
-  background: rgba(var(--accent-rgb), 0.25);
+  color: var(--accent-hover);
 }
 
 .topic-edit-btn--cancel {
@@ -121,7 +121,7 @@ function save(): void {
 
 .meta-topic {
   border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.15);
+  background: var(--accent-soft);
   color: var(--text-accent);
   font-size: 11px;
   font-weight: 600;
@@ -131,7 +131,7 @@ function save(): void {
 }
 
 .meta-topic:hover {
-  background: rgba(var(--accent-rgb), 0.25);
+  color: var(--accent-hover);
 }
 
 .meta-topic--empty {
@@ -148,7 +148,7 @@ function save(): void {
 
 .meta-tag {
   border-radius: 999px;
-  background: rgba(var(--accent-rgb), 0.1);
+  background: var(--accent-soft);
   color: var(--text-accent);
   font-size: 11px;
   padding: 3px 8px;

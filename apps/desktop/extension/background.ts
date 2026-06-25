@@ -1,13 +1,13 @@
 import { DEFAULT_API_BASE_URL } from "../src/constants/extension-storage";
 import {
   readAuthStorage,
-  readRuntimeApiBaseUrl,
   writeAuthStorage,
 } from "../src/utils/extension-storage";
 
 const MENU_ID = "nanopaste-send";
 const MENU_TITLE = "发送到 NanoPaste";
 const NOTIFICATION_ICON = "icon.png";
+const ENV_DEFAULT_API_BASE_URL = (import.meta.env.VITE_DEFAULT_APP_API_BASE_URL ?? "").trim();
 
 chrome.runtime.onInstalled.addListener(() => {
   void createContextMenu();
@@ -151,30 +151,48 @@ async function createTextItem(content: string, title?: string): Promise<void> {
 }
 
 async function requestWithAuth<T>(path: string, init: RequestInit): Promise<T> {
-  const apiBaseUrl = await readRuntimeApiBaseUrl();
+  const apiBaseUrl = resolveApiBaseUrl();
   const authSnapshot = await readAuthStorage();
   let accessToken = authSnapshot.accessToken;
 
   if (!accessToken) {
-    const refreshed = await tryRefreshAuthToken(apiBaseUrl || DEFAULT_API_BASE_URL, authSnapshot.refreshToken, authSnapshot.username);
+    const refreshed = await tryRefreshAuthToken(apiBaseUrl, authSnapshot.refreshToken, authSnapshot.username);
     if (!refreshed) {
       throw new Error("请先登录 NanoPaste");
     }
     accessToken = refreshed.accessToken;
   }
 
-  let response = await fetchWithAuth(apiBaseUrl || DEFAULT_API_BASE_URL, path, init, accessToken);
+  let response = await fetchWithAuth(apiBaseUrl, path, init, accessToken);
   if (response.status !== 401) {
     return parseApiResponse<T>(response);
   }
 
-  const refreshed = await tryRefreshAuthToken(apiBaseUrl || DEFAULT_API_BASE_URL, authSnapshot.refreshToken, authSnapshot.username);
+  const refreshed = await tryRefreshAuthToken(apiBaseUrl, authSnapshot.refreshToken, authSnapshot.username);
   if (!refreshed) {
     throw new Error("登录已失效，请重新登录 NanoPaste");
   }
 
-  response = await fetchWithAuth(apiBaseUrl || DEFAULT_API_BASE_URL, path, init, refreshed.accessToken);
+  response = await fetchWithAuth(apiBaseUrl, path, init, refreshed.accessToken);
   return parseApiResponse<T>(response);
+}
+
+function resolveApiBaseUrl(): string {
+  const normalized = ENV_DEFAULT_API_BASE_URL.replace(/\/+$/, "");
+  if (!normalized) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return normalized;
+    }
+  } catch {
+    // fall through to the default local backend URL
+  }
+
+  return DEFAULT_API_BASE_URL;
 }
 
 async function fetchWithAuth(

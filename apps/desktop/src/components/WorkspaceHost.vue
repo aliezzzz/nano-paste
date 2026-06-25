@@ -311,6 +311,9 @@ function selectTopic(topic: string): void {
 <style scoped>
 .host-sidebar {
     gap: 14px;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 14px;
 }
 
