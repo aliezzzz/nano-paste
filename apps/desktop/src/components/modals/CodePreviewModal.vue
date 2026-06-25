@@ -13,16 +13,31 @@ const emit = defineEmits<{
 }>();
 
 const highlighted = computed(() => highlightCode(props.code, props.language));
-const displayLanguage = computed(() => highlighted.value.language || props.language || "auto");
+const displayLanguage = computed(
+  () => highlighted.value.language || props.language || "auto",
+);
 </script>
 
 <template>
   <div class="code-modal-backdrop" @click="emit('close')">
-    <section class="code-modal" role="dialog" aria-modal="true" aria-label="代码预览" @click.stop>
-      <button type="button" class="code-modal-close" aria-label="关闭" @click="emit('close')">✕</button>
+    <section
+      class="code-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="代码预览"
+      @click.stop
+    >
+      <button
+        type="button"
+        class="code-modal-close"
+        aria-label="关闭"
+        @click="emit('close')"
+      >
+        ✕
+      </button>
       <header class="code-modal-head">
         <div>
-          <h2 class="code-modal-title">{{ props.title || '代码预览' }}</h2>
+          <h2 class="code-modal-title">{{ props.title || "代码预览" }}</h2>
           <p class="code-modal-subtitle">{{ displayLanguage }}</p>
         </div>
       </header>
@@ -106,7 +121,6 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
   overflow: auto;
   overscroll-behavior: contain;
   padding: 18px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   line-height: 1.6;
   tab-size: 2;

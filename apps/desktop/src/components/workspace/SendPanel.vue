@@ -139,8 +139,6 @@ function handleDragLeave(): void {
   isDragOver.value = false;
 }
 
-
-
 watch(
   () => props.clearVersion,
   (version, previousVersion) => {
@@ -192,10 +190,7 @@ defineExpose({ clear });
       </div>
 
       <div v-if="contentKind !== 'file'">
-        <div
-          class="editor-wrap"
-          :class="contentKind === 'code' ? 'editor-wrap--code' : ''"
-        >
+        <div class="editor-wrap">
           <textarea
             v-model="content"
             id="text-content"
@@ -446,14 +441,9 @@ defineExpose({ clear });
   font-family: inherit;
 }
 
-.editor-wrap--code .editor-textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+.editor-wrap .editor-textarea {
   font-variant-ligatures: none;
   tab-size: 2;
-}
-
-.editor-wrap--code .editor-textarea::placeholder {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 .editor-meta {

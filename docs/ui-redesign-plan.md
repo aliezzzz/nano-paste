@@ -164,7 +164,6 @@ watch(visibleCategories, (list) => {
   padding: 13px;
   white-space: pre-wrap;
   overflow: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12.5px;
   line-height: 1.62;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -297,9 +296,6 @@ function typeIconClass(item: ItemView): string {
   background: var(--bg-card);
 }
 
-.editor-wrap--code textarea {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
 ```
 
 ### 4.3 字数统计
