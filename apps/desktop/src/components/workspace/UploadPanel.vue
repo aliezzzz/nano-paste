@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import UploadCloudIcon from "../../assets/icons/upload-cloud.svg";
+
 export interface UploadQueueViewItem {
   id: string;
   fileName: string;
@@ -50,64 +51,97 @@ function handleDrop(e: DragEvent): void {
 function handleDragOver(e: DragEvent): void {
   e.preventDefault();
 }
+
+async function handleQuickUpload(): Promise<void> {
+  try {
+    const clipboardItems = await navigator.clipboard.read();
+    for (const item of clipboardItems) {
+      for (const type of item.types) {
+        if (type.startsWith("image/") || type.startsWith("application/")) {
+          const blob = await item.getType(type);
+          const ext = type.split("/")[1] || "bin";
+          const file = new File([blob], `clipboard-${Date.now()}.${ext}`, {
+            type,
+          });
+          emit("files-selected", [file]);
+          return;
+        }
+      }
+    }
+    chooseFiles();
+  } catch {
+    chooseFiles();
+  }
+}
 </script>
 
 <template>
-  <div class="upload-panel">
-    <h2 class="upload-panel-title">
-      <UploadCloudIcon class="upload-panel-title-icon" />
-      上传文件
-    </h2>
-
-    <div
-      id="upload-dropzone"
-      class="upload-dropzone"
-      @click="chooseFiles"
-      @dragover="handleDragOver"
-      @drop="handleDrop"
-    >
-      <div class="upload-dropzone-icon-wrap">
-        <UploadCloudIcon class="upload-dropzone-icon" />
-      </div>
-      <p class="upload-dropzone-title">拖拽文件到这里</p>
-      <p class="upload-dropzone-hint">或点击选择文件</p>
-      <input
-        ref="fileInputRef"
-        type="file"
-        id="file-input"
-        class="hidden"
-        multiple
-        @change="handleFileInputChange"
-      />
+  <section
+    class="quick-upload"
+    @click="handleQuickUpload"
+    @dragover="handleDragOver"
+    @drop="handleDrop"
+  >
+    <div class="q-icon">
+      <UploadCloudIcon class="q-icon-svg" />
     </div>
-  </div>
+    <div>
+      <strong>拖拽文件到这里，或点击粘贴</strong>
+      <small>支持图片、文档、压缩包等</small>
+    </div>
+    <input
+      ref="fileInputRef"
+      type="file"
+      class="hidden"
+      multiple
+      @change="handleFileInputChange"
+      @click.stop
+    />
+  </section>
 </template>
 
 <style scoped>
-.upload-panel {
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-card);
-  background: var(--bg-card);
-  padding: 12px;
+.quick-upload {
+  padding: 15px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg, 15px);
+  background: color-mix(in srgb, var(--bg-card) 82%, transparent);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.18s ease;
 }
 
-.upload-panel-title {
-  margin-bottom: 12px;
+.quick-upload:hover {
+  background: var(--bg-card-hover);
 }
 
-.upload-dropzone {
-  margin-bottom: 0;
-  border-color: var(--border-soft);
-  background: var(--input-bg);
-}
-
-.upload-dropzone:hover {
-  border-color: rgba(var(--accent-rgb), 0.38);
+.q-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
   background: var(--accent-soft);
+  color: var(--text-accent);
+  display: grid;
+  place-items: center;
+  flex: none;
 }
 
-.upload-dropzone-icon-wrap {
-  color: var(--text-accent);
+.q-icon-svg {
+  width: 20px;
+  height: 20px;
+}
+
+.quick-upload strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text-main);
+  margin-bottom: 4px;
+}
+
+.quick-upload small {
+  color: var(--text-subtle);
 }
 
 .hidden {

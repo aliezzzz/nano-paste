@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Component } from "vue";
+import { highlightCode } from "../../utils/code-highlight";
 import { formatBytes } from "../../utils/format";
 import { isImageFile } from "../../utils/item-icons";
 import type { ItemView, ItemActionPayload } from "../../types/workspace";
@@ -422,9 +423,10 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <pre v-if="isCodeItem(item)" class="code-block">{{
-              item.content
-            }}</pre>
+            <pre
+              v-if="isCodeItem(item)"
+              class="code-block"
+            ><code v-html="highlightCode(item.content ?? '', item.language ?? '').html"></code></pre>
             <img
               v-else-if="item.imageUrl"
               class="image-preview"
@@ -536,9 +538,10 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <pre v-if="isCodeItem(item)" class="code-block">{{
-              item.content
-            }}</pre>
+            <pre
+              v-if="isCodeItem(item)"
+              class="code-block"
+            ><code v-html="highlightCode(item.content ?? '', item.language ?? '').html"></code></pre>
             <img
               v-else-if="item.imageUrl"
               class="image-preview"
@@ -796,11 +799,15 @@ onBeforeUnmount(() => {
   box-shadow: none;
   transition:
     background-color 0.16s ease,
-    border-color 0.16s ease;
+    border-color 0.16s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .item-card:hover {
   border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .item-card--favorite {
@@ -1021,6 +1028,7 @@ onBeforeUnmount(() => {
 .list-container {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .items-list {

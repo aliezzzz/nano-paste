@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import EditIcon from "../../assets/icons/edit.svg";
 import SendIcon from "../../assets/icons/send.svg";
+import UploadCloudIcon from "../../assets/icons/upload-cloud.svg";
 import DropdownSelect from "./DropdownSelect.vue";
 
 interface DropdownOption {
@@ -51,14 +52,17 @@ const emit = defineEmits<{
       language?: string;
     },
   ): void;
+  (e: "files-selected", files: File[]): void;
 }>();
 
 const title = ref("");
 const content = ref("");
 const selectedTopic = ref("");
 const customTopic = ref("");
-const contentKind = ref<"text" | "code">("text");
+const contentKind = ref<"text" | "code" | "file">("text");
 const language = ref("");
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const isDragOver = ref(false);
 
 const hasExistingTopics = computed(() => props.topicSuggestions.length > 0);
 const topicValue = computed(
@@ -72,11 +76,14 @@ const topicOptions = computed<DropdownOption[]>(() => [
 
 function handleSubmit(e: Event): void {
   e.preventDefault();
+  if (contentKind.value === "file") {
+    return;
+  }
   const payload = {
     title: title.value.trim() || undefined,
     content: content.value,
     topic: topicValue.value || undefined,
-    contentKind: contentKind.value,
+    contentKind: contentKind.value as "text" | "code",
     language:
       contentKind.value === "code" ? language.value || undefined : undefined,
   };
@@ -100,6 +107,39 @@ function clear(): void {
   contentKind.value = "text";
   language.value = "";
 }
+
+function chooseFiles(): void {
+  fileInputRef.value?.click();
+}
+
+function handleFileInputChange(e: Event): void {
+  const input = e.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  if (files.length > 0) {
+    emit("files-selected", files);
+  }
+  input.value = "";
+}
+
+function handleDrop(e: DragEvent): void {
+  e.preventDefault();
+  isDragOver.value = false;
+  const files = Array.from(e.dataTransfer?.files || []);
+  if (files.length > 0) {
+    emit("files-selected", files);
+  }
+}
+
+function handleDragOver(e: DragEvent): void {
+  e.preventDefault();
+  isDragOver.value = true;
+}
+
+function handleDragLeave(): void {
+  isDragOver.value = false;
+}
+
+
 
 watch(
   () => props.clearVersion,
@@ -140,33 +180,69 @@ defineExpose({ clear });
           >
             代码片段
           </button>
+          <button
+            type="button"
+            class="send-kind-btn"
+            :class="contentKind === 'file' ? 'send-kind-btn--active' : ''"
+            @click="contentKind = 'file'"
+          >
+            文件
+          </button>
         </div>
       </div>
 
-      <div
-        class="editor-wrap"
-        :class="contentKind === 'code' ? 'editor-wrap--code' : ''"
-      >
-        <textarea
-          v-model="content"
-          id="text-content"
-          placeholder="粘贴文字、链接、验证码或临时备注..."
-          rows="6"
-          maxlength="5000"
-          class="editor-textarea"
-        ></textarea>
-        <div class="editor-meta">
-          <div v-if="contentKind === 'code'" class="editor-language">
-            <DropdownSelect
-              v-model="language"
-              :options="languageOptions"
-              compact
-              test-id="text-language"
-              menu-test-id="text-language-menu"
-            />
+      <div v-if="contentKind !== 'file'">
+        <div
+          class="editor-wrap"
+          :class="contentKind === 'code' ? 'editor-wrap--code' : ''"
+        >
+          <textarea
+            v-model="content"
+            id="text-content"
+            :placeholder="
+              contentKind === 'code'
+                ? '粘贴 Shell、JSON、YAML 或代码片段...'
+                : '粘贴文字、链接、验证码或临时备注...'
+            "
+            rows="6"
+            maxlength="5000"
+            class="editor-textarea"
+          ></textarea>
+          <div class="editor-meta">
+            <div v-if="contentKind === 'code'" class="editor-language">
+              <DropdownSelect
+                v-model="language"
+                :options="languageOptions"
+                compact
+                test-id="text-language"
+                menu-test-id="text-language-menu"
+              />
+            </div>
+            <span v-else>Ctrl + Enter 快速发送</span>
+            <span>{{ content.length }}/5000</span>
           </div>
-          <span v-else>Ctrl + Enter 快速发送</span>
-          <span>{{ content.length }}/5000</span>
+        </div>
+      </div>
+
+      <div v-else>
+        <div
+          class="file-zone"
+          :class="{ 'file-zone--drag-over': isDragOver }"
+          @click="chooseFiles"
+          @dragover="handleDragOver"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop"
+        >
+          <UploadCloudIcon class="file-zone-icon" />
+          <strong>拖入文件，或点击选择</strong>
+          <small>支持图片、文档、压缩包等</small>
+          <input
+            ref="fileInputRef"
+            type="file"
+            class="hidden"
+            multiple
+            @change="handleFileInputChange"
+          />
         </div>
       </div>
 
@@ -216,13 +292,22 @@ defineExpose({ clear });
       </details>
 
       <button
-        type="submit"
+        type="button"
         id="text-submit-btn"
         class="send-panel-submit"
         :disabled="props.submitting"
+        @click="contentKind === 'file' ? chooseFiles() : handleSubmit($event)"
       >
         <SendIcon class="send-panel-submit-icon" />
-        {{ props.submitting ? "发送中..." : "发送" }}
+        {{
+          props.submitting
+            ? "发送中..."
+            : contentKind === "file"
+              ? "上传文件"
+              : contentKind === "code"
+                ? "发送代码"
+                : "发送"
+        }}
       </button>
     </form>
   </div>
@@ -270,7 +355,7 @@ defineExpose({ clear });
 
 .send-kind-toggle {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   width: 100%;
   height: 42px;
   padding: 4px;
@@ -345,7 +430,7 @@ defineExpose({ clear });
 
 .editor-textarea {
   width: 100%;
-  min-height: 100px;
+  min-height: 120px;
   resize: vertical;
   border: 0;
   outline: none;
@@ -358,9 +443,16 @@ defineExpose({ clear });
 
 .editor-textarea::placeholder {
   color: var(--text-subtle);
+  font-family: inherit;
 }
 
 .editor-wrap--code .editor-textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-ligatures: none;
+  tab-size: 2;
+}
+
+.editor-wrap--code .editor-textarea::placeholder {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -428,6 +520,51 @@ defineExpose({ clear });
 .send-advanced-body {
   display: grid;
   gap: 10px;
+}
+
+/* ── 文件拖拽区域 ── */
+.file-zone {
+  height: 180px;
+  border: 2px dashed var(--border-soft);
+  border-radius: var(--radius-card);
+  background: var(--input-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.file-zone:hover,
+.file-zone--drag-over {
+  border-color: var(--text-accent);
+  background: var(--accent-soft);
+}
+
+.file-zone-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--text-accent);
+}
+
+.file-zone strong {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.file-zone small {
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
+.hidden {
+  display: none;
 }
 
 @media (max-width: 720px) {

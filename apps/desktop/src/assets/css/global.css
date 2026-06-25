@@ -214,6 +214,35 @@
     box-shadow: 0 0 0 2px var(--accent-glow);
   }
 
+  /* ── 代码高亮样式（highlight.js） ── */
+  .code-block .hljs-keyword,
+  .code-block .hljs-selector-tag,
+  .code-block .hljs-built_in {
+    color: #ff7b72;
+  }
+
+  .code-block .hljs-string,
+  .code-block .hljs-attr,
+  .code-block .hljs-symbol {
+    color: #a5d6ff;
+  }
+
+  .code-block .hljs-title,
+  .code-block .hljs-section,
+  .code-block .hljs-name {
+    color: #d2a8ff;
+  }
+
+  .code-block .hljs-comment,
+  .code-block .hljs-quote {
+    color: #8b949e;
+  }
+
+  .code-block .hljs-number,
+  .code-block .hljs-literal {
+    color: #79c0ff;
+  }
+
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) transparent;

@@ -117,6 +117,7 @@ function save(): void {
   align-items: center;
   gap: 4px;
   margin: 0;
+  height: 29px;
 }
 
 .meta-topic {

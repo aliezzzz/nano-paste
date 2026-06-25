@@ -113,34 +113,6 @@ const displayLanguage = computed(() => highlighted.value.language || props.langu
   -webkit-overflow-scrolling: touch;
 }
 
-.code-block :deep(.hljs-keyword),
-.code-block :deep(.hljs-selector-tag),
-.code-block :deep(.hljs-built_in) {
-  color: #ff7b72;
-}
-
-.code-block :deep(.hljs-string),
-.code-block :deep(.hljs-attr),
-.code-block :deep(.hljs-symbol) {
-  color: #a5d6ff;
-}
-
-.code-block :deep(.hljs-title),
-.code-block :deep(.hljs-section),
-.code-block :deep(.hljs-name) {
-  color: #d2a8ff;
-}
-
-.code-block :deep(.hljs-comment),
-.code-block :deep(.hljs-quote) {
-  color: #8b949e;
-}
-
-.code-block :deep(.hljs-number),
-.code-block :deep(.hljs-literal) {
-  color: #79c0ff;
-}
-
 @media (max-width: 720px) {
   .code-modal-backdrop {
     padding: 8px;
