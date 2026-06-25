@@ -9,10 +9,13 @@ export interface UploadQueueViewItem {
   progress: number;
 }
 
-const props = withDefaults(defineProps<{ compact?: boolean; queueItems?: UploadQueueViewItem[] }>(), {
-  compact: false,
-  queueItems: () => [],
-});
+const props = withDefaults(
+  defineProps<{ compact?: boolean; queueItems?: UploadQueueViewItem[] }>(),
+  {
+    compact: false,
+    queueItems: () => [],
+  },
+);
 
 const emit = defineEmits<{
   (e: "clear-finished"): void;
@@ -47,23 +50,35 @@ function handleDrop(e: DragEvent): void {
 function handleDragOver(e: DragEvent): void {
   e.preventDefault();
 }
-
 </script>
 
 <template>
-  <div :class="props.compact ? 'upload-panel' : 'upload-panel upload-panel--full'">
+  <div class="upload-panel">
     <h2 class="upload-panel-title">
       <UploadCloudIcon class="upload-panel-title-icon" />
       上传文件
     </h2>
 
-    <div id="upload-dropzone" class="upload-dropzone" @click="chooseFiles" @dragover="handleDragOver" @drop="handleDrop">
+    <div
+      id="upload-dropzone"
+      class="upload-dropzone"
+      @click="chooseFiles"
+      @dragover="handleDragOver"
+      @drop="handleDrop"
+    >
       <div class="upload-dropzone-icon-wrap">
         <UploadCloudIcon class="upload-dropzone-icon" />
       </div>
       <p class="upload-dropzone-title">拖拽文件到这里</p>
       <p class="upload-dropzone-hint">或点击选择文件</p>
-      <input ref="fileInputRef" type="file" id="file-input" class="hidden" multiple @change="handleFileInputChange">
+      <input
+        ref="fileInputRef"
+        type="file"
+        id="file-input"
+        class="hidden"
+        multiple
+        @change="handleFileInputChange"
+      />
     </div>
   </div>
 </template>

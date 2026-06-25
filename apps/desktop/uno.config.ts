@@ -5,7 +5,8 @@ export default defineConfig({
   presets: [presetWind()],
   shortcuts: {
     // App.vue
-    "app-root": "h-full w-full bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-400",
+    "app-root":
+      "h-full w-full bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-400",
     "app-login-page": "fixed inset-0 overflow-hidden bg-[var(--bg-main)]",
     "app-login-bg": "absolute inset-0 pointer-events-none opacity-50",
     "app-login-bg-radial":
@@ -49,7 +50,8 @@ export default defineConfig({
     "app-modal-close-btn":
       "w-7 h-7 rounded-md hover:bg-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors",
     "app-device-modal-content": "max-h-[65vh] overflow-y-auto p-3",
-    "app-device-modal-state": "px-3 py-8 text-center text-[12px] text-[var(--text-muted)]",
+    "app-device-modal-state":
+      "px-3 py-8 text-center text-[12px] text-[var(--text-muted)]",
     "app-device-modal-state--error": "text-[var(--danger)]",
     "app-device-card":
       "rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] px-3 py-2.5 mb-1.5",
@@ -58,8 +60,10 @@ export default defineConfig({
     "app-device-card-name": "text-[12px] text-[var(--text-main)] truncate",
     "app-device-card-meta": "text-[10px] text-[var(--text-muted)] mt-0.5",
     "app-device-tag": "text-[10px] px-1.5 py-0.5 rounded",
-    "app-device-tag--current": "text-[var(--text-accent)] bg-[var(--accent-soft)] border border-[rgba(var(--accent-rgb),0.2)]",
-    "app-device-tag--revoked": "text-[var(--text-muted)] bg-[var(--border-soft)]",
+    "app-device-tag--current":
+      "text-[var(--text-accent)] bg-[var(--accent-soft)] border border-[rgba(var(--accent-rgb),0.2)]",
+    "app-device-tag--revoked":
+      "text-[var(--text-muted)] bg-[var(--border-soft)]",
     "app-device-actions-confirm": "flex items-center gap-1",
     "app-device-confirm-btn":
       "text-[10px] text-[var(--danger)] bg-[rgba(220,74,74,0.08)] hover:bg-[rgba(220,74,74,0.15)] px-2 py-1 rounded transition-colors",
@@ -69,12 +73,14 @@ export default defineConfig({
       "text-[10px] text-[var(--danger)] hover:bg-[rgba(220,74,74,0.08)] px-2 py-1 rounded transition-colors",
     "app-btn-disabled": "opacity-50 pointer-events-none",
     "app-config-form": "px-4 py-3 space-y-2.5",
-    "app-config-label": "block text-[12px] text-[var(--text-main)] mb-1 opacity-80",
+    "app-config-label":
+      "block text-[12px] text-[var(--text-main)] mb-1 opacity-80",
     "app-config-error": "mt-1 text-[11px] text-[var(--danger)]",
     "app-config-current": "mt-1.5 text-[11px] text-[var(--text-muted)]",
     "app-config-current-value": "text-[var(--text-main)]",
     "app-config-actions": "flex items-center justify-end gap-2",
-    "app-config-btn": "px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all",
+    "app-config-btn":
+      "px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-all",
     "app-config-btn--neutral":
       "text-[var(--text-muted)] bg-[var(--border-soft)] hover:bg-[var(--border-strong)]",
     "app-config-btn--primary":
@@ -95,7 +101,8 @@ export default defineConfig({
     "host-brand-icon-wrap":
       "w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--text-accent)] to-[var(--accent-hover)] flex items-center justify-center shadow-[var(--accent-glow)]",
     "host-brand-icon": "w-5 h-5 text-white",
-    "host-brand-text": "font-bold text-lg hidden sm:block tracking-tight leading-none",
+    "host-brand-text":
+      "font-bold text-lg hidden sm:block tracking-tight leading-none",
     "host-brand-text-mobile": "font-bold text-lg block tracking-tight",
     "host-header-actions": "flex items-center gap-3",
     "host-user-wrap": "relative z-[90]",
@@ -112,7 +119,8 @@ export default defineConfig({
       "absolute top-full right-0 mt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] translate-y-2 group-hover:translate-y-0",
     "host-device-dropdown-card":
       "bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-strong)] rounded-2xl p-3 shadow-[var(--shadow-md)]",
-    "host-device-dropdown-title": "text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-3 px-2",
+    "host-device-dropdown-title":
+      "text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-3 px-2",
     "host-device-list": "space-y-1.5",
     "host-device-item":
       "flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[var(--border-soft)] transition-colors",
@@ -120,8 +128,10 @@ export default defineConfig({
     "host-device-item-platform": "text-[10px] text-[var(--text-muted)]",
     "host-device-item-current":
       "text-[9px] font-bold text-violet-500 bg-violet-500/10 px-1.5 py-0.5 rounded-md",
-    "host-device-item-empty": "px-2 py-4 text-center text-xs text-[var(--text-muted)]",
-    "host-device-dropdown-footer": "mt-3 pt-3 border-t border-[var(--border-soft)]",
+    "host-device-item-empty":
+      "px-2 py-4 text-center text-xs text-[var(--text-muted)]",
+    "host-device-dropdown-footer":
+      "mt-3 pt-3 border-t border-[var(--border-soft)]",
     "host-device-manage-btn":
       "w-full text-xs font-bold text-[var(--text-accent)] hover:bg-[var(--border-soft)] py-2 rounded-xl transition-all",
     "host-icon-btn":
@@ -142,15 +152,18 @@ export default defineConfig({
     "host-logout-btn":
       "w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-[var(--danger)] hover:bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] transition-colors",
     "host-logout-btn-icon": "w-4 h-4",
-    "host-main": "relative z-0 flex-1 overflow-hidden flex",
+    "host-main":
+      "relative z-0 flex-1 overflow-hidden flex mx-auto max-w-screen-2xl",
     "host-sidebar":
-      "w-[332px] border-r border-[var(--border-soft)] bg-[var(--bg-sidebar)] flex flex-col shrink-0",
+      "w-[420px] border-r border-[var(--border-soft)] flex flex-col shrink-0",
     "host-content": "flex-1 flex flex-col min-h-0 bg-[var(--bg-main)]",
-    "host-mobile": "flex md:hidden flex-col h-screen overflow-hidden bg-[var(--bg-main)]",
+    "host-mobile":
+      "flex md:hidden flex-col h-screen overflow-hidden bg-[var(--bg-main)]",
     "host-mobile-top": "relative z-50",
     "host-mobile-header": "!h-auto min-h-18",
     "host-mobile-actions": "flex items-center gap-2",
-    "host-mobile-main": "flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 px-1.5",
+    "host-mobile-main":
+      "flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 px-1.5",
     "host-mobile-send": "py-2 space-y-2",
     "host-mobile-items": "py-2",
     "host-mobile-card":
@@ -159,16 +172,14 @@ export default defineConfig({
     // SendPanel.vue
     "send-panel": "p-2 md:p-4",
     "send-panel-title":
-      "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
+      "text-base font-bold uppercase tracking-widest text-[var(--text-main)] mt-2 mb-2 flex items-center gap-2",
     "send-panel-title-icon": "w-4 h-4 text-[var(--text-accent)]",
-    "send-panel-form": "space-y-3",
     "send-panel-submit":
       "w-full h-11 px-4 bg-[var(--text-accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-[var(--accent-glow)] disabled:opacity-50",
     "send-panel-submit-icon": "w-4 h-4",
 
     // UploadPanel.vue
     "upload-panel": "flex flex-col min-h-0",
-    "upload-panel--full": "flex-1",
     "upload-panel-title":
       "text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4 flex items-center gap-2",
     "upload-panel-title-icon": "w-4 h-4 text-[var(--text-accent)]",
@@ -180,23 +191,28 @@ export default defineConfig({
     "upload-dropzone-title": "text-sm text-[var(--text-main)] font-bold mb-1",
     "upload-dropzone-hint": "text-xs text-[var(--text-muted)]",
     "upload-queue-header": "flex items-center justify-between mb-3",
-    "upload-queue-title": "text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]",
+    "upload-queue-title":
+      "text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]",
     "upload-queue-clear":
       "text-[10px] font-bold uppercase text-[var(--text-accent)] hover:opacity-80 transition-colors",
     "upload-queue": "space-y-2",
     "upload-queue--full": "flex-1 overflow-y-auto min-h-0 pr-1",
-    "upload-queue-empty": "text-center py-10 text-[var(--text-muted)] text-sm italic",
+    "upload-queue-empty":
+      "text-center py-10 text-[var(--text-muted)] text-sm italic",
     "upload-queue-empty-icon":
       "w-10 h-10 mx-auto mb-2 opacity-20 text-[var(--text-muted)]",
     "upload-queue-item":
       "rounded-xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-3 shadow-[var(--shadow-sm)]",
     "upload-queue-item-head": "flex items-center justify-between gap-3",
     "upload-queue-item-info": "min-w-0",
-    "upload-queue-item-name": "text-sm font-medium text-[var(--text-main)] truncate",
-    "upload-queue-item-status": "text-[10px] font-bold uppercase tracking-wider",
+    "upload-queue-item-name":
+      "text-sm font-medium text-[var(--text-main)] truncate",
+    "upload-queue-item-status":
+      "text-[10px] font-bold uppercase tracking-wider",
     "upload-queue-retry":
       "text-[10px] font-bold text-[var(--text-accent)] hover:underline transition-all",
-    "upload-queue-error": "text-[10px] text-[var(--danger)] mt-1 break-all opacity-80",
+    "upload-queue-error":
+      "text-[10px] text-[var(--danger)] mt-1 break-all opacity-80",
 
     // MobileTabs.vue
     "mobile-tabs-nav":

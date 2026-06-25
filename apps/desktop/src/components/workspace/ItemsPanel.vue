@@ -88,7 +88,9 @@ const filteredItems = computed(() => {
   const sourceByMode = shouldShowFavoritesOnly
     ? props.items.filter((item) => item.isFavorite)
     : props.items;
-  const source = sourceByMode.filter((item) => matchesCategory(item, activeCategory.value));
+  const source = sourceByMode.filter((item) =>
+    matchesCategory(item, activeCategory.value),
+  );
   if (!query) return source;
 
   return source.filter((item) => {
@@ -114,7 +116,11 @@ const isFavoritesMode = computed(() => props.mode === "favorites");
 const hasTopics = computed(() => props.topics.length > 0);
 const topicFilterOptions = computed(() => [
   { label: "全部", value: "", count: props.items.length },
-  ...props.topics.map((t) => ({ label: t.name, value: t.name, count: t.count })),
+  ...props.topics.map((t) => ({
+    label: t.name,
+    value: t.name,
+    count: t.count,
+  })),
 ]);
 const categoryCounts = computed(() => {
   const counts: Record<CategoryKey, number> = {
@@ -154,7 +160,11 @@ function matchesCategory(item: ItemView, category: CategoryKey): boolean {
   if (category === "favorite") return item.isFavorite;
   if (category === "code") return isCodeItem(item);
   if (category === "text") return item.type === "text" && !isCodeItem(item);
-  if (category === "image") return item.type === "file" && Boolean(item.fileName && isImageFile(item.fileName));
+  if (category === "image")
+    return (
+      item.type === "file" &&
+      Boolean(item.fileName && isImageFile(item.fileName))
+    );
   return item.type === "file";
 }
 
@@ -228,14 +238,16 @@ function isCodeItem(item: ItemView): boolean {
 
 function typeIconClass(item: ItemView): string {
   if (isCodeItem(item)) return "type-code";
-  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "type-image";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName))
+    return "type-image";
   if (item.type === "file") return "type-file";
   return "type-text";
 }
 
 function itemKindLabel(item: ItemView): string {
   if (isCodeItem(item)) return "代码";
-  if (item.type === "file" && item.fileName && isImageFile(item.fileName)) return "图片";
+  if (item.type === "file" && item.fileName && isImageFile(item.fileName))
+    return "图片";
   if (item.type === "file") return "文件";
   return "文本";
 }
@@ -312,14 +324,19 @@ onBeforeUnmount(() => {
             :key="category.key"
             type="button"
             class="category-tab"
-            :class="activeCategory === category.key ? 'category-tab--active' : ''"
+            :class="
+              activeCategory === category.key ? 'category-tab--active' : ''
+            "
             @click="selectCategory(category.key)"
           >
             <span class="category-tab-icon">
               <component :is="category.icon" />
             </span>
             {{ category.label }}
-            <span v-if="categoryCounts[category.key] > 0" class="category-tab-count">
+            <span
+              v-if="categoryCounts[category.key] > 0"
+              class="category-tab-count"
+            >
               {{ categoryCounts[category.key] }}
             </span>
           </button>
@@ -386,7 +403,11 @@ onBeforeUnmount(() => {
           >
             <div class="card-head">
               <div class="card-ident">
-                <div class="item-icon" :class="typeIconClass(item)" v-html="item.iconSvg"></div>
+                <div
+                  class="item-icon"
+                  :class="typeIconClass(item)"
+                  v-html="item.iconSvg"
+                ></div>
                 <div class="card-titles">
                   <div class="item-title">{{ displayTitle(item) }}</div>
                   <div class="item-kind">{{ itemKindLabel(item) }}</div>
@@ -401,7 +422,9 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <pre v-if="isCodeItem(item)" class="code-block">{{ item.content }}</pre>
+            <pre v-if="isCodeItem(item)" class="code-block">{{
+              item.content
+            }}</pre>
             <img
               v-else-if="item.imageUrl"
               class="image-preview"
@@ -410,12 +433,14 @@ onBeforeUnmount(() => {
               loading="lazy"
               @click="emit('item-action', itemPayload(item, 'preview'))"
               @error="onImageError"
-            >
+            />
             <div v-else-if="item.type === 'file'" class="file-line">
               <span>{{ formatBytes(item.fileSize ?? 0) }}</span>
               <span class="file-line-hint">可下载</span>
             </div>
-            <div v-else-if="item.content" class="item-content-text">{{ item.content }}</div>
+            <div v-else-if="item.content" class="item-content-text">
+              {{ item.content }}
+            </div>
 
             <div
               class="item-footer"
@@ -487,7 +512,11 @@ onBeforeUnmount(() => {
           >
             <div class="card-head">
               <div class="card-ident">
-                <div class="item-icon" :class="typeIconClass(item)" v-html="item.iconSvg"></div>
+                <div
+                  class="item-icon"
+                  :class="typeIconClass(item)"
+                  v-html="item.iconSvg"
+                ></div>
                 <div class="card-titles">
                   <div class="item-title">{{ displayTitle(item) }}</div>
                   <div class="item-kind">{{ itemKindLabel(item) }}</div>
@@ -507,7 +536,9 @@ onBeforeUnmount(() => {
               </button>
             </div>
 
-            <pre v-if="isCodeItem(item)" class="code-block">{{ item.content }}</pre>
+            <pre v-if="isCodeItem(item)" class="code-block">{{
+              item.content
+            }}</pre>
             <img
               v-else-if="item.imageUrl"
               class="image-preview"
@@ -516,12 +547,14 @@ onBeforeUnmount(() => {
               loading="lazy"
               @click="emit('item-action', itemPayload(item, 'preview'))"
               @error="onImageError"
-            >
+            />
             <div v-else-if="item.type === 'file'" class="file-line">
               <span>{{ formatBytes(item.fileSize ?? 0) }}</span>
               <span class="file-line-hint">可下载</span>
             </div>
-            <div v-else-if="item.content" class="item-content-text">{{ item.content }}</div>
+            <div v-else-if="item.content" class="item-content-text">
+              {{ item.content }}
+            </div>
 
             <div
               class="item-footer"
@@ -604,22 +637,21 @@ onBeforeUnmount(() => {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  padding: 0;
+  border-radius: var(--radius-card);
 }
 
 @media (min-width: 721px) {
   .items-panel {
     padding: 12px;
+    margin: 12px 0;
+    background-color: #fefefc;
   }
 }
 
 .items-shell-head {
   flex: 0 0 auto;
   margin-bottom: 12px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-card);
   background: var(--bg-glass);
-  padding: 10px 12px;
 }
 
 .items-toolbar-row {
@@ -648,7 +680,10 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 800;
   padding: 0 12px;
-  transition: background-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .category-tab:hover {
@@ -712,7 +747,9 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   color: var(--text-accent);
-  transition: border-color 0.16s ease, background-color 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease;
 }
 
 .refresh-btn:hover {
@@ -757,7 +794,9 @@ onBeforeUnmount(() => {
   background: var(--bg-card);
   padding: 14px;
   box-shadow: none;
-  transition: background-color 0.16s ease, border-color 0.16s ease;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease;
 }
 
 .item-card:hover {
@@ -914,7 +953,9 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   color: var(--text-subtle);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .favorite-btn--active {
@@ -941,7 +982,10 @@ onBeforeUnmount(() => {
   border: 1px solid var(--border-soft);
   background: var(--bg-card);
   color: var(--text-muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .action-btn:hover {
@@ -1042,8 +1086,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.85; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 @media (max-width: 720px) {

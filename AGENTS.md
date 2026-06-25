@@ -1,4 +1,4 @@
-# AGENTS 指南（my-todolist）
+# AGENTS 指南（NanoPaste）
 
 本文件面向在此仓库内工作的 agentic coding agents。
 目标：快速了解项目结构、可执行命令、代码风格和提交前检查。
@@ -11,7 +11,9 @@
   - `packages/contracts`：前后端共享 TypeScript 协议类型（`v1/*`）。
 - 当前未发现统一任务编排（无根 `package.json` 脚本、无 Makefile）。
 - 当前未发现统一 lint/format 配置（如 ESLint/Prettier/golangci）。
-- 当前测试文件很少或没有，命令以“可执行标准”优先。
+- 桌面端核心组件：`WorkspaceHost.vue`（布局外壳）、`ItemsPanel.vue`（内容列表）、`SendPanel.vue`（发送面板）、`UploadPanel.vue`（上传面板）、`DropdownSelect.vue`（自定义下拉）、`TopicBadge.vue`（话题标签）。
+- 桥接层位于 `src/composables/useBridge.ts`，负责 API 调用和状态管理。
+- UI 改造方案文档：`docs/ui-redesign-plan.md`。
 
 ## 1. 外部规则文件（Cursor / Copilot）
 
@@ -131,6 +133,7 @@
 - API 请求/响应优先复用 `packages/contracts` 类型。
 - 可空值先收窄再使用，减少非空断言。
 - 浏览器端尽量避免手写 DOM API（如 `document.querySelector` / `innerHTML`）；优先通过 Vue 模板和响应式状态驱动 UI。
+- SVG 文件通过 `vite-svg-loader` 作为 Vue 组件导入；类型声明在 `src/env.d.ts` 中覆盖 `vite/client` 的默认 `string` 类型为 `DefineComponent`。
 
 ### 6.3 命名
 
@@ -145,62 +148,95 @@
 - 网络错误统一由 `ApiClient` / `ApiRequestError` 承接。
 - 不要静默吞错；若有意忽略，需体现明确意图。
 
-### 6.5 Desktop UI 样式阅读顺序（UnoCSS + scoped）
+### 6.5 Desktop UI 样式架构（UnoCSS + scoped）
 
-`apps/desktop/uno.config.ts` 中的 UnoCSS shortcuts 已经承担组件级设计系统职责，不是简单 class alias。修改 UI 前必须把 shortcut 当作设计系统入口阅读。
+`apps/desktop/uno.config.ts` 中的 UnoCSS shortcuts 分两类：
+- **仍在使用的 shortcut**：`app-login-*`、`app-modal-*`、`host-*`、`mobile-*`、`upload-*`、`send-panel-*`。这些组件没有 scoped CSS 冲突，shortcut 直接负责布局和视觉。
+- **已废弃并删除的 shortcut**：ItemsPanel 相关的 `item-card`、`item-body`、`item-footer`、`item-icon`、`filter-tab`、`refresh-btn` 等 30 个已全部删除。这些样式已迁移到 `ItemsPanel.vue` 的 `<style scoped>`。
 
-#### 6.5.1 必读顺序
+**核心规则：一个 class 要么在 shortcut 里，要么在 scoped 里，不同时出现在两边。**
+
+#### 6.5.1 样式职责划分
+
+```
+uno.config.ts shortcuts（页面级布局 + 基础组件）
+  ├── app-*          登录页、模态框、Toast
+  ├── host-*         布局外壳、header、sidebar、设备下拉、用户菜单
+  ├── mobile-*       移动端 tab
+  ├── upload-*       上传面板（dropzone 布局已迁移到 scoped）
+  └── send-panel-*   发送面板基础结构
+
+组件 scoped CSS（内容区组件 + 频繁调整的视觉细节）
+  ├── ItemsPanel.vue     卡片、工具条、分类 tab、瀑布流（全部自管）
+  ├── SendPanel.vue      editor-wrap、mode-tabs、高级折叠区
+  ├── DropdownSelect.vue 自定义下拉
+  └── TopicBadge.vue     话题标签
+
+global.css（只放 token）
+  └── CSS variables      颜色、阴影、圆角、间距 token
+```
+
+#### 6.5.2 必读顺序
 
 修改任意 `apps/desktop` UI 样式前，按顺序确认：
 
 1. 组件模板中的 class 名。
-2. `apps/desktop/uno.config.ts` 中对应 shortcut 的完整定义，特别是 `md:` / `lg:` / `max-*` 响应式前缀。
-3. `apps/desktop/src/assets/css/global.css` 中相关 CSS variable 在 light/dark 下的实际值，如 `--bg-card`、`--text-main`、`--border-soft`、`--accent-glow`。
+2. 确认该 class 是来自 shortcut 还是 scoped（参见 6.5.1 职责划分）。
+3. `apps/desktop/src/assets/css/global.css` 中相关 CSS variable 在 light/dark 下的实际值。
 4. 当前组件 `<style scoped>` 是否定义了同名 class 或同一属性。
-5. 父级容器是否已经提供 padding / gap / overflow / height，不要只看当前组件。
+5. 父级容器是否已经提供 padding / gap / overflow / height。
 
-#### 6.5.2 scoped 与 shortcut 的关系
+#### 6.5.3 CSS 变量速查
 
-- scoped 样式会编译为带 `[data-v-xxx]` 的选择器，通常会覆盖同名 UnoCSS 原子类。
-- UnoCSS shortcut 里带 `md:` / `lg:` 的规则会生成媒体查询；如果 scoped 样式没有对应 `@media` 覆盖，断点内的 shortcut 规则仍可能生效。
-- 如果一个 class 同时存在于 `uno.config.ts` shortcut 和组件 `<style scoped>`，必须明确谁负责布局、谁负责局部变体，避免两边同时改同一属性。
+**配色（绿灰调）**：`--bg-main`、`--bg-card`（`#fafbfc`）、`--text-main`、`--text-muted`、`--text-subtle`、`--accent-rgb`、`--accent-soft`、`--border-soft`、`--border-strong`。
 
-#### 6.5.3 间距与滚动容器检查
+**圆角 token（Shape Consistency Lock）**：
+- `--radius-card: 16px` — 卡片、面板等容器
+- `--radius-icon: 10px` — 图标容器
+- `--radius-control: 10px` — 按钮、输入框等交互控件
 
-禁止在未检查父容器和 shortcut 的情况下，直接给当前组件添加 `padding`、`margin`、`height`、`overflow`。
+**功能性变量**：
+- `--code-bg` / `--code-text` — 代码黑底预览区
+- `--warning` / `--warning-soft` — 收藏爱心金色（仅用于收藏按钮）
+- `--type-code-bg/fg`、`--type-file-bg/fg`、`--type-image-bg/fg` — type-icon 分色（当前已停用，SVG 自带颜色）
 
-当前常见布局层级：
+#### 6.5.4 间距与滚动容器检查
+
+禁止在未检查父容器的情况下，直接给当前组件添加 `padding`、`margin`、`height`、`overflow`。
+
+当前布局层级：
 
 ```txt
 桌面端：
   host-content
     items-panel
       items-list
-        item-card grid
+        items-section (masonry columns 瀑布流)
+          item-card (break-inside: avoid)
 
 手机端：
   host-mobile-items
     items-panel
       items-list
-        item-card grid
+        items-section (columns: 1)
+          item-card
 ```
 
-- 桌面端内容面板的间距通常来自 `items-panel` shortcut。
-- 手机端内容页外层间距通常来自 `WorkspaceHost.vue` 里的 `host-mobile-items` scoped 样式。
-- `items-list` 应是滚动容器；卡片网格间距应由 grid `gap` 控制，不要额外叠加右 padding 制造横向滚动条。
+- `items-section` 使用 CSS `columns` 瀑布流布局，不是 grid。卡片高度由内容自然决定。
+- `item-card` 用 `break-inside: avoid` 防止瀑布流分栏断裂。
+- `items-list` 是滚动容器。
 
-#### 6.5.4 修改 UI 前 checklist
+#### 6.5.5 修改 UI 前 checklist
 
 开始改样式前先回答：
 
-- 当前 class 是否来自 `uno.config.ts` shortcut？
-- shortcut 是否有响应式前缀？
+- 该 class 属于 shortcut 还是 scoped？（参见 6.5.1）
+- 如果是 shortcut，是否有响应式前缀？
 - scoped 是否覆盖了同名 class 或同一属性？
 - 父容器是否已有 padding / gap / overflow？
 - CSS variable 在 light/dark 下实际颜色是什么？
+- 圆角是否遵循 token 体系（`--radius-card/icon/control`）？
 - 这次改动属于设计系统通用规则，还是组件局部变体？
-
-补充索引：修改桌面端 UI 前优先阅读 `docs/design-system.md`。
 
 ## 7. API 与数据约定
 

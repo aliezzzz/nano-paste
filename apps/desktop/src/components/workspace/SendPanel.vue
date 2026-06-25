@@ -26,14 +26,31 @@ const languageOptions: DropdownOption[] = [
   { label: "YAML", value: "yaml" },
 ];
 
-const props = withDefaults(defineProps<{ submitting?: boolean; topicSuggestions?: string[]; clearVersion?: number }>(), {
-  submitting: false,
-  topicSuggestions: () => [],
-  clearVersion: 0,
-});
+const props = withDefaults(
+  defineProps<{
+    submitting?: boolean;
+    topicSuggestions?: string[];
+    clearVersion?: number;
+  }>(),
+  {
+    submitting: false,
+    topicSuggestions: () => [],
+    clearVersion: 0,
+  },
+);
 
 const emit = defineEmits<{
-  (e: "submit", payload: { title?: string; content: string; tags?: string[]; topic?: string; contentKind?: "text" | "code"; language?: string }): void;
+  (
+    e: "submit",
+    payload: {
+      title?: string;
+      content: string;
+      tags?: string[];
+      topic?: string;
+      contentKind?: "text" | "code";
+      language?: string;
+    },
+  ): void;
 }>();
 
 const title = ref("");
@@ -44,7 +61,9 @@ const contentKind = ref<"text" | "code">("text");
 const language = ref("");
 
 const hasExistingTopics = computed(() => props.topicSuggestions.length > 0);
-const topicValue = computed(() => customTopic.value.trim() || selectedTopic.value.trim());
+const topicValue = computed(
+  () => customTopic.value.trim() || selectedTopic.value.trim(),
+);
 
 const topicOptions = computed<DropdownOption[]>(() => [
   { label: hasExistingTopics.value ? "选择已有话题" : "暂无话题", value: "" },
@@ -58,7 +77,8 @@ function handleSubmit(e: Event): void {
     content: content.value,
     topic: topicValue.value || undefined,
     contentKind: contentKind.value,
-    language: contentKind.value === "code" ? language.value || undefined : undefined,
+    language:
+      contentKind.value === "code" ? language.value || undefined : undefined,
   };
   if (!payload.content.trim()) {
     return;
@@ -100,17 +120,33 @@ defineExpose({ clear });
         <SendIcon class="send-panel-title-icon" />
         快速投递
       </h2>
-      <p class="send-panel-subtitle">粘贴内容，立即同步到剪贴板</p>
     </div>
     <form id="text-form" class="send-panel-form" @submit="handleSubmit">
       <div class="send-kind-row">
         <div class="send-kind-toggle" aria-label="内容类型">
-          <button type="button" class="send-kind-btn" :class="contentKind === 'text' ? 'send-kind-btn--active' : ''" @click="contentKind = 'text'">文本</button>
-          <button type="button" class="send-kind-btn" :class="contentKind === 'code' ? 'send-kind-btn--active' : ''" @click="contentKind = 'code'">代码片段</button>
+          <button
+            type="button"
+            class="send-kind-btn"
+            :class="contentKind === 'text' ? 'send-kind-btn--active' : ''"
+            @click="contentKind = 'text'"
+          >
+            文本
+          </button>
+          <button
+            type="button"
+            class="send-kind-btn"
+            :class="contentKind === 'code' ? 'send-kind-btn--active' : ''"
+            @click="contentKind = 'code'"
+          >
+            代码片段
+          </button>
         </div>
       </div>
 
-      <div class="editor-wrap" :class="contentKind === 'code' ? 'editor-wrap--code' : ''">
+      <div
+        class="editor-wrap"
+        :class="contentKind === 'code' ? 'editor-wrap--code' : ''"
+      >
         <textarea
           v-model="content"
           id="text-content"
@@ -142,7 +178,14 @@ defineExpose({ clear });
         <div class="send-advanced-body">
           <label class="send-field">
             <span class="send-label">标题</span>
-            <input v-model="title" type="text" id="text-title" placeholder="给这段文本一个短标题，可留空" maxlength="80" class="send-input">
+            <input
+              v-model="title"
+              type="text"
+              id="text-title"
+              placeholder="给这段文本一个短标题，可留空"
+              maxlength="80"
+              class="send-input"
+            />
           </label>
 
           <div class="send-topic-grid">
@@ -166,13 +209,18 @@ defineExpose({ clear });
                 maxlength="50"
                 class="send-input"
                 @input="handleCustomTopicInput"
-              >
+              />
             </label>
           </div>
         </div>
       </details>
 
-      <button type="submit" id="text-submit-btn" class="send-panel-submit" :disabled="props.submitting">
+      <button
+        type="submit"
+        id="text-submit-btn"
+        class="send-panel-submit"
+        :disabled="props.submitting"
+      >
         <SendIcon class="send-panel-submit-icon" />
         {{ props.submitting ? "发送中..." : "发送" }}
       </button>
@@ -182,7 +230,7 @@ defineExpose({ clear });
 
 <style scoped>
 .send-panel {
-  padding: 18px;
+  padding: 12px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   background: var(--bg-card);
@@ -191,14 +239,6 @@ defineExpose({ clear });
 .send-panel-head {
   display: grid;
   gap: 4px;
-  margin-bottom: 16px;
-}
-
-.send-panel-subtitle {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .send-panel-form {
@@ -220,7 +260,7 @@ defineExpose({ clear });
 
 .send-topic-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -235,7 +275,7 @@ defineExpose({ clear });
   height: 42px;
   padding: 4px;
   border-radius: var(--radius-control);
-  background: var(--input-bg);
+  background: var(--bg-card-hover);
 }
 
 .send-kind-btn {
@@ -247,8 +287,10 @@ defineExpose({ clear });
 }
 
 .send-kind-btn--active {
-  background: var(--bg-card);
-  color: var(--text-accent);
+  /*background: var(--bg-card);
+  color: var(--text-accent);*/
+  background: var(--text-accent);
+  color: var(--bg-card);
 }
 
 .send-input {
@@ -262,7 +304,10 @@ defineExpose({ clear });
   line-height: 1.45;
   padding: 10px 12px;
   outline: none;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
 }
 
 .send-input::placeholder {
@@ -286,7 +331,10 @@ defineExpose({ clear });
   border-radius: var(--radius-card);
   background: var(--input-bg);
   padding: 12px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
 }
 
 .editor-wrap:focus-within {
@@ -297,7 +345,7 @@ defineExpose({ clear });
 
 .editor-textarea {
   width: 100%;
-  min-height: 160px;
+  min-height: 100px;
   resize: vertical;
   border: 0;
   outline: none;
@@ -346,10 +394,10 @@ defineExpose({ clear });
   gap: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
   list-style: none;
-  padding: 12px 14px;
+  padding: 12px 0;
 }
 
 .send-advanced-summary::-webkit-details-marker {
@@ -380,7 +428,6 @@ defineExpose({ clear });
 .send-advanced-body {
   display: grid;
   gap: 10px;
-  padding: 0 12px;
 }
 
 @media (max-width: 720px) {

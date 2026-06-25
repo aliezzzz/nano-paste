@@ -15,7 +15,7 @@
     --accent-hover: #0fa778;
     --accent-soft: #e8f8f2;
     --danger: #e55f5f;
-    --border-soft: #e2e8e5;
+    --border-soft: #eff1f1;
     --border-strong: #d3ddd8;
     --accent-glow: rgba(var(--accent-rgb), 0.16);
     --shadow-sm: 0 8px 24px rgba(21, 34, 29, 0.055);
@@ -115,15 +115,30 @@
     background-clip: content-box;
   }
 
-  html, body {
+  html,
+  body {
     margin: 0;
     padding: 0;
     height: 100%;
     background-color: var(--bg-main);
     color: var(--text-main);
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans CJK SC", "Noto Sans SC", system-ui, sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "SF Pro Text",
+      "Segoe UI",
+      "Microsoft YaHei",
+      "微软雅黑",
+      "PingFang SC",
+      "Noto Sans CJK SC",
+      "Noto Sans SC",
+      system-ui,
+      sans-serif;
     overflow: hidden;
-    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Subtle noise texture — very low opacity for depth */
@@ -188,7 +203,9 @@
     background: var(--input-bg);
     color: var(--text-main);
     font-size: 0.8125rem;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .ui-input:focus {
@@ -209,7 +226,9 @@
   }
 
   .card-hover {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
     border: 1px solid var(--border-soft);
   }
 
