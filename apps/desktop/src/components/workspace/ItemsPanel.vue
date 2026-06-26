@@ -575,7 +575,7 @@ onBeforeUnmount(() => {
   .items-panel {
     padding: 12px;
     margin: 12px 0;
-    background-color: #fefefc;
+    background-color: var(--bg-card);
   }
 }
 
@@ -622,7 +622,7 @@ onBeforeUnmount(() => {
 }
 
 .category-tab--active {
-  color: #fff;
+  color: var(--bg-header);
   background: var(--text-accent);
   box-shadow: var(--accent-glow) 0 8px 24px;
 }
@@ -798,7 +798,7 @@ onBeforeUnmount(() => {
   max-height: 180px;
   font-size: 12.5px;
   line-height: 1.62;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--code-border);
   margin: 0;
   max-width: 100%;
   box-sizing: border-box;
@@ -935,8 +935,8 @@ onBeforeUnmount(() => {
 
 .delete-btn:hover {
   color: var(--danger);
-  border-color: rgba(229, 95, 95, 0.35);
-  background: rgba(229, 95, 95, 0.08);
+  border-color: rgba(var(--danger-rgb), 0.35);
+  background: rgba(var(--danger-rgb), 0.08);
 }
 
 .action-btn-icon,
@@ -1034,7 +1034,14 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .items-panel {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+  }
+
   .items-shell-head {
+    background: var(--bg-header);
+    border-top: 1px solid var(--border-soft);
     padding: 6px;
     border-bottom: 1px solid var(--border-soft);
   }
@@ -1086,6 +1093,18 @@ onBeforeUnmount(() => {
 
   .topic-filter-dropdown {
     display: none;
+  }
+
+  .items-empty-state {
+    border: none;
+    padding: 24px 16px;
+    height: auto;
+    margin: 0;
+  }
+
+  .items-empty-icon {
+    width: 48px;
+    height: 48px;
   }
 }
 </style>

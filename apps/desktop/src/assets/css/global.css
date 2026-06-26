@@ -15,6 +15,7 @@
     --accent-hover: #0fa778;
     --accent-soft: #e8f8f2;
     --danger: #e55f5f;
+    --danger-rgb: 229, 95, 95;
     --border-soft: #eff1f1;
     --border-strong: #d3ddd8;
     --accent-glow: rgba(var(--accent-rgb), 0.16);
@@ -26,6 +27,7 @@
     /* 代码黑底预览 */
     --code-bg: #17242d;
     --code-text: #d9f8ec;
+    --code-border: rgba(255, 255, 255, 0.08);
 
     /* 收藏金色星标 */
     --warning: #f0b429;
@@ -61,6 +63,7 @@
     --accent-hover: #5fe3b6;
     --accent-soft: #17372e;
     --danger: #f17a78;
+    --danger-rgb: 241, 122, 120;
     --border-soft: #293936;
     --border-strong: #39504a;
     --accent-glow: rgba(var(--accent-rgb), 0.14);
@@ -72,6 +75,7 @@
     /* 代码黑底预览 */
     --code-bg: #0b1116;
     --code-text: #d5f9ec;
+    --code-border: rgba(255, 255, 255, 0.08);
 
     /* 收藏金色星标 */
     --warning: #f3c15c;

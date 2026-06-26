@@ -432,6 +432,8 @@ function selectTopic(topic: string): void {
 }
 
 .host-mobile-items {
+    height: 100%;
+    min-height: 0;
     padding: 0;
 }
 

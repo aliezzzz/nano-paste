@@ -160,7 +160,7 @@ export default defineConfig({
     "host-mobile":
       "flex md:hidden flex-col h-screen overflow-hidden bg-[var(--bg-main)]",
     "host-mobile-top": "relative z-50",
-    "host-mobile-header": "!h-auto min-h-18 shadow-[var(--shadow-sm)]",
+    "host-mobile-header": "!h-auto min-h-18",
     "host-mobile-actions": "flex items-center gap-2",
     "host-mobile-main":
       "flex-1 min-h-0 relative pb-14",
