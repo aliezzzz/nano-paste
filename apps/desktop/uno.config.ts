@@ -160,10 +160,10 @@ export default defineConfig({
     "host-mobile":
       "flex md:hidden flex-col h-screen overflow-hidden bg-[var(--bg-main)]",
     "host-mobile-top": "relative z-50",
-    "host-mobile-header": "!h-auto min-h-18",
+    "host-mobile-header": "!h-auto min-h-18 shadow-[var(--shadow-sm)]",
     "host-mobile-actions": "flex items-center gap-2",
     "host-mobile-main":
-      "flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative pb-16 px-1.5",
+      "flex-1 min-h-0 relative pb-14",
     "host-mobile-send": "py-2 space-y-2",
     "host-mobile-items": "py-2",
     "host-mobile-card":
@@ -216,7 +216,7 @@ export default defineConfig({
 
     // MobileTabs.vue
     "mobile-tabs-nav":
-      "fixed bottom-0 left-0 right-0 h-14 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50",
+      "fixed bottom-0 left-0 right-0 h-14 border-t border-[var(--border-soft)] bg-[var(--bg-glass)] backdrop-blur-xl flex items-center justify-around z-50 shadow-[var(--shadow-sm)]",
     "mobile-tab-btn":
       "flex flex-col items-center gap-1 py-2 px-6 transition-all",
     "mobile-tab-btn--active": "text-[var(--text-accent)] scale-105",

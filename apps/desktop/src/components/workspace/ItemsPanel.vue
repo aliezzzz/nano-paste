@@ -18,6 +18,7 @@ import ImageIcon from "../../assets/icons/image.svg";
 import TopicBadge from "./TopicBadge.vue";
 import DropdownSelect from "./DropdownSelect.vue";
 import type { TopicInfo } from "./TopicList.vue";
+import { MasonryWall } from "@yeger/vue-masonry-wall";
 
 export type { ItemView };
 
@@ -111,6 +112,9 @@ const filteredItems = computed(() => {
 
 const favoriteItems = computed(() =>
   filteredItems.value.filter((item) => item.isFavorite),
+);
+const displayItems = computed(() =>
+  isFavoritesMode.value ? favoriteItems.value : filteredItems.value,
 );
 const hasVisibleItems = computed(() => filteredItems.value.length > 0);
 const isFavoritesMode = computed(() => props.mode === "favorites");
@@ -399,26 +403,23 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="list-container">
-      <div
+      <MasonryWall
         v-if="hasVisibleItems"
-        id="items-list"
-        class="items-list custom-scrollbar"
+        :items="displayItems"
+        :column-width="280"
+        :gap="12"
+        :min-columns="1"
+        :max-columns="4"
+        :key-mapper="(_item: ItemView, _col: number, _row: number, index: number) => String(_item.id)"
+        class="items-list"
       >
-        <section
-          v-if="isFavoritesMode"
-          data-testid="mobile-favorites-section"
-          class="items-section"
-        >
-          <div v-if="favoriteItems.length === 0" class="items-section-empty">
-            还没有收藏内容
-          </div>
+        <template #default="{ item }">
           <article
-            v-for="item in favoriteItems"
-            :key="item.id"
-            class="item-card item-card--favorite"
-            :class="
-              item.type === 'file' ? 'item-card--file' : 'item-card--text'
-            "
+            class="item-card"
+            :class="[
+              (isFavoritesMode || item.isFavorite) ? 'item-card--favorite' : '',
+              item.type === 'file' ? 'item-card--file' : 'item-card--text',
+            ]"
             :style="itemCardStyle(item)"
           >
             <div class="card-head">
@@ -435,8 +436,13 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <button
-                class="favorite-btn favorite-btn--active"
-                title="取消收藏"
+                class="favorite-btn"
+                :class="
+                  (isFavoritesMode || item.isFavorite)
+                    ? 'favorite-btn--active'
+                    : 'favorite-btn--inactive'
+                "
+                :title="(isFavoritesMode || item.isFavorite) ? '取消收藏' : '收藏'"
                 @click="emit('item-action', itemPayload(item, 'favorite'))"
               >
                 <HeartIcon class="w-4 h-4" aria-hidden="true" />
@@ -511,115 +517,10 @@ onBeforeUnmount(() => {
                   >{{ formatBytes(item.fileSize) }}</span
                 >
               </div>
-              <span v-if="!isTopicEditing(item.id)" class="timestamp">{{
-                formatItemTime(item.createdAt)
-              }}</span>
-            </div>
-          </article>
-        </section>
-
-        <section
-          v-if="!isFavoritesMode"
-          data-testid="all-section"
-          class="items-section"
-        >
-          <article
-            v-for="item in filteredItems"
-            :key="item.id"
-            class="item-card"
-            :class="[
-              item.isFavorite ? 'item-card--favorite' : '',
-              item.type === 'file' ? 'item-card--file' : 'item-card--text',
-            ]"
-            :style="itemCardStyle(item)"
-          >
-            <div class="card-head">
-              <div class="card-ident">
-                <div
-                  class="item-icon"
-                  :class="typeIconClass(item)"
-                  :style="itemIconStyle(item)"
-                  v-html="item.iconSvg"
-                ></div>
-                <div class="card-titles">
-                  <div class="item-title">{{ displayTitle(item) }}</div>
-                  <div class="item-kind">{{ itemKindLabel(item) }}</div>
-                </div>
-              </div>
-              <button
-                class="favorite-btn"
-                :class="
-                  item.isFavorite
-                    ? 'favorite-btn--active'
-                    : 'favorite-btn--inactive'
-                "
-                :title="item.isFavorite ? '取消收藏' : '收藏'"
-                @click="emit('item-action', itemPayload(item, 'favorite'))"
+              <div
+                v-if="!isFavoritesMode && !isTopicEditing(item.id)"
+                class="footer-meta"
               >
-                <HeartIcon class="w-4 h-4" aria-hidden="true" />
-              </button>
-            </div>
-
-            <pre
-              v-if="isCodeItem(item)"
-              class="code-block"
-            ><code v-html="highlightCode(item.content ?? '', item.language ?? '').html"></code></pre>
-            <img
-              v-else-if="item.imageUrl"
-              class="image-preview"
-              :src="item.imageUrl"
-              :alt="item.fileName || ''"
-              loading="lazy"
-              @click="emit('item-action', itemPayload(item, 'preview'))"
-              @error="onImageError"
-            />
-            <div v-else-if="item.type === 'file'" class="file-line">
-              <span>{{ formatBytes(item.fileSize ?? 0) }}</span>
-              <span class="file-line-hint">可下载</span>
-            </div>
-            <div v-else-if="item.content" class="item-content-text">
-              {{ item.content }}
-            </div>
-
-            <div
-              class="item-footer"
-              :class="
-                isTopicEditing(item.id) ? 'item-footer--topic-editing' : ''
-              "
-            >
-              <div class="item-actions-left">
-                <TopicBadge
-                  :topic="item.topic"
-                  :tags="item.tags"
-                  @edit-start="startTopicEdit(item.id)"
-                  @edit-end="endTopicEdit(item.id)"
-                  @update-topic="updateItemTopic(item, $event)"
-                />
-                <button
-                  v-if="isCodeItem(item) && !isTopicEditing(item.id)"
-                  class="action-btn action-btn--text"
-                  @click="emit('item-action', itemPayload(item, 'copy'))"
-                >
-                  <CopyIcon class="action-btn-icon" />
-                  复制
-                </button>
-                <button
-                  v-if="!isTopicEditing(item.id)"
-                  class="action-btn"
-                  :class="
-                    item.type === 'text'
-                      ? 'action-btn--text'
-                      : 'action-btn--file'
-                  "
-                  @click="
-                    emit('item-action', itemPayload(item, primaryAction(item)))
-                  "
-                >
-                  <component :is="actionIcon(item)" class="action-btn-icon" />
-                  {{ actionLabel(item) }}
-                </button>
-              </div>
-              <div v-if="!isTopicEditing(item.id)" class="footer-meta">
                 <span class="timestamp">{{
                   formatItemTime(item.createdAt)
                 }}</span>
@@ -632,10 +533,15 @@ onBeforeUnmount(() => {
                   删除
                 </button>
               </div>
+              <span
+                v-if="isFavoritesMode && !isTopicEditing(item.id)"
+                class="timestamp"
+                >{{ formatItemTime(item.createdAt) }}</span
+              >
             </div>
           </article>
-        </section>
-      </div>
+        </template>
+      </MasonryWall>
 
       <div
         v-if="!props.loading && !hasVisibleItems"
@@ -665,7 +571,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-card);
 }
 
-@media (min-width: 721px) {
+@media (min-width: 769px) {
   .items-panel {
     padding: 12px;
     margin: 12px 0;
@@ -790,19 +696,8 @@ onBeforeUnmount(() => {
   height: 16px;
 }
 
-.items-section {
-  columns: 3 280px;
-  column-gap: 12px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.items-section + .items-section {
-  margin-top: 12px;
-}
-
 .items-section-empty {
-  break-inside: avoid;
+  display: block;
   border: 1px dashed var(--border-soft);
   border-radius: var(--radius-card);
   color: var(--text-muted);
@@ -812,9 +707,7 @@ onBeforeUnmount(() => {
 
 /* ── 卡片 ── */
 .item-card {
-  break-inside: avoid;
   display: block;
-  margin: 0 0 12px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   background: var(--item-card-bg, var(--bg-card));
@@ -899,13 +792,16 @@ onBeforeUnmount(() => {
   color: var(--code-text);
   border-radius: 12px;
   padding: 13px;
-  white-space: pre-wrap;
-  overflow: auto;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 180px;
   font-size: 12.5px;
   line-height: 1.62;
   border: 1px solid rgba(255, 255, 255, 0.08);
   margin: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .image-preview {
@@ -1137,13 +1033,17 @@ onBeforeUnmount(() => {
   }
 }
 
-@media (max-width: 720px) {
-  .items-panel {
-    height: auto;
+@media (max-width: 768px) {
+  .items-shell-head {
+    padding: 6px;
+    border-bottom: 1px solid var(--border-soft);
   }
 
   .list-container {
-    min-height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
   }
 
   .items-list {
@@ -1151,16 +1051,41 @@ onBeforeUnmount(() => {
     overflow: visible;
   }
 
-  .items-section {
-    columns: 1;
-  }
-
   .items-skeleton {
     columns: 1;
   }
 
   .items-toolbar-row {
-    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .category-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .category-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-tab {
+    min-height: 30px;
+    font-size: 11px;
+    padding: 0 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .category-tab--active {
+    box-shadow: none;
+  }
+
+  .topic-filter-dropdown {
+    display: none;
   }
 }
 </style>

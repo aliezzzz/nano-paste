@@ -427,9 +427,12 @@ function selectTopic(topic: string): void {
     min-height: 0;
 }
 
-.host-mobile-send,
-.host-mobile-items {
+.host-mobile-send {
     padding: 10px;
+}
+
+.host-mobile-items {
+    padding: 0;
 }
 
 .host-mobile-send {
