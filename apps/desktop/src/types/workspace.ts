@@ -12,6 +12,7 @@ export interface ItemView {
   iconSvg: string;
   iconBackground?: string;
   iconDarkBackground?: string;
+  cardBackground?: string;
   tags?: string[];
   topic?: string;
   contentKind?: "text" | "code";

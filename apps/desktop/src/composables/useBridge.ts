@@ -75,6 +75,7 @@ export function useBridge(onLoggedOut: () => void) {
           iconSvg: icon.svg,
           iconBackground: icon.background,
           iconDarkBackground: icon.darkBackground,
+          cardBackground: icon.cardBackground,
           topic: item.topic,
           contentKind: item.type === "text" ? item.contentKind : undefined,
           language: item.type === "text" ? item.language : undefined,

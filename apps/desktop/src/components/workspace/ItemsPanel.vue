@@ -306,6 +306,11 @@ function itemIconStyle(item: ItemView): Record<string, string> | undefined {
   return style;
 }
 
+function itemCardStyle(item: ItemView): Record<string, string> | undefined {
+  if (!item.cardBackground) return undefined;
+  return { "--item-card-bg": item.cardBackground };
+}
+
 function startTopicEdit(itemId: string): void {
   editingTopicItemId.value = itemId;
 }
@@ -414,6 +419,7 @@ onBeforeUnmount(() => {
             :class="
               item.type === 'file' ? 'item-card--file' : 'item-card--text'
             "
+            :style="itemCardStyle(item)"
           >
             <div class="card-head">
               <div class="card-ident">
@@ -525,6 +531,7 @@ onBeforeUnmount(() => {
               item.isFavorite ? 'item-card--favorite' : '',
               item.type === 'file' ? 'item-card--file' : 'item-card--text',
             ]"
+            :style="itemCardStyle(item)"
           >
             <div class="card-head">
               <div class="card-ident">
@@ -810,7 +817,7 @@ onBeforeUnmount(() => {
   margin: 0 0 12px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
-  background: var(--bg-card);
+  background: var(--item-card-bg, var(--bg-card));
   padding: 14px;
   box-shadow: none;
   transition:
@@ -827,7 +834,7 @@ onBeforeUnmount(() => {
 }
 
 .item-card--favorite {
-  background: var(--accent-soft);
+  background: var(--item-card-bg, var(--accent-soft));
   border-color: var(--border-soft);
 }
 
