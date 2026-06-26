@@ -15,7 +15,7 @@ function toggle() {
     @click="toggle"
     :title="themeStore.theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
   >
-    <div class="icon-wrapper" :class="themeStore.theme">
+    <div class="icon-wrapper" :class="`theme-icon-${themeStore.theme}`">
       <!-- Sun -->
       <svg
         v-if="themeStore.theme === 'light'"
@@ -75,6 +75,14 @@ function toggle() {
   position: relative;
 }
 
+:global(.dark) .theme-toggle,
+:global(.dark) .theme-toggle:hover {
+  border: 0;
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
 .theme-toggle:hover {
   border-color: var(--border-strong);
   color: var(--text-main);
@@ -87,11 +95,11 @@ function toggle() {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.icon-wrapper.light {
+.icon-wrapper.theme-icon-light {
   animation: rotate-in 0.4s ease-out;
 }
 
-.icon-wrapper.dark {
+.icon-wrapper.theme-icon-dark {
   animation: scale-in 0.4s ease-out;
 }
 
@@ -122,6 +130,6 @@ function toggle() {
 }
 
 .moon-icon {
-  color: var(--text-accent);
+  color: var(--accent-warm);
 }
 </style>

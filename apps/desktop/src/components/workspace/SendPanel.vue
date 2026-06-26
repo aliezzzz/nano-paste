@@ -316,6 +316,14 @@ defineExpose({ clear });
   background: var(--bg-card);
 }
 
+:global(.dark) .send-panel {
+  border-color: rgba(196, 202, 236, 0.13);
+  background: linear-gradient(180deg, rgba(38, 43, 67, 0.82), rgba(31, 36, 58, 0.82));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 42px rgba(5, 8, 18, 0.2);
+}
+
 .send-panel-head {
   display: grid;
   gap: 4px;
@@ -358,6 +366,11 @@ defineExpose({ clear });
   background: var(--bg-card-hover);
 }
 
+:global(.dark) .send-kind-toggle {
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
 .send-kind-btn {
   border-radius: var(--radius-control);
   color: var(--text-muted);
@@ -371,6 +384,12 @@ defineExpose({ clear });
   color: var(--text-accent);*/
   background: var(--text-accent);
   color: var(--bg-card);
+}
+
+:global(.dark) .send-kind-btn--active {
+  background: linear-gradient(135deg, #9f7fff, #b99fff);
+  color: #ffffff;
+  box-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.22);
 }
 
 .send-input {
@@ -388,6 +407,11 @@ defineExpose({ clear });
     border-color 0.16s ease,
     box-shadow 0.16s ease,
     background-color 0.16s ease;
+}
+
+:global(.dark) .send-input {
+  border-color: rgba(196, 202, 236, 0.13);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .send-input::placeholder {
@@ -415,6 +439,12 @@ defineExpose({ clear });
     border-color 0.18s ease,
     box-shadow 0.18s ease,
     background-color 0.18s ease;
+}
+
+:global(.dark) .editor-wrap {
+  border-color: rgba(196, 202, 236, 0.13);
+  background: rgba(18, 22, 36, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .editor-wrap:focus-within {
@@ -463,7 +493,10 @@ defineExpose({ clear });
 
 .send-advanced {
   border-radius: 14px;
-  background: var(--input-bg);
+}
+
+:global(.dark) .send-advanced {
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .send-advanced[open] {
@@ -529,6 +562,11 @@ defineExpose({ clear });
   transition:
     border-color 0.18s ease,
     background-color 0.18s ease;
+}
+
+:global(.dark) .file-zone {
+  border-color: rgba(196, 202, 236, 0.16);
+  background: rgba(18, 22, 36, 0.72);
 }
 
 .file-zone:hover,

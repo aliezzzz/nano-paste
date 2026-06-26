@@ -175,7 +175,7 @@ export default defineConfig({
       "text-base font-bold uppercase tracking-widest text-[var(--text-main)] mt-2 mb-2 flex items-center gap-2",
     "send-panel-title-icon": "w-4 h-4 text-[var(--text-accent)]",
     "send-panel-submit":
-      "w-full h-11 px-4 bg-[var(--text-accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-[var(--accent-glow)] disabled:opacity-50",
+      "w-full h-11 px-4 bg-[var(--submit-btn-bg,var(--text-accent))] hover:bg-[var(--submit-btn-hover,var(--accent-hover))] text-[var(--submit-btn-text,white)] text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-[var(--accent-glow)] disabled:opacity-50",
     "send-panel-submit-icon": "w-4 h-4",
 
     // UploadPanel.vue

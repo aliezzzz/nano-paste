@@ -355,6 +355,23 @@ function selectTopic(topic: string): void {
     padding: 12px;
 }
 
+:global(.dark) .host-header {
+    background: linear-gradient(180deg, rgba(29, 33, 52, 0.94), rgba(26, 30, 48, 0.86));
+    border-bottom-color: rgba(194, 201, 238, 0.12);
+    box-shadow: 0 16px 44px rgba(5, 8, 18, 0.16);
+    backdrop-filter: blur(20px) saturate(1.16);
+    -webkit-backdrop-filter: blur(20px) saturate(1.16);
+}
+
+:global(.dark) .host-sidebar {
+    background: linear-gradient(180deg, rgba(35, 40, 63, 0.58), rgba(27, 32, 51, 0.52));
+    border-right-color: rgba(194, 201, 238, 0.12);
+}
+
+:global(.dark) .host-content {
+    background: transparent;
+}
+
 .host-brand-copy {
     display: grid;
     gap: 2px;
@@ -384,10 +401,26 @@ function selectTopic(topic: string): void {
     transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
+:global(.dark) .host-search {
+    border-color: rgba(192, 199, 235, 0.14);
+    background: rgba(18, 22, 36, 0.68);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 10px 30px rgba(5, 8, 18, 0.12);
+}
+
 .host-search:focus-within {
     border-color: rgba(var(--accent-rgb), 0.38);
     background: var(--bg-card);
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
+}
+
+:global(.dark) .host-search:focus-within {
+    border-color: rgba(var(--accent-rgb), 0.46);
+    background: rgba(23, 27, 45, 0.84);
+    box-shadow:
+        0 0 0 3px rgba(var(--accent-rgb), 0.13),
+        0 14px 36px rgba(5, 8, 18, 0.22);
 }
 
 .host-search-icon {
@@ -437,6 +470,10 @@ function selectTopic(topic: string): void {
     font-weight: 700;
     line-height: 1;
     padding: 4px 6px;
+}
+
+:global(.dark) .host-search-kbd {
+    background: rgba(255, 255, 255, 0.03);
 }
 
 .host-content {

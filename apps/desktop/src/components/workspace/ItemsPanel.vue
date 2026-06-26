@@ -577,11 +577,23 @@ onBeforeUnmount(() => {
     margin: 12px 0;
     background-color: var(--bg-card);
   }
+
+  :global(.dark) .items-panel {
+    background: linear-gradient(180deg, rgba(37, 42, 65, 0.74), rgba(30, 35, 56, 0.72));
+    border: 1px solid rgba(195, 202, 238, 0.1);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.035),
+      0 20px 52px rgba(5, 8, 18, 0.18);
+  }
 }
 
 .items-shell-head {
   flex: 0 0 auto;
   background: var(--bg-glass);
+}
+
+:global(.dark) .items-shell-head {
+  background: transparent;
 }
 
 .items-toolbar-row {
@@ -621,10 +633,25 @@ onBeforeUnmount(() => {
   background: var(--input-bg);
 }
 
+:global(.dark) .category-tab {
+  color: rgba(244, 242, 255, 0.72);
+}
+
+:global(.dark) .category-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.045);
+}
+
 .category-tab--active {
-  color: var(--bg-header);
-  background: var(--text-accent);
-  box-shadow: var(--accent-glow) 0 8px 24px;
+  color: #211b11;
+  background: linear-gradient(135deg, #ffe16f, var(--accent-warm));
+  box-shadow: 0 8px 24px var(--accent-warm-soft);
+}
+
+:global(.dark) .category-tab--active {
+  color: #211b11;
+  background: linear-gradient(135deg, #ffe16f, var(--accent-warm));
+  box-shadow: 0 12px 30px rgba(244, 200, 95, 0.24);
 }
 
 .category-tab-icon {
@@ -642,6 +669,10 @@ onBeforeUnmount(() => {
 
 .category-tab:not(.category-tab--active) .category-tab-icon {
   color: var(--text-accent);
+}
+
+:global(.dark) .category-tab:not(.category-tab--active) .category-tab-icon {
+  color: #b7a0ff;
 }
 
 .category-tab-count {
@@ -682,6 +713,13 @@ onBeforeUnmount(() => {
     background-color 0.16s ease;
 }
 
+:global(.dark) .refresh-btn {
+  border-color: rgba(196, 202, 236, 0.16);
+  background: rgba(27, 31, 50, 0.74);
+  color: var(--accent-warm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
 .refresh-btn:hover {
   border-color: var(--border-strong);
 }
@@ -720,15 +758,35 @@ onBeforeUnmount(() => {
     box-shadow 0.18s ease;
 }
 
+:global(.dark) .item-card {
+  border-color: rgba(196, 202, 236, 0.13);
+  background: var(--item-card-bg, linear-gradient(180deg, rgba(36, 41, 64, 0.88), rgba(28, 33, 54, 0.88)));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 34px rgba(5, 8, 18, 0.18);
+}
+
 .item-card:hover {
   border-color: var(--border-strong);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
+:global(.dark) .item-card:hover {
+  border-color: rgba(202, 209, 246, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 44px rgba(5, 8, 18, 0.34);
+}
+
 .item-card--favorite {
   background: var(--item-card-bg, var(--accent-soft));
   border-color: var(--border-soft);
+}
+
+:global(.dark) .item-card--favorite {
+  background: var(--item-card-bg, linear-gradient(180deg, rgba(54, 47, 70, 0.9), rgba(35, 35, 56, 0.9)));
+  border-color: rgba(244, 200, 95, 0.18);
 }
 
 /* ── 卡片头部 ── */
@@ -777,6 +835,10 @@ onBeforeUnmount(() => {
   background: var(--item-icon-bg, var(--accent-soft));
 }
 
+:global(.dark) .item-icon {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
 .item-icon :deep(svg) {
   width: 18px;
   height: 18px;
@@ -804,6 +866,10 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
+:global(.dark) .code-block {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
 .image-preview {
   width: 100%;
   aspect-ratio: 4 / 3;
@@ -814,6 +880,10 @@ onBeforeUnmount(() => {
   margin: 0;
   background: var(--input-bg);
   cursor: pointer;
+}
+
+:global(.dark) .image-preview {
+  border: 1px solid rgba(205, 211, 255, 0.08);
 }
 
 .file-line {
@@ -923,10 +993,20 @@ onBeforeUnmount(() => {
     background-color 0.15s ease;
 }
 
+:global(.dark) .action-btn,
+:global(.dark) .delete-btn {
+  border-color: rgba(196, 202, 236, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+}
+
 .action-btn:hover {
   color: var(--text-accent);
   border-color: rgba(var(--accent-rgb), 0.35);
   background: var(--accent-soft);
+}
+
+:global(.dark) .action-btn:hover {
+  background: rgba(var(--accent-rgb), 0.14);
 }
 
 .delete-btn {
@@ -998,6 +1078,11 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-card);
   background: var(--bg-card);
   padding: 14px;
+}
+
+:global(.dark) .skeleton-card {
+  border-color: rgba(196, 202, 236, 0.13);
+  background: rgba(32, 37, 58, 0.74);
 }
 
 .skeleton-line {
