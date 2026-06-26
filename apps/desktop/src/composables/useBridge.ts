@@ -125,10 +125,17 @@ export function useBridge(onLoggedOut: () => void) {
     // 监听上传队列完成事件
     stopUploadQueueSubscription?.();
     let lastCompletedVersion = completedVersion.value;
+    const doneIds = new Set<string>();
     stopUploadQueueSubscription = uploadQueueStore.$subscribe((_mutation, state) => {
       if (state.completedVersion !== lastCompletedVersion) {
         lastCompletedVersion = state.completedVersion;
         void loadItems();
+      }
+      for (const item of state.items) {
+        if (item.status === "done" && !doneIds.has(item.id)) {
+          doneIds.add(item.id);
+          showToast(`"${item.file.name}" 上传成功`, "success");
+        }
       }
     });
 
@@ -186,6 +193,7 @@ export function useBridge(onLoggedOut: () => void) {
   function uploadFiles(files: File[]): void {
     if (!files.length) return;
     uploadQueueStore.enqueue(files);
+    showToast(`开始上传 ${files.length} 个文件`, "success");
   }
 
   // 重试上传

@@ -190,6 +190,7 @@ function selectTopic(topic: string): void {
                         :clear-version="props.sentTextVersion"
                         :topic-suggestions="props.topics.map(t => t.name)"
                         @submit="sendText"
+                        @files-selected="uploadFiles"
                     />
                     <UploadPanel
                         :queue-items="props.queueItems"
@@ -278,6 +279,7 @@ function selectTopic(topic: string): void {
                         :clear-version="props.sentTextVersion"
                         :topic-suggestions="props.topics.map(t => t.name)"
                         @submit="sendText"
+                        @files-selected="uploadFiles"
                     />
                     <UploadPanel
                         compact

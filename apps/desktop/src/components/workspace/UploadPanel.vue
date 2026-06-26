@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import UploadCloudIcon from "../../assets/icons/upload-cloud.svg";
+import { showToast } from "../feedback/toast";
 
 export interface UploadQueueViewItem {
   id: string;
@@ -53,6 +54,11 @@ function handleDragOver(e: DragEvent): void {
 }
 
 async function handleQuickUpload(): Promise<void> {
+  if (!navigator.clipboard?.read) {
+    showToast("当前环境不支持读取剪贴板，请手动选择文件", "error");
+    chooseFiles();
+    return;
+  }
   try {
     const clipboardItems = await navigator.clipboard.read();
     for (const item of clipboardItems) {
@@ -68,8 +74,10 @@ async function handleQuickUpload(): Promise<void> {
         }
       }
     }
+    showToast("剪贴板中无可上传的文件，请手动选择", "error");
     chooseFiles();
   } catch {
+    showToast("无法读取剪贴板内容，请手动选择文件", "error");
     chooseFiles();
   }
 }
