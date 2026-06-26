@@ -205,7 +205,7 @@ function selectTopic(topic: string): void {
                     <SendPanel
                         :submitting="props.sendingText"
                         :clear-version="props.sentTextVersion"
-                        :topic-suggestions="props.topics.map(t => t.name)"
+                        :topic-suggestions="props.topics"
                         @submit="sendText"
                         @files-selected="uploadFiles"
                     />
@@ -294,7 +294,7 @@ function selectTopic(topic: string): void {
                     <SendPanel
                         :submitting="props.sendingText"
                         :clear-version="props.sentTextVersion"
-                        :topic-suggestions="props.topics.map(t => t.name)"
+                        :topic-suggestions="props.topics"
                         @submit="sendText"
                         @files-selected="uploadFiles"
                     />

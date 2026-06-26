@@ -17,6 +17,7 @@ import FileIcon from "../../assets/icons/folder.svg";
 import ImageIcon from "../../assets/icons/image.svg";
 import TopicBadge from "./TopicBadge.vue";
 import DropdownSelect from "./DropdownSelect.vue";
+import type { TopicOption } from "./TopicSelect.vue";
 import type { TopicInfo } from "./TopicList.vue";
 import { MasonryWall } from "@yeger/vue-masonry-wall";
 
@@ -127,6 +128,9 @@ const topicFilterOptions = computed(() => [
     count: t.count,
   })),
 ]);
+const topicOptionsForBadge = computed<TopicOption[]>(() =>
+  props.topics.map((t) => ({ name: t.name, count: t.count })),
+);
 const categoryCounts = computed(() => {
   const counts: Record<CategoryKey, number> = {
     all: props.items.length,
@@ -480,6 +484,7 @@ onBeforeUnmount(() => {
                 <TopicBadge
                   :topic="item.topic"
                   :tags="item.tags"
+                  :topics="topicOptionsForBadge"
                   @edit-start="startTopicEdit(item.id)"
                   @edit-end="endTopicEdit(item.id)"
                   @update-topic="updateItemTopic(item, $event)"

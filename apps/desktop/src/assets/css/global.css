@@ -184,7 +184,8 @@
   }
 
   .dark .host-brand-icon-wrap,
-  .dark .app-login-brand-icon-wrap {
+  .dark .app-login-hero-icon-wrap,
+  .dark .app-login-card-brand-icon-wrap {
     background-image: linear-gradient(to bottom right, #38bdf8, #0ea5e9);
     box-shadow: 0 12px 30px rgba(56, 189, 248, 0.28);
   }

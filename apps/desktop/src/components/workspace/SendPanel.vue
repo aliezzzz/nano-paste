@@ -4,6 +4,8 @@ import EditIcon from "../../assets/icons/edit.svg";
 import SendIcon from "../../assets/icons/send.svg";
 import UploadCloudIcon from "../../assets/icons/upload-cloud.svg";
 import DropdownSelect from "./DropdownSelect.vue";
+import TopicSelect, { type TopicOption } from "./TopicSelect.vue";
+import type { TopicInfo } from "./TopicList.vue";
 
 interface DropdownOption {
   label: string;
@@ -30,12 +32,12 @@ const languageOptions: DropdownOption[] = [
 const props = withDefaults(
   defineProps<{
     submitting?: boolean;
-    topicSuggestions?: string[];
+    topicSuggestions?: TopicInfo[];
     clearVersion?: number;
   }>(),
   {
     submitting: false,
-    topicSuggestions: () => [],
+    topicSuggestions: () => [] as TopicInfo[],
     clearVersion: 0,
   },
 );
@@ -58,21 +60,14 @@ const emit = defineEmits<{
 const title = ref("");
 const content = ref("");
 const selectedTopic = ref("");
-const customTopic = ref("");
 const contentKind = ref<"text" | "code" | "file">("text");
 const language = ref("");
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isDragOver = ref(false);
 
-const hasExistingTopics = computed(() => props.topicSuggestions.length > 0);
-const topicValue = computed(
-  () => customTopic.value.trim() || selectedTopic.value.trim(),
+const topicOptionsForPicker = computed<TopicOption[]>(() =>
+  props.topicSuggestions.map((t) => ({ name: t.name, count: t.count })),
 );
-
-const topicOptions = computed<DropdownOption[]>(() => [
-  { label: hasExistingTopics.value ? "选择已有话题" : "暂无话题", value: "" },
-  ...props.topicSuggestions.map((topic) => ({ label: topic, value: topic })),
-]);
 
 function handleSubmit(e: Event): void {
   e.preventDefault();
@@ -82,7 +77,7 @@ function handleSubmit(e: Event): void {
   const payload = {
     title: title.value.trim() || undefined,
     content: content.value,
-    topic: topicValue.value || undefined,
+    topic: selectedTopic.value.trim() || undefined,
     contentKind: contentKind.value as "text" | "code",
     language:
       contentKind.value === "code" ? language.value || undefined : undefined,
@@ -93,17 +88,10 @@ function handleSubmit(e: Event): void {
   emit("submit", payload);
 }
 
-function handleCustomTopicInput(): void {
-  if (customTopic.value.trim()) {
-    selectedTopic.value = "";
-  }
-}
-
 function clear(): void {
   title.value = "";
   content.value = "";
   selectedTopic.value = "";
-  customTopic.value = "";
   contentKind.value = "text";
   language.value = "";
 }
@@ -200,7 +188,7 @@ defineExpose({ clear });
                 : '粘贴文字、链接、验证码或临时备注...'
             "
             rows="6"
-            maxlength="5000"
+            maxlength="50000"
             class="editor-textarea"
           ></textarea>
           <div class="editor-meta">
@@ -214,7 +202,7 @@ defineExpose({ clear });
               />
             </div>
             <span v-else>Ctrl + Enter 快速发送</span>
-            <span>{{ content.length }}/5000</span>
+            <span>{{ content.length }}/50000</span>
           </div>
         </div>
       </div>
@@ -259,29 +247,15 @@ defineExpose({ clear });
             />
           </label>
 
-          <div class="send-topic-grid">
-            <div class="send-field">
-              <span class="send-label">话题</span>
-              <DropdownSelect
-                v-model="selectedTopic"
-                :options="topicOptions"
-                :disabled="!hasExistingTopics || Boolean(customTopic.trim())"
-                test-id="text-topic-select"
-                menu-test-id="text-topic-select-menu"
-              />
-            </div>
-            <label class="send-field">
-              <span class="send-label">新话题</span>
-              <input
-                v-model="customTopic"
-                data-testid="text-topic"
-                type="text"
-                placeholder="输入后自动创建"
-                maxlength="50"
-                class="send-input"
-                @input="handleCustomTopicInput"
-              />
-            </label>
+          <div class="send-field">
+            <span class="send-label">话题</span>
+            <TopicSelect
+              v-model="selectedTopic"
+              :topics="topicOptionsForPicker"
+              placeholder="选择或创建话题"
+              test-id="text-topic-select"
+              menu-test-id="text-topic-select-menu"
+            />
           </div>
         </div>
       </details>
@@ -344,12 +318,6 @@ defineExpose({ clear });
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.04em;
-}
-
-.send-topic-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
 }
 
 .send-kind-row {

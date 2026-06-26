@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
+import TopicSelect, { type TopicOption } from "./TopicSelect.vue";
 
-const props = defineProps<{
-  topic?: string;
-  tags?: string[];
-}>();
+const props = withDefaults(
+  defineProps<{
+    topic?: string;
+    tags?: string[];
+    topics?: TopicOption[];
+  }>(),
+  {
+    topics: () => [] as TopicOption[],
+  },
+);
 
 const emit = defineEmits<{
   (e: "update-topic", topic: string): void;
@@ -12,105 +19,77 @@ const emit = defineEmits<{
   (e: "edit-end"): void;
 }>();
 
-const editing = ref(false);
-const editValue = ref("");
+const pickerOpen = ref(false);
+const triggerRef = ref<HTMLElement | null>(null);
+const popoverStyle = ref<Record<string, string>>({});
 
-function startEdit(): void {
-  editing.value = true;
-  editValue.value = props.topic || "";
+async function openPicker(): Promise<void> {
+  if (!triggerRef.value) return;
+  const rect = triggerRef.value.getBoundingClientRect();
+  popoverStyle.value = {
+    position: "fixed",
+    top: `${rect.bottom + 4}px`,
+    left: `${rect.left}px`,
+    width: `${Math.max(rect.width, 200)}px`,
+    zIndex: "50",
+  };
+  pickerOpen.value = true;
   emit("edit-start");
+  await nextTick();
 }
 
-function cancelEdit(): void {
-  editing.value = false;
-  editValue.value = "";
+function closePicker(): void {
+  pickerOpen.value = false;
   emit("edit-end");
 }
 
-function save(): void {
-  emit("update-topic", editValue.value.trim());
-  editing.value = false;
-  editValue.value = "";
-  emit("edit-end");
+function onSelect(value: string): void {
+  emit("update-topic", value);
+  closePicker();
 }
 </script>
 
 <template>
-  <div v-if="editing" class="topic-edit">
-    <input
-      v-model="editValue"
-      class="topic-edit-input"
-      placeholder="输入话题"
-      maxlength="50"
-      autofocus
-      @keyup.enter="save"
-      @keyup.escape="cancelEdit"
-    >
-    <button class="topic-edit-btn topic-edit-btn--save" @click="save">保存</button>
-    <button class="topic-edit-btn topic-edit-btn--cancel" @click="cancelEdit">取消</button>
-  </div>
-  <div v-else-if="topic || tags?.length" class="meta-tags">
-    <span v-if="topic" class="meta-topic" title="点击编辑话题" @click="startEdit">{{ topic }}</span>
-    <span v-else class="meta-topic meta-topic--empty" title="点击添加话题" @click="startEdit">+话题</span>
+  <div v-if="topic || tags?.length" class="meta-tags">
+    <span
+      v-if="topic"
+      ref="triggerRef"
+      class="meta-topic"
+      title="点击修改话题"
+      @click="openPicker"
+    >{{ topic }}</span>
+    <span
+      v-else
+      ref="triggerRef"
+      class="meta-topic meta-topic--empty"
+      title="点击添加话题"
+      @click="openPicker"
+    >+话题</span>
     <span v-for="tag in tags" :key="tag" class="meta-tag">#{{ tag }}</span>
   </div>
   <div v-else class="meta-tags">
-    <span class="meta-topic meta-topic--empty" title="点击添加话题" @click="startEdit">+话题</span>
+    <span
+      ref="triggerRef"
+      class="meta-topic meta-topic--empty"
+      title="点击添加话题"
+      @click="openPicker"
+    >+话题</span>
   </div>
+
+  <Teleport to="body">
+    <div v-if="pickerOpen" :style="popoverStyle" class="topic-badge-popover">
+      <TopicSelect
+        :model-value="props.topic || ''"
+        :topics="props.topics"
+        :placeholder="topic ? '修改或清空话题' : '选择或创建话题'"
+        @update:modelValue="onSelect"
+        @close="closePicker"
+      />
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
-.topic-edit {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 26px;
-  margin: 0;
-}
-
-.topic-edit-input {
-  flex: 1;
-  min-width: 0;
-  height: 26px;
-  box-sizing: border-box;
-  padding: 0 8px;
-  border: 1px solid var(--text-accent);
-  border-radius: 6px;
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 11px;
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-glow);
-}
-
-.topic-edit-btn {
-  height: 26px;
-  padding: 0 8px;
-  border-radius: 6px;
-  font-size: 10px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: all 0.15s ease;
-}
-
-.topic-edit-btn--save {
-  background: var(--accent-soft);
-  color: var(--text-accent);
-}
-
-.topic-edit-btn--save:hover {
-  color: var(--accent-hover);
-}
-
-.topic-edit-btn--cancel {
-  background: var(--border-soft);
-  color: var(--text-muted);
-}
-
-.topic-edit-btn--cancel:hover {
-  background: var(--border-strong);
-}
-
 .meta-tags {
   display: flex;
   flex-wrap: wrap;
@@ -126,7 +105,7 @@ function save(): void {
   color: var(--text-accent);
   font-size: 10px;
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 5px 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -154,5 +133,9 @@ function save(): void {
   color: var(--text-muted);
   font-size: 10px;
   padding: 2px 5px;
+}
+
+.topic-badge-popover {
+  /* position / top / left / width / z-index 由 inline style 提供 */
 }
 </style>

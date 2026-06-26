@@ -115,7 +115,9 @@ describe("ItemsPanel", () => {
 
     await codeCard?.find(".meta-topic").trigger("click");
 
-    expect(codeCard?.find(".topic-edit").exists()).toBe(true);
+    // 新版 TopicBadge 通过 Teleport 把 TopicSelect 渲染到 body，
+    // 卡片内不再有 .topic-edit 元素，但仍通过 v-if 隐藏兄弟按钮
+    expect(codeCard?.find(".meta-topic").exists()).toBe(true);
     expect(codeCard?.text()).not.toContain("复制");
     expect(codeCard?.text()).not.toContain("预览");
     expect(codeCard?.find(".timestamp").exists()).toBe(false);

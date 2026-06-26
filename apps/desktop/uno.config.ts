@@ -7,33 +7,52 @@ export default defineConfig({
     // App.vue
     "app-root":
       "h-full w-full bg-[var(--bg-main)] text-[var(--text-main)] transition-colors duration-400",
-    "app-login-page": "fixed inset-0 overflow-hidden bg-[var(--bg-main)]",
-    "app-login-bg": "absolute inset-0 pointer-events-none opacity-50",
+    "app-login-page": "relative min-h-[100dvh] bg-[var(--bg-main)] overflow-auto",
+    "app-login-bg": "absolute inset-0 pointer-events-none overflow-hidden",
     "app-login-bg-radial":
-      "absolute inset-x-0 top-0 h-[48vh] bg-[radial-gradient(ellipse_at_top,var(--accent-soft),transparent_78%)] opacity-50 dark:opacity-18",
+      "absolute inset-x-0 top-0 h-[55vh] bg-[radial-gradient(ellipse_at_top,var(--accent-soft),transparent_72%)] opacity-55 dark:opacity-18",
     "app-login-config-btn":
       "absolute top-5 right-5 z-30 w-9 h-9 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:border-[var(--text-accent)] transition-all flex items-center justify-center",
     "app-login-config-btn-icon": "w-4 h-4",
-    "app-login-shell":
-      "relative h-full flex justify-center px-4 sm:px-8 py-4 sm:py-6 max-[700px]:py-2",
+    "app-login-container":
+      "relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-8 py-10 sm:py-14 lg:min-h-[100dvh] lg:flex lg:items-center lg:py-0",
     "app-login-grid":
-      "w-full max-w-3xl h-full max-h-[680px] max-[700px]:max-h-[620px] grid grid-cols-1 lg:grid-cols-[1fr_640px] gap-6 lg:gap-10 items-center",
-    "app-login-grid-spacer": "hidden lg:block",
-    "app-login-card-shell":
-      "h-full min-h-0 bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-[var(--shadow-md)] px-4 sm:px-8 lg:px-10 py-3 sm:py-6 lg:py-8 max-[700px]:py-2 flex flex-col justify-center",
-    "app-login-brand": "text-center mb-3 sm:mb-6 lg:mb-7 max-[700px]:mb-2",
-    "app-login-brand-icon-wrap":
-      "inline-flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-[var(--text-accent)] to-[var(--accent-hover)] mb-3 sm:mb-4",
-    "app-login-brand-icon": "w-6 h-6 sm:w-7 sm:h-7 text-white",
-    "app-login-title":
-      "text-[clamp(2rem,5vw,3.5rem)] leading-none font-bold bg-gradient-to-r from-[var(--text-main)] to-[var(--text-muted)] bg-clip-text text-transparent",
-    "app-login-subtitle":
-      "mt-1.5 sm:mt-3 text-[var(--text-muted)] text-sm sm:text-lg font-medium tracking-wide",
-    "app-login-form": "space-y-2.5 sm:space-y-5 lg:space-y-6",
+      "w-full grid lg:grid-cols-[1fr_380px] lg:gap-10 xl:gap-16 items-center",
+    "app-login-hero": "hidden lg:flex flex-col",
+    "app-login-hero-icon-wrap":
+      "w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--text-accent)] to-[var(--accent-hover)] shadow-[var(--accent-glow)] mb-6",
+    "app-login-hero-icon": "w-8 h-8 text-white",
+    "app-login-hero-title":
+      "text-[clamp(2rem,5vw,2.75rem)] leading-none font-bold text-[var(--text-main)]",
+    "app-login-hero-subtitle":
+      "mt-2 text-lg sm:text-xl text-[var(--text-muted)] font-medium",
+    "app-login-hero-desc":
+      "mt-4 text-sm leading-relaxed text-[var(--text-subtle)] max-w-[30ch]",
+    "app-login-hero-points":
+      "mt-7 flex items-center gap-2 text-[11px] font-semibold text-[var(--text-muted)]",
+    "app-login-hero-point":
+      "rounded-full border border-[var(--border-soft)] bg-[var(--bg-card)] px-3 py-1.5",
+    "app-login-card":
+      "bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-[var(--shadow-md)] p-5 sm:p-7 lg:p-8",
+    "app-login-card-brand": "flex items-center gap-3 mb-5 sm:mb-6",
+    "app-login-card-brand-icon-wrap":
+      "w-10 h-10 sm:w-11 sm:h-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-[var(--text-accent)] to-[var(--accent-hover)] shadow-[var(--accent-glow)]",
+    "app-login-card-brand-icon": "w-5 h-5 text-white",
+    "app-login-card-brand-copy": "min-w-0",
+    "app-login-card-brand-text": "text-lg sm:text-xl font-bold text-[var(--text-main)]",
+    "app-login-card-brand-subtitle":
+      "mt-0.5 text-xs sm:text-sm text-[var(--text-muted)]",
+    "app-login-note":
+      "mb-5 flex items-center gap-2 rounded-xl border border-[rgba(var(--accent-rgb),0.16)] bg-[var(--accent-soft)] px-3 py-2.5 text-xs sm:text-sm text-[var(--text-muted)]",
+    "app-login-note-dot":
+      "h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-accent)] shadow-[0_0_0_4px_rgba(var(--accent-rgb),0.12)]",
+    "app-login-form": "space-y-3.5 sm:space-y-4",
     "app-login-label":
-      "block text-sm sm:text-base font-semibold text-[var(--text-main)] mb-1 sm:mb-2 opacity-90",
+      "block text-xs sm:text-sm font-semibold text-[var(--text-main)] mb-1.5 opacity-85",
     "app-login-submit-btn":
-      "w-full h-10 sm:h-12 lg:h-14 bg-[var(--text-accent)] hover:bg-[var(--accent-hover)] text-white text-sm sm:text-lg font-semibold rounded-xl transition-all disabled:opacity-50",
+      "w-full h-11 sm:h-12 bg-[var(--text-accent)] hover:bg-[var(--accent-hover)] text-white text-sm sm:text-base font-semibold rounded-xl transition-all duration-200 active:scale-[0.98] disabled:opacity-50",
+    "app-login-footnote":
+      "mt-5 text-center text-xs text-[var(--text-subtle)]",
     "app-modal-wrap": "fixed inset-0",
     "app-modal-wrap--device": "z-[290]",
     "app-modal-wrap--config": "z-[300]",
