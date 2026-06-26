@@ -809,6 +809,7 @@ onBeforeUnmount(() => {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   display: block;
+  max-height: 150px;
   border-radius: 12px;
   margin: 0;
   background: var(--input-bg);

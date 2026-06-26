@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import ThemeToggle from "./ThemeToggle.vue";
 import SendPanel from "./workspace/SendPanel.vue";
 import UploadPanel from "./workspace/UploadPanel.vue";
@@ -64,6 +64,22 @@ const emit = defineEmits<{
 
 const activeMobileTab = ref<MobileTab>("send");
 const workspaceSearch = ref("");
+const searchInputRef = ref<HTMLInputElement | null>(null);
+
+function handleSearchShortcut(e: KeyboardEvent): void {
+    if (e.ctrlKey && e.key === "/") {
+        e.preventDefault();
+        searchInputRef.value?.focus();
+    }
+}
+
+onMounted(() => {
+    document.addEventListener("keydown", handleSearchShortcut);
+});
+
+onUnmounted(() => {
+    document.removeEventListener("keydown", handleSearchShortcut);
+});
 
 function logout(): void {
     emit("logout");
@@ -131,12 +147,13 @@ function selectTopic(topic: string): void {
                 <label class="host-search" aria-label="搜索剪贴板内容">
                     <span class="host-search-icon" aria-hidden="true"></span>
                     <input
+                        ref="searchInputRef"
                         v-model="workspaceSearch"
                         class="host-search-input"
                         type="search"
                         placeholder="搜索剪贴板内容..."
                     />
-                    <span class="host-search-kbd">Ctrl K</span>
+                    <span class="host-search-kbd">Ctrl /</span>
                 </label>
 
                 <div class="host-header-actions">
@@ -427,10 +444,6 @@ function selectTopic(topic: string): void {
     min-height: 0;
 }
 
-.host-mobile-send {
-    padding: 10px;
-}
-
 .host-mobile-items {
     height: 100%;
     min-height: 0;
@@ -440,6 +453,13 @@ function selectTopic(topic: string): void {
 .host-mobile-send {
     display: grid;
     gap: 8px;
+    align-content: start;
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px 10px;
 }
 
 @media (max-width: 960px) {
