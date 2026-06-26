@@ -3,7 +3,7 @@
 ############################
 # 1) Build Web static files
 ############################
-FROM node:20-alpine AS web-builder
+FROM node:22-alpine AS web-builder
 WORKDIR /src/apps/desktop
 
 COPY apps/desktop/package.json apps/desktop/pnpm-lock.yaml ./

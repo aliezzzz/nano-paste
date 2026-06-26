@@ -4,3 +4,5 @@
 apps/desktop/dist
 apps/backend/data
 build/data
+**/target
++apps/desktop/src-tauri
