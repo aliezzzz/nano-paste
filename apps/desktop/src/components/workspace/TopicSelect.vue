@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 12px 36px rgba(5, 8, 18, 0.16);
   overflow: hidden;
 }
-:global(.dark) .topic-select-menu {
+.dark .topic-select-menu {
   background: rgba(23, 27, 45, 0.96);
   border-color: rgba(192, 199, 235, 0.14);
 }

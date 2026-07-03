@@ -121,7 +121,7 @@ async function handleQuickUpload(): Promise<void> {
   transition: background-color 0.18s ease;
 }
 
-:global(.dark) .quick-upload {
+.dark .quick-upload {
   border-color: rgba(196, 202, 236, 0.18);
   background: rgba(32, 37, 58, 0.58);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -131,7 +131,7 @@ async function handleQuickUpload(): Promise<void> {
   background: var(--bg-card-hover);
 }
 
-:global(.dark) .quick-upload:hover {
+.dark .quick-upload:hover {
   background: rgba(43, 49, 74, 0.76);
 }
 
@@ -146,7 +146,7 @@ async function handleQuickUpload(): Promise<void> {
   flex: none;
 }
 
-:global(.dark) .q-icon {
+.dark .q-icon {
   background: rgba(var(--accent-rgb), 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }

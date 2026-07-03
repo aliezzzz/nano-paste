@@ -75,8 +75,8 @@ function toggle() {
   position: relative;
 }
 
-:global(.dark) .theme-toggle,
-:global(.dark) .theme-toggle:hover {
+.dark .theme-toggle,
+.dark .theme-toggle:hover {
   border: 0;
   background: transparent;
   outline: none;

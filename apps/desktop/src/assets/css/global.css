@@ -172,15 +172,40 @@
   }
 
   .dark body {
+    background: var(--bg-main);
+  }
+
+  .dark .app-root,
+  .dark .host-root,
+  .dark .app-login-page {
+    position: relative;
+    background: var(--bg-main);
+  }
+
+  .dark .app-root::before,
+  .dark .host-root::before,
+  .dark .app-login-page::before {
+    content: "";
+    position: fixed;
+    inset: 1px;
+    pointer-events: none;
+    z-index: 0;
     background:
       radial-gradient(circle at 16% 6%, rgba(var(--accent-rgb), 0.18), transparent 34rem),
       radial-gradient(circle at 86% 12%, rgba(244, 200, 95, 0.08), transparent 28rem),
       linear-gradient(135deg, #171b2b 0%, #1d2235 48%, #151929 100%);
   }
 
+  .dark .app-root > *,
+  .dark .host-root > *,
+  .dark .app-login-page > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .dark body::before {
-    opacity: 0.028;
-    mix-blend-mode: screen;
+    opacity: 0;
+    mix-blend-mode: normal;
   }
 
   .dark .host-brand-icon-wrap,

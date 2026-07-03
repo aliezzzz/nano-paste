@@ -13,6 +13,7 @@ import type { UploadQueueViewItem } from "./workspace/UploadPanel.vue";
 import type { ItemView, ItemActionPayload } from "../types/workspace";
 import ImagePreviewModal from "./modals/ImagePreviewModal.vue";
 import CodePreviewModal from "./modals/CodePreviewModal.vue";
+import { useWorkspaceUiStore } from "../stores/workspace-ui";
 
 type SendPayload = { title?: string; content: string; tags?: string[]; topic?: string; contentKind?: "text" | "code"; language?: string };
 
@@ -62,7 +63,8 @@ const emit = defineEmits<{
     (e: "select-topic", topic: string): void;
 }>(); 
 
-const activeMobileTab = ref<MobileTab>("send");
+const workspaceUiStore = useWorkspaceUiStore();
+const activeMobileTab = computed(() => workspaceUiStore.mobileTab);
 const workspaceSearch = ref("");
 const searchInputRef = ref<HTMLInputElement | null>(null);
 
@@ -82,6 +84,7 @@ onUnmounted(() => {
 });
 
 function logout(): void {
+    workspaceUiStore.reset();
     emit("logout");
 }
 
@@ -106,7 +109,7 @@ function refreshItems(): void {
 }
 
 function switchMobileTab(tab: MobileTab): void {
-    activeMobileTab.value = tab;
+    workspaceUiStore.setMobileTab(tab);
 }
 
 function sendText(payload: SendPayload): void {
@@ -314,6 +317,7 @@ function selectTopic(topic: string): void {
                         :topics="props.topics"
                         :active-topic="props.activeTopic"
                         :mode="activeMobileTab === 'favorites' ? 'favorites' : 'all'"
+                        :hide-favorite-category="activeMobileTab === 'favorites'"
                         :search-query="workspaceSearch"
                         @item-action="itemAction"
                         @refresh-items="refreshItems"
@@ -355,7 +359,7 @@ function selectTopic(topic: string): void {
     padding: 12px;
 }
 
-:global(.dark) .host-header {
+.dark .host-header {
     background: linear-gradient(180deg, rgba(29, 33, 52, 0.94), rgba(26, 30, 48, 0.86));
     border-bottom-color: rgba(194, 201, 238, 0.12);
     box-shadow: 0 16px 44px rgba(5, 8, 18, 0.16);
@@ -363,12 +367,12 @@ function selectTopic(topic: string): void {
     -webkit-backdrop-filter: blur(20px) saturate(1.16);
 }
 
-:global(.dark) .host-sidebar {
+.dark .host-sidebar {
     background: linear-gradient(180deg, rgba(35, 40, 63, 0.58), rgba(27, 32, 51, 0.52));
     border-right-color: rgba(194, 201, 238, 0.12);
 }
 
-:global(.dark) .host-content {
+.dark .host-content {
     background: transparent;
 }
 
@@ -401,7 +405,7 @@ function selectTopic(topic: string): void {
     transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
-:global(.dark) .host-search {
+.dark .host-search {
     border-color: rgba(192, 199, 235, 0.14);
     background: rgba(18, 22, 36, 0.68);
     box-shadow:
@@ -415,7 +419,7 @@ function selectTopic(topic: string): void {
     box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1);
 }
 
-:global(.dark) .host-search:focus-within {
+.dark .host-search:focus-within {
     border-color: rgba(var(--accent-rgb), 0.46);
     background: rgba(23, 27, 45, 0.84);
     box-shadow:
@@ -472,7 +476,7 @@ function selectTopic(topic: string): void {
     padding: 4px 6px;
 }
 
-:global(.dark) .host-search-kbd {
+.dark .host-search-kbd {
     background: rgba(255, 255, 255, 0.03);
 }
 

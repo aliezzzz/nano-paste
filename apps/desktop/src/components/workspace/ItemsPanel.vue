@@ -48,6 +48,7 @@ const props = withDefaults(
     activeTopic?: string;
     mode?: "all" | "favorites";
     searchQuery?: string;
+    hideFavoriteCategory?: boolean;
   }>(),
   {
     items: () => [],
@@ -56,6 +57,7 @@ const props = withDefaults(
     activeTopic: "",
     mode: "all",
     searchQuery: "",
+    hideFavoriteCategory: false,
   },
 );
 
@@ -85,13 +87,16 @@ watch(searchQuery, (value) => {
   emit("update:search-query", value);
 });
 
-const filteredItems = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase();
+const modeItems = computed(() => {
   const shouldShowFavoritesOnly = props.mode === "favorites";
-  const sourceByMode = shouldShowFavoritesOnly
+  return shouldShowFavoritesOnly
     ? props.items.filter((item) => item.isFavorite)
     : props.items;
-  const source = sourceByMode.filter((item) =>
+});
+
+const filteredItems = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  const source = modeItems.value.filter((item) =>
     matchesCategory(item, activeCategory.value),
   );
   if (!query) return source;
@@ -133,14 +138,14 @@ const topicOptionsForBadge = computed<TopicOption[]>(() =>
 );
 const categoryCounts = computed(() => {
   const counts: Record<CategoryKey, number> = {
-    all: props.items.length,
+    all: modeItems.value.length,
     text: 0,
     code: 0,
     file: 0,
     image: 0,
     favorite: 0,
   };
-  for (const item of props.items) {
+  for (const item of modeItems.value) {
     if (item.isFavorite) counts.favorite += 1;
     if (isCodeItem(item)) {
       counts.code += 1;
@@ -155,7 +160,10 @@ const categoryCounts = computed(() => {
 });
 
 const visibleCategories = computed<CategoryDef[]>(() =>
-  categories.filter((c) => c.key === "all" || categoryCounts.value[c.key] > 0),
+  categories.filter((c) => {
+    if (props.hideFavoriteCategory && c.key === "favorite") return false;
+    return c.key === "all" || categoryCounts.value[c.key] > 0;
+  }),
 );
 
 watch(visibleCategories, (list) => {
@@ -583,7 +591,7 @@ onBeforeUnmount(() => {
     background-color: var(--bg-card);
   }
 
-  :global(.dark) .items-panel {
+  .dark .items-panel {
     background: linear-gradient(180deg, rgba(37, 42, 65, 0.74), rgba(30, 35, 56, 0.72));
     border: 1px solid rgba(195, 202, 238, 0.1);
     box-shadow:
@@ -597,7 +605,7 @@ onBeforeUnmount(() => {
   background: var(--bg-glass);
 }
 
-:global(.dark) .items-shell-head {
+.dark .items-shell-head {
   background: transparent;
 }
 
@@ -638,11 +646,11 @@ onBeforeUnmount(() => {
   background: var(--input-bg);
 }
 
-:global(.dark) .category-tab {
+.dark .category-tab {
   color: rgba(244, 242, 255, 0.72);
 }
 
-:global(.dark) .category-tab:hover {
+.dark .category-tab:hover {
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.045);
 }
@@ -653,7 +661,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 8px 24px var(--accent-warm-soft);
 }
 
-:global(.dark) .category-tab--active {
+.dark .category-tab--active {
   color: #211b11;
   background: linear-gradient(135deg, #ffe16f, var(--accent-warm));
   box-shadow: 0 12px 30px rgba(244, 200, 95, 0.24);
@@ -676,7 +684,7 @@ onBeforeUnmount(() => {
   color: var(--text-accent);
 }
 
-:global(.dark) .category-tab:not(.category-tab--active) .category-tab-icon {
+.dark .category-tab:not(.category-tab--active) .category-tab-icon {
   color: #b7a0ff;
 }
 
@@ -718,7 +726,7 @@ onBeforeUnmount(() => {
     background-color 0.16s ease;
 }
 
-:global(.dark) .refresh-btn {
+.dark .refresh-btn {
   border-color: rgba(196, 202, 236, 0.16);
   background: rgba(27, 31, 50, 0.74);
   color: var(--accent-warm);
@@ -763,7 +771,7 @@ onBeforeUnmount(() => {
     box-shadow 0.18s ease;
 }
 
-:global(.dark) .item-card {
+.dark .item-card {
   border-color: rgba(196, 202, 236, 0.13);
   background: var(--item-card-bg, linear-gradient(180deg, rgba(36, 41, 64, 0.88), rgba(28, 33, 54, 0.88)));
   box-shadow:
@@ -777,7 +785,7 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-md);
 }
 
-:global(.dark) .item-card:hover {
+.dark .item-card:hover {
   border-color: rgba(202, 209, 246, 0.26);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
@@ -789,7 +797,7 @@ onBeforeUnmount(() => {
   border-color: var(--border-soft);
 }
 
-:global(.dark) .item-card--favorite {
+.dark .item-card--favorite {
   background: var(--item-card-bg, linear-gradient(180deg, rgba(54, 47, 70, 0.9), rgba(35, 35, 56, 0.9)));
   border-color: rgba(244, 200, 95, 0.18);
 }
@@ -840,7 +848,7 @@ onBeforeUnmount(() => {
   background: var(--item-icon-bg, var(--accent-soft));
 }
 
-:global(.dark) .item-icon {
+.dark .item-icon {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -849,7 +857,7 @@ onBeforeUnmount(() => {
   height: 18px;
 }
 
-:global(.dark) .item-icon {
+.dark .item-icon {
   background: var(--item-icon-bg-dark, var(--item-icon-bg, var(--accent-soft)));
 }
 
@@ -871,7 +879,7 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-:global(.dark) .code-block {
+.dark .code-block {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
@@ -887,7 +895,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 
-:global(.dark) .image-preview {
+.dark .image-preview {
   border: 1px solid rgba(205, 211, 255, 0.08);
 }
 
@@ -998,8 +1006,8 @@ onBeforeUnmount(() => {
     background-color 0.15s ease;
 }
 
-:global(.dark) .action-btn,
-:global(.dark) .delete-btn {
+.dark .action-btn,
+.dark .delete-btn {
   border-color: rgba(196, 202, 236, 0.13);
   background: rgba(255, 255, 255, 0.035);
 }
@@ -1010,7 +1018,7 @@ onBeforeUnmount(() => {
   background: var(--accent-soft);
 }
 
-:global(.dark) .action-btn:hover {
+.dark .action-btn:hover {
   background: rgba(var(--accent-rgb), 0.14);
 }
 
@@ -1070,6 +1078,13 @@ onBeforeUnmount(() => {
   font-size: 16px;
 }
 
+.items-empty-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
 /* ── 骨架屏 ── */
 .items-skeleton {
   columns: 3 280px;
@@ -1085,7 +1100,7 @@ onBeforeUnmount(() => {
   padding: 14px;
 }
 
-:global(.dark) .skeleton-card {
+.dark .skeleton-card {
   border-color: rgba(196, 202, 236, 0.13);
   background: rgba(32, 37, 58, 0.74);
 }

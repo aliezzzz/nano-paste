@@ -290,7 +290,7 @@ defineExpose({ clear });
   background: var(--bg-card);
 }
 
-:global(.dark) .send-panel {
+.dark .send-panel {
   border-color: rgba(196, 202, 236, 0.13);
   background: linear-gradient(180deg, rgba(38, 43, 67, 0.82), rgba(31, 36, 58, 0.82));
   box-shadow:
@@ -334,7 +334,7 @@ defineExpose({ clear });
   background: var(--bg-card-hover);
 }
 
-:global(.dark) .send-kind-toggle {
+.dark .send-kind-toggle {
   background: rgba(255, 255, 255, 0.055);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
 }
@@ -354,7 +354,7 @@ defineExpose({ clear });
   color: var(--bg-card);
 }
 
-:global(.dark) .send-kind-btn--active {
+.dark .send-kind-btn--active {
   background: linear-gradient(135deg, #9f7fff, #b99fff);
   color: #ffffff;
   box-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.22);
@@ -377,7 +377,7 @@ defineExpose({ clear });
     background-color 0.16s ease;
 }
 
-:global(.dark) .send-input {
+.dark .send-input {
   border-color: rgba(196, 202, 236, 0.13);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
@@ -409,7 +409,7 @@ defineExpose({ clear });
     background-color 0.18s ease;
 }
 
-:global(.dark) .editor-wrap {
+.dark .editor-wrap {
   border-color: rgba(196, 202, 236, 0.13);
   background: rgba(18, 22, 36, 0.76);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
@@ -463,7 +463,7 @@ defineExpose({ clear });
   border-radius: 14px;
 }
 
-:global(.dark) .send-advanced {
+.dark .send-advanced {
   background: rgba(255, 255, 255, 0.035);
 }
 
@@ -532,7 +532,7 @@ defineExpose({ clear });
     background-color 0.18s ease;
 }
 
-:global(.dark) .file-zone {
+.dark .file-zone {
   border-color: rgba(196, 202, 236, 0.16);
   background: rgba(18, 22, 36, 0.72);
 }

@@ -103,7 +103,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
 }
 
-:global(.dark) .image-preview-title {
+.dark .image-preview-title {
   color: #fff;
 }
 

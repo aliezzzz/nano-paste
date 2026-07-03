@@ -64,6 +64,28 @@ describe("ItemsPanel", () => {
     expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
   });
 
+  it("counts categories within favorites mode", () => {
+    const wrapper = mount(ItemsPanel, { props: { items, mode: "favorites" } });
+    const tabs = wrapper.find(".category-tabs").text();
+
+    expect(tabs).toContain("全部 1");
+    expect(tabs).toContain("文本 1");
+    expect(tabs).toContain("收藏 1");
+    expect(tabs).not.toContain("文件 1");
+    expect(tabs).not.toContain("代码 1");
+  });
+
+  it("hides favorite category when requested", () => {
+    const wrapper = mount(ItemsPanel, {
+      props: { items, mode: "favorites", hideFavoriteCategory: true },
+    });
+    const tabs = wrapper.find(".category-tabs").text();
+
+    expect(tabs).toContain("全部 1");
+    expect(tabs).toContain("文本 1");
+    expect(tabs).not.toContain("收藏");
+  });
+
   it("emits selected topic from topic filter dropdown", async () => {
     const wrapper = mount(ItemsPanel, {
       props: {
