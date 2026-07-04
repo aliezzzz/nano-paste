@@ -5,9 +5,16 @@ import {
   readAuthStorage,
 } from "../utils/extension-storage";
 import { refreshWithToken } from "../utils/auth";
+import { syncQuickSendSession } from "../utils/quick-send-session";
 
 export async function bootstrapStoresFromExtensionStorage(): Promise<void> {
   if (!isChromeExtensionRuntime()) {
+    const authStore = useAuthStore();
+    const runtimeStore = useRuntimeStore();
+    await syncQuickSendSession({
+      accessToken: authStore.accessToken,
+      apiBaseUrl: runtimeStore.apiBaseUrl,
+    });
     return;
   }
 

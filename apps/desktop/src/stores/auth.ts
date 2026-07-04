@@ -5,6 +5,8 @@ import {
   type AuthStorageSnapshot,
   writeAuthStorage,
 } from "../utils/extension-storage";
+import { clearQuickSendSession, syncQuickSendSession } from "../utils/quick-send-session";
+import { useRuntimeStore } from "./runtime";
 
 export interface TokenBundle {
   accessToken: string;
@@ -40,6 +42,11 @@ export const useAuthStore = defineStore("auth", {
           username: this.username,
         });
       }
+      const runtimeStore = useRuntimeStore();
+      void syncQuickSendSession({
+        accessToken: this.accessToken,
+        apiBaseUrl: runtimeStore.apiBaseUrl,
+      });
     },
     applyPersistedState(snapshot: AuthStorageSnapshot): void {
       this.accessToken = snapshot.accessToken;
@@ -47,6 +54,11 @@ export const useAuthStore = defineStore("auth", {
       this.expiresInSeconds = snapshot.expiresInSeconds;
       this.username = snapshot.username;
       this.sessionVersion += 1;
+      const runtimeStore = useRuntimeStore();
+      void syncQuickSendSession({
+        accessToken: this.accessToken,
+        apiBaseUrl: runtimeStore.apiBaseUrl,
+      });
     },
     clearSession(): void {
       this.accessToken = "";
@@ -57,6 +69,7 @@ export const useAuthStore = defineStore("auth", {
       if (isExtensionRuntime) {
         void clearAuthStorage();
       }
+      void clearQuickSendSession();
     },
   },
   persist: isExtensionRuntime
