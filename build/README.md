@@ -24,6 +24,8 @@ docker compose -f build/docker-compose.yml up -d
 
 说明：
 
+- 在 Windows 上请使用 Git Bash 执行上述命令；在 WSL 中可直接执行同一组命令。
+- 仓库强制 `.sh` 文件使用 LF 换行，避免在 Windows 工作区执行时出现 `pipefail` 解析错误。
 - 默认按 `linux/amd64` 构建，适合部署到 x86_64 Linux 机器。
 - 如需覆盖平台，可临时指定：`PLATFORM=linux/arm64 bash build/docker-build.sh`。
 

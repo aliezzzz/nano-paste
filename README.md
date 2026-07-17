@@ -43,6 +43,8 @@ bash build/docker-build.sh
 docker compose -f build/docker-compose.yml up -d
 ```
 
+Windows 请在 Git Bash 中执行上述命令；WSL 可直接执行同一组命令。
+
 部署前请修改 `build/.env` 中的 `JWT_SECRET`。
 
 ## 当前接口范围
