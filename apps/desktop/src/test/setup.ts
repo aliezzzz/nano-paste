@@ -11,4 +11,8 @@ config.global.stubs = {
   UploadCloudIcon: { template: "<svg data-test-icon='upload' />" },
   FolderIcon: { template: "<svg data-test-icon='folder' />" },
   SpinnerIcon: { template: "<svg data-test-icon='spinner' />" },
+  MasonryWall: {
+    props: ["items"],
+    template: "<div class='masonry-wall-stub'><slot v-for='item in items' :item='item' /></div>",
+  },
 };

@@ -246,7 +246,7 @@ function itemPayload(
 function displayTitle(item: ItemView): string {
   if (item.type === "file") return item.fileName || "无文件名";
   if (isCodeItem(item)) return item.title?.trim() || "未命名代码片段";
-  return item.title?.trim() || item.content?.trim() || "空文本";
+  return item.title?.trim() || "未命名文本";
 }
 
 function isCodeItem(item: ItemView): boolean {
@@ -823,6 +823,10 @@ onBeforeUnmount(() => {
 }
 
 .item-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   font-size: 15px;
   font-weight: 850;
   line-height: 1.42;
@@ -915,6 +919,10 @@ onBeforeUnmount(() => {
 }
 
 .item-content-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 10;
   color: var(--text-muted);
   font-size: 14px;
   line-height: 1.72;

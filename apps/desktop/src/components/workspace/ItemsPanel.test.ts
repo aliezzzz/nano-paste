@@ -48,20 +48,19 @@ describe("ItemsPanel", () => {
   it("renders all items together in all mode", () => {
     const wrapper = mount(ItemsPanel, { props: { items } });
 
-    const allSectionText = wrapper.get('[data-testid="all-section"]').text();
+    const allSectionText = wrapper.get(".items-list").text();
     expect(allSectionText).toContain("会议纪要");
     expect(allSectionText).toContain("design.png");
-    expect(wrapper.find('[data-testid="favorite-section"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
+    expect(wrapper.findAll("article")).toHaveLength(3);
   });
 
   it("shows only favorite items in favorites mode", () => {
     const wrapper = mount(ItemsPanel, { props: { items, mode: "favorites" } });
 
-    expect(wrapper.get('[data-testid="mobile-favorites-section"]').text()).toContain("会议纪要");
-    expect(wrapper.text()).not.toContain("design.png");
-    expect(wrapper.find('[data-testid="all-section"]').exists()).toBe(false);
-    expect(wrapper.find('[data-testid="history-section"]').exists()).toBe(false);
+    const favoritesText = wrapper.get(".items-list").text();
+    expect(favoritesText).toContain("会议纪要");
+    expect(favoritesText).not.toContain("design.png");
+    expect(wrapper.findAll("article")).toHaveLength(1);
   });
 
   it("counts categories within favorites mode", () => {
@@ -109,11 +108,25 @@ describe("ItemsPanel", () => {
     expect(wrapper.text()).toContain("拖拽文件");
   });
 
-  it("uses content as the title when text has no title", () => {
-    const wrapper = mount(ItemsPanel, { props: { items } });
+  it("uses a placeholder title when text has no title", () => {
+    const content = "没有标题的完整文本内容";
+    const wrapper = mount(ItemsPanel, {
+      props: {
+        items: [
+          {
+            id: "untitled-text-1",
+            type: "text",
+            content,
+            isFavorite: false,
+            createdAt: "2026-06-08T13:00:00Z",
+            iconSvg: "<svg></svg>",
+          },
+        ],
+      },
+    });
 
-    expect(wrapper.text()).toContain("const answer = 42;");
-    expect(wrapper.text()).not.toContain("无标题");
+    expect(wrapper.get(".item-title").text()).toBe("未命名文本");
+    expect(wrapper.get(".item-content-text").text()).toBe(content);
   });
 
   it("emits code preview action for code items", async () => {
