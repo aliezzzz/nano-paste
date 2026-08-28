@@ -21,3 +21,4 @@ services:
       REFRESH_TOKEN_TTL_HOURS: "${REFRESH_TOKEN_TTL_HOURS:-720}"
     volumes:
       - ./data:/data
+      - ./web:/app/web:ro

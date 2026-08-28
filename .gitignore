@@ -8,6 +8,7 @@ dist
 dist-extension
 target
 apps/backend/data
+build/web/
 apps/backend/data/nanopaste.db
 .DS_Store
 **.tar

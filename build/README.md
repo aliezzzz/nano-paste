@@ -9,7 +9,35 @@
 - `.env`：本地 Compose 环境变量
 - `.env.example`：环境变量模板
 - `docker-build.sh`：手动构建镜像脚本
-- `docker-compose.yml`：Compose 启动配置（SQLite 数据映射到 `build/data`）
+- `docker-compose.yml`：Compose 启动配置（SQLite 数据映射到 `build/data`，前端静态资源映射到 `build/web`）
+
+## 前端目录挂载
+
+`docker-compose.yml` 将宿主机 `build/web` 只读挂载到容器内 `/app/web`。后端按请求读取文件系统，因此**更新前端无需重新打包镜像，也不用重启容器**：
+
+1. 本地构建前端：
+
+   ```bash
+   cd apps/desktop && pnpm install && pnpm run build:web
+   ```
+
+2. 同步 dist 内容到 `build/web`（注意是内容，不是 dist 文件夹本身）：
+
+   ```bash
+   rm -rf build/web && mkdir -p build/web && cp -r apps/desktop/dist/. build/web/
+   ```
+
+   服务器上同理，可直接上传覆盖：
+
+   ```bash
+   scp -r apps/desktop/dist/* 用户@服务器:部署目录/build/web/
+   ```
+
+注意事项：
+
+- 首次 `docker compose up -d` 前，`build/web` 必须已包含构建产物（至少有 `index.html`），否则后端因找不到 Web 入口文件启动失败。
+- 首次加入该挂载或调整挂载配置时，需要 `docker compose -f build/docker-compose.yml up -d` 重建容器；日常更新只需覆盖 `build/web` 内文件，即时生效。
+- `build/web/` 已加入 `.gitignore`，不会被提交到仓库。
 
 ## 使用
 
